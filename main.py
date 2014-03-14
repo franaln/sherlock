@@ -60,8 +60,13 @@ class Main():
         else:
             self.menu.add_char(key)
 
+
+    def reset_search(self):
+        self.menu.clear()
+
     def on_query_changed(self, widget, query):
         if not query:
+            self.reset_search()
             return
 
         matches = self.plugin.get_matches(query)

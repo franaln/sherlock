@@ -11,7 +11,7 @@ class Menu(Gtk.Window, GObject.GObject):
     def __init__(self):
 
         # config
-        self.height = 28
+        #self.height = 28
         self.width = 480
         self.line_height = 28
         self.lines = 5
@@ -38,7 +38,7 @@ class Menu(Gtk.Window, GObject.GObject):
 
         self.set_title('Sherlock')
 
-        self.set_size_request(self.width, self.height)
+        self.set_size_request(self.width, self.line_height)
 
         self.connect('draw', self.draw)
         self.connect('screen-changed', self.screen_changed)
@@ -50,13 +50,19 @@ class Menu(Gtk.Window, GObject.GObject):
         self.items = list(items)
         self.show_box()
 
+    def clear(self):
+        self.items = []
+        self.hide_box()
+
     def show_box(self):
-        self.height = self.line_height * (self.lines + 1)
-        self.resize(self.width, self.height)
+        height = self.line_height * (self.lines + 1)
+        self.resize(self.width, height)
         self.queue_draw()
 
     def hide_box(self):
-        pass
+        height = self.line_height
+        self.resize(self.width, height)
+        self.queue_draw()
 
     def add_char(self, char):
         self.query += char
@@ -72,18 +78,16 @@ class Menu(Gtk.Window, GObject.GObject):
         x = 0
         y = (pos+1) * self.line_height
 
-        # background rectangle
         if selected:
-            self.draw_rect(cr, 0, y, self.width, y+self.line_height, self.sb_color)
-        else:
-            self.draw_rect(cr, 0, y, self.width, y+self.line_height, self.nb_color)
+            self.draw_rect(cr, 0, y, self.width, 28, self.sb_color)
 
         # text
         self.draw_text(cr, x, y, item.title, self.nf_color)
 
-    def draw_rect(self, cr, xb, yb, xe, ye, color):
+
+    def draw_rect(self, cr, x, y, width, height, color):
         cr.set_source_rgb(*color)
-        cr.rectangle(xb, yb, xe, ye)
+        cr.rectangle(x, y, width, height)
         cr.fill()
 
     def draw_text(self, cr, base_x, base_y, text, color):
@@ -111,8 +115,8 @@ class Menu(Gtk.Window, GObject.GObject):
 
         # draw search entry
         self.draw_rect(cr, 0, 0, self.width, self.line_height, self.nb_color)
-
         self.draw_text(cr, 0, 0, self.query, self.nf_color)
+
         # cr.set_source_rgb(*self.nf_color)
         # cr.set_line_width(1)
         # cr.move_to(10, 2)
@@ -122,13 +126,9 @@ class Menu(Gtk.Window, GObject.GObject):
         if not self.items:
             return
 
-        show_items = []
-        if self.selected < self.lines:
-            first_item = 0 #self.selected
-        else:
-            first_item = self.selected - self.lines + 1
+        first_item = 0 if (self.selected < self.lines) else (self.selected - self.lines + 1)
 
-        max_items = min(5,len(self.items))
+        max_items = min(5, len(self.items))
 
         for i in range(max_items):
             self.draw_item(cr, i, self.items[first_item+i], (first_item+i == self.selected))
