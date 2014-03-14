@@ -10,7 +10,7 @@ import sys
 import re
 import subprocess
 
-from main import Sherlock
+from main import Main
 
 def install_excepthook():
     """ Make sure we exit when an unhandled exception occurs. """
@@ -23,9 +23,13 @@ def install_excepthook():
             sys.exit()
     sys.excepthook = new_hook
 
-if __name__ == '__main__':
-
+def main():
     install_excepthook()
 
-    app = Sherlock()
+    app = Main()
     app.run()
+
+    return True
+
+if __name__ == '__main__':
+    sys.exit(main())

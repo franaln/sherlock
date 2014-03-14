@@ -1,4 +1,6 @@
 from plugin import Plugin
+from match import Match
+from actions import Run
 
 class Applications(Plugin):
     """ Open apps. Show recent apps first """
@@ -11,16 +13,17 @@ class Applications(Plugin):
         # self.rest_cache = "$cachedir/apps_all"
 
     def get_actions(self):
-        return ['Open',]
+        return [Run,]
 
     def get_matches(self, query):
 
-        apps = ['Evince', 'Foo', 'Notes']
+        apps = open('/home/fran/.cache/sherlock/apps_recent').read().split('\n')
         matches = []
 
         for app in apps:
             if query in app.lower():
-                matches.append(app)
+                m = Match(app, '')
+                matches.append(m)
 
         return matches
 
