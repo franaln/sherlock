@@ -2,11 +2,9 @@
 
 class Plugin:
 
-    def __init(self, name, cmd):
+    def __init(self, name, trigger):
         self.name = name
-        self.cmd = cmd
-        #self._actions = []
-        # engine = SearchEngine()
+        self.trigger = trigger
 
     def get_actions(self):
         raise Exception('Not implemented')

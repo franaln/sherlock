@@ -1,9 +1,11 @@
+# Applications
+# Open applications
+
 from plugin import Plugin
-from match import Match
+from items import Match
 from actions import Run
 
-class Applications(Plugin):
-    """ Open apps. Show recent apps first """
+class ApplicationsPlugin(Plugin):
 
     def __init__(self):
         Plugin.__init__('Applications', 'app')
@@ -12,20 +14,33 @@ class Applications(Plugin):
         # self.recent_cache = "$cachedir/apps_recent"
         # self.rest_cache = "$cachedir/apps_all"
 
+        self.apps = open('/home/fran/.cache/sherlock/apps_recent').read().split('\n')
+
+
     def get_actions(self):
-        return [Run,]
+        yield Run
 
     def get_matches(self, query):
 
-        apps = open('/home/fran/.cache/sherlock/apps_recent').read().split('\n')
-        matches = []
+        avg_score = 8
 
-        for app in apps:
+        matches = []
+        for app in self.apps:
+            score = avg_score
+
             if query in app.lower():
-                m = Match(app, '')
+
+                if app.startswith(query):
+                    score += 1
+
+                m = Match(app, 'subtitle', None, score)
+
                 matches.append(m)
 
         return matches
+
+
+        #yield app.lower()
 
         # os.mkdir -p $cachedir
         #     touch $recent_cache
