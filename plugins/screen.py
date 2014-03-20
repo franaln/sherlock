@@ -1,8 +1,49 @@
-#     ## Screen/VGA/HDMI options
-#     screen)
+# Screen plugin
 
-#         devices=$(xrandr -q | grep [[:upper:]]1)
+import re
 
+from plugin import Plugin
+from utils import check_output
+
+
+
+
+class ScreenPlugin(Plugin):
+    def __init__(self):
+        Plugin.__init__(self, 'Screen', 'screen')
+        self._items = []
+
+    def get_actions(self):
+        return None
+
+
+    def check_devices(self):
+        devices = []
+
+        output = check_output(['xrandr', '-q'])
+        for line in output.split('\n'):
+            splitline = line.split()
+
+            if not splitline[1] in ['connected', 'disconnected']:
+                continue
+
+            device = re.findall(r'^[a-zA-Z]+', splitline[0])[0]
+            status = splitline[1]
+
+            devices.append((device, status))
+
+        return devices
+
+    def get_matches(self, query):
+        self.clear_matches()
+
+        devices = self.check_devices()
+
+        for dev in devices:
+            print (dev)
+            self.add_item(title=dev[0], subtitle=dev[1])
+
+        return self._items
 #         availableopts="Laptop only"
 
 #         if [[ $devices == *"VGA1 connected"* ]] ; then

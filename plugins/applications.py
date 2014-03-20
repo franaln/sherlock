@@ -1,65 +1,55 @@
-# Applications
+# Applications plugin
 # Open applications
 
 from plugin import Plugin
-from items import Match
 from actions import Run
+
+from gi.repository import Gio
+
 
 class ApplicationsPlugin(Plugin):
 
     def __init__(self):
-        Plugin.__init__('Applications', 'app')
-
-        self.max_recent = 50 # Number of recent commands to track
-        # self.recent_cache = "$cachedir/apps_recent"
-        # self.rest_cache = "$cachedir/apps_all"
-
-        self.apps = open('/home/fran/.cache/sherlock/apps_recent').read().split('\n')
+        Plugin.__init__(self, 'Applications', 'app')
+        self._items = []
+        self._actions = [Run(),]
 
 
     def get_actions(self):
-        yield Run
+        pass
+
+    def get_default_action(self):
+        return self._actions[0]
+
+    def get_apps(self):
+        apps = []
+        for app in Gio.app_info_get_all():
+
+            a = (app.get_name(),
+                 app.get_description(),
+                 app.get_executable(),
+                 app.get_filename()
+            )
+            apps.append(a)
+
+        return apps
+
+    def search_key(self, app):
+        return ' %s %s' % (app[0], app[2])
 
     def get_matches(self, query):
 
-        avg_score = 8
+        self.clear_matches()
 
-        matches = []
-        for app in self.apps:
-            score = avg_score
+        matches = self.cached_data('apps', self.get_apps, max_age=3600)
 
-            if query in app.lower():
+        if query:
+            matches = self.filter(query, matches, key=self.search_key, include_score=True)
 
-                if app.startswith(query):
-                    score += 1
+        for m in matches:
+            title = m[0][0]
+            subtitle = '%s (%s)' % (m[0][1], m[0][2]) if m[0][1] is not None else ''
+            filename = m[0][3]
+            self.add_item(title=title, subtitle=subtitle, arg=filename, score=m[1], plugin_name='Applications')
 
-                m = Match(app, 'subtitle', None, score)
-
-                matches.append(m)
-
-        return matches
-
-
-        #yield app.lower()
-
-        # os.mkdir -p $cachedir
-        #     touch $recent_cache
-
-        #     IFS=:
-        #     if stest -dqr -n "$rest_cache" $PATH; then
-        #         stest -flx $PATH | sort -u | grep -vf "$recent_cache" > "$rest_cache"
-        #     fi
-
-        #     IFS=" "
-        #     cmd=$(cat "$recent_cache" "$rest_cache" | xdmenu "apps") || exit
-
-        #     if ! grep -qx "$cmd" "$recent_cache" &> /dev/null; then
-        #         grep -vx "$cmd" "$rest_cache" > "$rest_cache.$$"
-        #         mv "$rest_cache.$$" "$rest_cache"
-        #     fi
-        #     echo "$cmd" > "$recent_cache.$$"
-        #     grep -vx "$cmd" "$recent_cache" | head -n "$max_recent" >> "$recent_cache.$$"
-        #     mv "$recent_cache.$$"  "$recent_cache"
-
-        #     ($cmd | ${SHELL:-"/bin/sh"} &)
-        #     ;;
+        return self._items
