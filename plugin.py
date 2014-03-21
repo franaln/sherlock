@@ -2,7 +2,7 @@
 
 import os, re, string, pickle, time
 
-from items import Match
+from objects import Match
 
 # Match filter flags
 MATCH_STARTSWITH = 1
@@ -23,75 +23,67 @@ split_on_delimiters = re.compile('[^a-zA-Z0-9]').split
 
 class Plugin(object):
 
-    def __init__(self, name, keyword):
+    def __init__(self, name, keyword, only_keyword=False):
         self.name = name
         self.keyword = keyword
+        self.only_keyword = only_keyword
 
-        self._items = []
+        self._matches = []
+        self._actions = []
 
-    def get_actions(self):
-        raise Exception('Not implemented')
+    def get_actions(self, match_id=None):
+        for action in self._actions:
+            yield action
 
     def get_matches(self, query):
-        raise Exception('Not implemented')
+        """ Need to be implemented"""
+        pass
 
     def get_default_action(self):
-        self.get_actions()
+        if self._actions:
+            return self._actions[0]
+        else:
+            return None
 
     def clear_matches(self):
-        del self._items[:]
+        del self._matches[:]
 
-    def add_item(self, title, subtitle='', arg=None, valid=False,
-                     uid=None, score=0, plugin_name=None):
-        item = Match(title, subtitle, arg, valid,
-                     uid, score, plugin_name)
-        self._items.append(item)
-        return item
+    def add_match(self, title, subtitle='', actionable=False, arg=None,
+                  uid=None, score=0):
+        m = Match(title=title, subtitle=subtitle,
+                  actionable=actionable, arg=arg,
+                  uid=uid, score=score, plugin=self.name)
+        self._matches.append(m)
+        return m
 
     def filter(self, query, items, key=lambda x: x, ascending=False,
                include_score=False, min_score=0, max_results=0,
                match_on=MATCH_ALL ^ MATCH_ALLCHARS):
         """ search filter. Returns list of items that match query.
+                      (Taken from Alfred workflow)
 
-        query is case-insensitive. Any item that does not contain the
-        entirety of query is rejected.
-
-        query: query to test items against
-        items: iterable of items to test (list or tuple)
-        key: function to get comparison key from items. Must return a
-        unicode string. The default simply returns the item.
-        ascending: True to get worst matches first
-        min_score: Ignore results with a score lower than this if is non-zero
-        max_results: If non-zero, prune results list to this length.
-        match_on: Filter option flags. Bitwise-combined list of
-        MATCH_* constants (see below).
+        * query: query to test items against
+        * items: iterable of items to test (list or tuple)
+        * key: function to get comparison key from items. Must return a
+        * unicode string. The default simply returns the item.
+        * ascending: True to get worst matches first
+        * min_score: Ignore results with a score lower than this if is non-zero
+        * max_results
+        * match_on: Filter option flags.
 
         Matching rules
         --------------
-
         By default, filter uses all of the following flags in this order
-
-        1. MATCH_STARTSWITH : Item search key startswith query (case-insensitive).
-        2. MATCH_CAPITALS : The list of capital letters in item search key starts with query (query may be lower-case). E.g., ``of`` would match ``OmniFocus``, ``gc`` would match ``Google Chrome``
-        3. MATCH_ATOM : Search key is split into "atoms" on non-word characters (.,-,' etc.). Matches if ``query`` is one of these atoms (case-insensitive).
-        4. MATCH_INITIALS_STARTSWITH` : Initials are the first characters of the above-described "atoms" (case-insensitive).
-        5. MATCH_INITIALS_CONTAIN` : ``query`` is a substring of the above-described initials.
-        6. MATCH_INITIALS` : Combination of (4) and (5).
-        7. MATCH_SUBSTRING` : Match if ``query`` is a substring of item search key (case-insensitive).
-        8. MATCH_ALLCHARS` : Matches if all characters in ``query`` appear in item search key in the same order (case-insensitive).
+        1. MATCH_STARTSWITH: Item search key startswith query (case-insensitive).
+        2. MATCH_CAPITALS: The list of capital letters in item search key starts with query (query may be lower-case). E.g., of would match OmniFocus, gc would match Google Chrome
+        3. MATCH_ATOM: Search key is split into "atoms" on non-word characters (.,-,' etc.). Matches if query is one of these atoms (case-insensitive).
+        4. MATCH_INITIALS_STARTSWITH: Initials are the first characters of the above-described "atoms" (case-insensitive).
+        5. MATCH_INITIALS_CONTAIN: query is a substring of the above-described initials.
+        6. MATCH_INITIALS: Combination of (4) and (5).
+        7. MATCH_SUBSTRING: Match if query is a substring of item search key (case-insensitive).
+        8. MATCH_ALLCHARS: Matches if all characters in query appear in item search key in the same order (case-insensitive).
         9. MATCH_ALL: Combination of all the above. The default.
-
-        **Examples:**
-
-        To ignore ``MATCH_ALLCHARS`` (tends to provide the worst matches and
-        is expensive to run), use ``match_on=MATCH_ALL ^ MATCH_ALLCHARS``.
-
-        To match only on capitals, use ``match_on=MATCH_CAPITALS``.
-
-        To match only on startswith and substring, use
-        ``match_on=MATCH_STARTSWITH | MATCH_SUBSTRING``.
-
-        """
+       """
 
         results = {}
         query = query.lower()
@@ -109,7 +101,7 @@ class Plugin(object):
             score = 0
             value = key(item)
 
-            # pre-filter any items that do not contain all characters of `query`
+            # pre-filter any items that do not contain all characters of 'query'
             # to save on running several more expensive tests
             if not queryset <= set(value.lower()):
                 continue
@@ -138,35 +130,35 @@ class Plugin(object):
                     initials = ''.join([s[0] for s in atoms if s])
 
                 if match_on & MATCH_ATOM:
-                    # is `query` one of the atoms in item?
+                    # is 'query' one of the atoms in item?
                     # similar to substring, but scores more highly, as it's
                     # a word within the item
                     if query in atoms:
                         score = 100.0 - (len(value) / len(query))
 
             if not score:
-                # `query` matches start (or all) of the initials of the
-                # atoms, e.g. ``himym`` matches "How I Met Your Mother"
-                # *and* "how i met your mother" (the ``capitals`` rule only
+                # 'query' matches start (or all) of the initials of the
+                # atoms, e.g. 'himym' matches 'How I Met Your Mother'
+                # *and* 'how i met your mother' (the capitals rule only
                 # matches the former)
                 if (match_on & MATCH_INITIALS_STARTSWITH and
                         initials.startswith(query)):
                     score = 100.0 - (len(initials) / len(query))
 
-                # `query` is a substring of initials, e.g. ``doh`` matches
-                # "The Dukes of Hazzard"
+                # 'query' is a substring of initials, e.g. 'doh' matches
+                # 'The Dukes of Hazzard'
                 elif (match_on & MATCH_INITIALS_CONTAIN and
                         query in initials):
                     score = 95.0 - (len(initials) / len(query))
 
             if not score:
-                # `query` is a substring of item
+                # 'query' is a substring of item
                 if match_on & MATCH_SUBSTRING and query in value.lower():
                         score = 90.0 - (len(value) / len(query))
 
             if not score:
                 # finally, assign a score based on how close together the
-                # characters in `query` are in item.
+                # characters in query are in item.
                 if match_on & MATCH_ALLCHARS:
                     match = search(value)
                     if match:
@@ -178,8 +170,8 @@ class Plugin(object):
                 continue
 
             if score > 0:
-                # use "reversed" `score` (i.e. highest becomes lowest) and
-                # `value` as sort key. This means items with the same score
+                # use "reversed" score (i.e. highest becomes lowest) and
+                # value as sort key. This means items with the same score
                 # will be sorted in alphabetical not reverse alphabetical order
                 results[(100.0 / score, value.lower(), i)] = (item, score)
 
@@ -190,7 +182,7 @@ class Plugin(object):
         if max_results and len(results) > max_results:
             results = results[:max_results]
 
-        # return list of ``(item, score)``
+        # return list of (item, score)
         return results
 
     ## Cache
@@ -199,22 +191,11 @@ class Plugin(object):
         dirpath = os.path.expanduser('~/dev/sherlock/data/')
         return self._create(dirpath)
 
-    @property
-    def datadir(self):
-        dirpath = os.path.expanduser('~/dev/sherlock/data/')
-        return self._create(dirpath)
-
     def cachefile(self, filename):
         """
         Return full path to filename within workflow's cache dir.
         """
         return os.path.join(self.cachedir, filename)
-
-    def datafile(self, filename):
-        """
-        Return full path to filename within workflow's data dir.
-        """
-        return os.path.join(self.datadir, filename)
 
     def cached_data(self, name, data_func=None, max_age=60):
         """ Retrieve data from cache or re-generate and re-cache data if
@@ -229,7 +210,6 @@ class Plugin(object):
         if not data_func:
             return None
         data = data_func()
-        print(data)
         self.cache_data(name, data)
         return data
 

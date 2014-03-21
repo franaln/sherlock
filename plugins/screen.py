@@ -1,21 +1,13 @@
 # Screen plugin
 
 import re
-
 from plugin import Plugin
 from utils import check_output
 
-
-
-
 class ScreenPlugin(Plugin):
     def __init__(self):
-        Plugin.__init__(self, 'Screen', 'screen')
-        self._items = []
-
-    def get_actions(self):
-        return None
-
+        Plugin.__init__(self, 'Screen', 'screen', True)
+        self._matches = []
 
     def check_devices(self):
         devices = []
@@ -40,10 +32,16 @@ class ScreenPlugin(Plugin):
         devices = self.check_devices()
 
         for dev in devices:
-            print (dev)
-            self.add_item(title=dev[0], subtitle=dev[1])
+            if dev[1] == 'connected':
+                self.add_match(title=dev[0], subtitle=dev[1])
 
-        return self._items
+
+        # Also add the combinations
+
+
+
+
+        return self._matches
 #         availableopts="Laptop only"
 
 #         if [[ $devices == *"VGA1 connected"* ]] ; then
