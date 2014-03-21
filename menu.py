@@ -1,5 +1,5 @@
 import sys, math, cairo
-from gi.repository import Gtk, Gdk, GdkPixbuf, GObject
+from gi.repository import Gtk, Gdk, GdkPixbuf, GObject, Pango, PangoCairo
 
 import config
 
@@ -42,9 +42,7 @@ class Menu(Gtk.Window, GObject.GObject):
         self.set_size_request(self.width, self.height)
 
         self.connect('draw', self.draw)
-        self.connect('screen-changed', self.screen_changed)
 
-        self.screen_changed(self)
         self.show_all()
 
     def get_selected(self):
@@ -99,19 +97,25 @@ class Menu(Gtk.Window, GObject.GObject):
         cr.rectangle(x, y, width, height)
         cr.fill()
 
-    def draw_text(self, cr, x, y, text, color, size=16):
-        cr.select_font_face(config.font, cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
-        cr.set_font_size(size)
+    def draw_text(self, cr, x, y, text, color, size=12, cursor=False):
+        layout = PangoCairo.create_layout(cr)
+        fontname = config.font
+        font = Pango.FontDescription('%s %s' % (fontname, size))
+        layout.set_font_description(font)
 
-        descent, font_height = cr.font_extents()[1:3]
-
-        (x_bearing, y_bearing, text_width, text_height) = cr.text_extents(text)[:4]
-
-        y = y - descent + font_height / 2
-
-        cr.move_to(x, y)
+        layout.set_text(u'%s' % text, -1)
         cr.set_source_rgb(*color)
-        cr.show_text(text)
+        PangoCairo.update_layout(cr, layout)
+
+        width, height = layout.get_pixel_size()
+
+        ext = layout.get_pixel_extents()[1]
+
+        cr.move_to(x, y - ext.height + height/2 )
+
+        PangoCairo.show_layout(cr, layout)
+
+        return (width, height)
 
     def draw(self, widget, event):
         cr = Gdk.cairo_create(widget.get_window())
@@ -121,18 +125,8 @@ class Menu(Gtk.Window, GObject.GObject):
         cr.set_operator(cairo.OPERATOR_SOURCE)
         cr.paint()
 
-        # draw search entry
-        self.draw_rect(cr, self.offset, self.offset, self.bar_width,
-                       self.bar_height, config.query_bkg_color)
-        self.draw_text(cr, self.offset + 10, self.offset + self.bar_height/2,
-                       self.query, config.query_text_color, 32)
-
-        # cursor
-        # cr. move_to(self.offset + 15 + width, self.offset + self.bar_height - 2)
-        # cr.set_source_rgb(*query_color)
-        # cr.set_line_width(0.8)
-        # cr.line_to(self.offset + 15 + width, self.offset + 2)
-        # cr.stroke()
+        # draw query entry
+        self.draw_query(cr)
 
         # draw items box if there are items to show
         if not self.items:
@@ -145,6 +139,17 @@ class Menu(Gtk.Window, GObject.GObject):
             self.draw_item(cr, i, self.items[first_item+i], (first_item+i == self.selected))
 
         return False
+
+    def draw_query(self, cr):
+        self.draw_rect(cr, self.offset, self.offset, self.bar_width,
+                       self.bar_height, config.query_bkg_color)
+
+        (w, h) = self.draw_text(cr, self.offset + 10, self.offset + self.bar_height/2,
+                       self.query, config.query_text_color, 28, True)
+
+        # cursor
+        cursor_x = self.offset + 12 + w
+        self.draw_rect(cr, cursor_x, self.offset+5, 1, self.bar_height-10, config.query_cur_color)
 
     def draw_item(self, cr, pos, item, selected):
 
@@ -204,9 +209,9 @@ class Menu(Gtk.Window, GObject.GObject):
         x = base_x + 10 #+ 60
         y = base_y + (3/4) * self.item_height
         if selected:
-            self.draw_text(cr, x, y, item.subtitle, (1, 1, 1), 10)
+            self.draw_text(cr, x, y, item.subtitle, (1, 1, 1), 8)
         else:
-            self.draw_text(cr, x, y, item.subtitle, config.menu_sub_color, 10)
+            self.draw_text(cr, x, y, item.subtitle, config.menu_sub_color, 8)
 
         # if selected:
         #     default_action = 'Open'
@@ -222,17 +227,3 @@ class Menu(Gtk.Window, GObject.GObject):
         #     cr.rel_line_to(-4, -4)
         #     cr.set_line_join(cairo.LINE_JOIN_ROUND)
         #     cr.stroke()
-
-    def screen_changed(self, widget, old_screen=None):
-        """ If screen changes, it could be possible
-        we no longer got rgba colors """
-        screen = widget.get_screen()
-        visual = screen.get_rgba_visual()
-        if visual is None:
-            visual = screen.get_rgba_visual()
-            self.supports_alpha = False
-        else:
-            self.supports_alpha = True
-
-        widget.set_visual(visual)
-        return True
