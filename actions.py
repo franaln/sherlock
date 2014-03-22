@@ -210,3 +210,28 @@ class LargeType(Action):
             title='LargeType',
             subtitle='...'
         )
+
+class ShowQRCode (Action):
+    def __init__(self):
+        Action.__init__(self, 'Show QR Code')
+
+    def execute(self, match, target=None):
+
+        image_file = StringIO.StringIO()
+        text = leaf.get_text_representation()
+        version, size, image = qrencode.encode_scaled(text, size=300)
+        image.save(image_file, "ppm")
+        image_contents = image_file.getvalue()
+        image_file.close()
+
+        loader = gtk.gdk.PixbufLoader("pnm")
+        loader.write(image_contents, len(image_contents))
+        pixbuf = loader.get_pixbuf()
+        loader.close()
+        window = gtk.Window()
+        window.set_default_size(350, 350)
+        image = gtk.Image()
+        image.set_from_pixbuf(pixbuf)
+        image.show()
+        window.add(image)
+        ctx.environment.present_window(window)

@@ -1,7 +1,7 @@
 # config
 
 #-- Menu
-font = 'Cantarell' #'Sans'
+font = 'Sans' #'Cantarell' #'Sans'
 
 # Query colours
 query_bkg_color  = (0.8, 0.8, 0.8) # '#141414'

@@ -109,10 +109,7 @@ class Menu(Gtk.Window, GObject.GObject):
 
         width, height = layout.get_pixel_size()
 
-        ext = layout.get_pixel_extents()[1]
-
-        cr.move_to(x, y - ext.height + height/2 )
-
+        cr.move_to(x, y - height/2)
         PangoCairo.show_layout(cr, layout)
 
         return (width, height)
@@ -154,10 +151,10 @@ class Menu(Gtk.Window, GObject.GObject):
     def draw_item(self, cr, pos, item, selected):
 
         """
-        ----------------------------------------
-        | icon | title                 |       |
-        |      | subtitle              |       |
-        ----------------------------------------
+        ---------------------------------
+        | title                 | more  |
+        | subtitle              |       |
+        ---------------------------------
         """
 
         # pos to (x, y)
