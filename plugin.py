@@ -2,7 +2,6 @@
 
 import os, re, string, pickle, time
 
-from objects import Match
 
 # Match filter flags
 MATCH_STARTSWITH = 1
@@ -23,9 +22,9 @@ split_on_delimiters = re.compile('[^a-zA-Z0-9]').split
 
 class Plugin(object):
 
-    def __init__(self, name, keyword, only_keyword=False):
+    def __init__(self, name, keywords, only_keyword=False):
         self.name = name
-        self.keyword = keyword
+        self.keywords = keywords
         self.only_keyword = only_keyword
 
         self._matches = []
@@ -48,13 +47,35 @@ class Plugin(object):
     def clear_matches(self):
         del self._matches[:]
 
-    def add_match(self, title, subtitle='', actionable=False, arg=None,
+    def add_match(self, text, subtext='', _type='text', arg=None,
                   uid=None, score=0):
-        m = Match(title=title, subtitle=subtitle,
-                  actionable=actionable, arg=arg,
-                  uid=uid, score=score, plugin=self.name)
-        self._matches.append(m)
-        return m
+
+        """
+        text: text to show,
+        subtext: secondary text to show,
+        type: 'app', 'text', 'cmd', 'uri'
+        arg:
+             app: .desktop path,
+             uri: uri,
+             cmd: cmd,
+             text: original text
+        uid:
+        score: score
+        """
+
+        match = {
+            'text': text,
+            'subtext': subtext,
+            'type': _type,
+            'arg': arg,
+            'uid': None,
+            'score': score,
+        }
+
+        self._matches.append(match)
+
+    def add_match_dict(self, match):
+        self._matches.append(match)
 
     def filter(self, query, items, key=lambda x: x, ascending=False,
                include_score=False, min_score=0, max_results=0,

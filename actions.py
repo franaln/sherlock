@@ -1,11 +1,45 @@
-# common actions
+# actions
 
 import subprocess
-from gi.repository import Gio, Gdk
-from objects import Action
+from gi.repository import Gio, Gdk, Notify
 
-def open_uri(uri):
-    f = Gio.File.new_for_uri (uri);
+
+## Fallback searches
+
+def do_search_google():
+    pass
+
+
+## Common actions
+
+def do_run_cmd(match, target=None):
+    cmd_list = match['arg'].split()
+    subprocess.call(cmd_list)
+
+def do_run(match):
+    # title='Run'
+    # subtitle='Run an application, action or script'
+
+    display = Gdk.Display.get_default()
+
+    app = Gio.DesktopAppInfo().new_from_filename(match.arg)
+    app.launch(None, display.get_app_launch_context())
+
+def do_run_in_terminal(match):
+    # title='Run in Terminal'
+    # subtitle='Run application or command in terminal'
+    original = Gio.DesktopAppInfo().new_from_filename(match.arg)
+    app = Gio.AppInfo.create_from_commandline(original.get_commandline(),
+                                              original.get_name(),
+                                              AppInfoCreateFlags.NEEDS_TERMINAL)
+    display = Gdk.Display.get_default()
+    app.launch(None, display.get_app_launch_context())
+
+def  do_open(match):
+    # title: 'Open'
+    # subtitle: 'Open using default application'
+
+    f = Gio.File.new_for_uri(match.arg)
 
     app_info = f.query_default_handler(None)
     files = []
@@ -14,147 +48,29 @@ def open_uri(uri):
     display = Gdk.Display.get_default ();
     app_info.launch(files, display.get_app_launch_context())
 
+def do_open_in_folder(match):
+    # title: 'Open folder'
+    # subtitle: 'Open folder containing this file'
 
-class RunCmd(Action):
-    def __init__(self):
-        Action.__init__(self, 'Run command')
+    f = Gio.File.new_for_uri(match.arg)
+    f = f.get_parent()
 
-    def execute(self, match, target=None):
-        cmd_list = match.arg.split()
-        subprocess.call(cmd_list)
+    app_info = f.query_default_handler(None)
 
+    files = []
+    files.append(f)
 
-class Open(Action):
-    def __init__(self):
-        Action.__init__(self, 'Open', 'Open using default application')
-
-    def execute(match, target=None):
-        pass
-
-        #     uri_match = UriMatch(match)
-
-    #     if uri_match is not None:
-    #         CommonActions.open_uri (uri_match.uri);
-
-    #     else if (file_path.match (match.title))
-    #     {
-    #       File f;
-    #       if (match.title.has_prefix ("~"))
-    #       {
-    #         f = File.new_for_path (Path.build_filename (Environment.get_home_dir (),
-    #                                                     match.title.substring (1),
-    #                                                     null));
-    #       }
-    #       else
-    #       {
-    #         f = File.new_for_path (match.title);
-    #       }
-    #       CommonActions.open_uri (f.get_uri ());
-    #     }
-    #     else
-    #     {
-    #       CommonActions.open_uri (match.title);
-    #     }
-    #   }
-
-    #   public override bool valid_for_match (Match match)
-    #   {
-    #     switch (match.match_type)
-    #     {
-    #       case MatchType.GENERIC_URI:
-    #         return true;
-    #       case MatchType.UNKNOWN:
-    #         return web_uri.match (match.title) || file_path.match (match.title);
-    #       default:
-    #         return false;
-    #     }
-    #   }
-
-    #   private Regex web_uri;
-    #   private Regex file_path;
-
-    #   construct
-    #   {
-    #     try
-    #     {
-    #       web_uri = new Regex ("^(ftp|http(s)?)://[^.]+\\.[^.]+", RegexCompileFlags.OPTIMIZE);
-    #       file_path = new Regex ("^(/|~/)[^/]+", RegexCompileFlags.OPTIMIZE);
-    #     }
-    #     catch (Error err)
-    #     {
-    #       Utils.Logger.warning (this, "%s", err.message);
-    #     }
-    #   }
-    # }
-
-class OpenFolder(Action):
-    def __init__(self):
-        Action.__init__(self, 'Open folder', 'Open folder containing this file')
-
-    def execute(match, target=None):
-        pass
-        # UriMatch uri_match = match as UriMatch;
-        #   return_if_fail (uri_match != null);
-
-        f = Gio.File.new_for_uri (uri_match.uri);
-        f = f.get_parent ()
-
-        app_info = f.query_default_handler(None)
-        files = []
-        files.append(f)
-
-        display = Gdk.Display.get_default()
-        app_info.launch(files, display.get_app_launch_context())
-
-        #   public override bool valid_for_match (Match match)
-        #   {
-        #     if (match.match_type != MatchType.GENERIC_URI) return false;
-        #     UriMatch uri_match = match as UriMatch;
-        #     var f = File.new_for_uri (uri_match.uri);
-        #     var parent = f.get_parent ();
-        #     return parent != null && f.is_native ();
-        #   }
-        # }
-
-class Run(Action):
-      def __init__(self):
-          Action.__init__(self,
-                          title='Run',
-                          subtitle='Run an application, action or script')
-
-      def execute (self, match, target=None):
-          display = Gdk.Display.get_default()
-
-          app = Gio.DesktopAppInfo().new_from_filename(match.arg)
-          app.launch(None, display.get_app_launch_context())
-
-class RunTerminal(Action):
-    def __init__(self):
-        Action.__init__(self,
-                        title='Run in Terminal',
-                        subtitle='Run application or command in terminal')
-
-    def execute(self, match, target=None):
-        original = app_match.app_info
-
-        app = Gio.AppInfo.create_from_commandline(original.get_commandline(),
-                                                  original.get_name(),
-                                                  AppInfoCreateFlags.NEEDS_TERMINAL)
-        display = Gdk.Display.get_default()
-        app.launch(None, display.get_app_launch_context())
+    display = Gdk.Display.get_default()
+    app_info.launch(files, display.get_app_launch_context())
 
 
-# Copy to clipboard
-class CopyClipboard(Action):
-    def __init__(self):
-        Action.__init__(
-            title="Copy to Clipboard",
-            description="Copy selection to clipboard"
-        )
+## Outputs
 
-    def execute(self, match, target=None):
+def do_copy_to_clipboard(match):
+    # title: "Copy to Clipboard",
+    # description: "Copy selection to clipboard"
 
-        cb = Gtk.Clipboard.get(Gdk.Atom.NONE)
+    cb = Gtk.Clipboard.get(Gdk.Atom.NONE)
         #     if (match.match_type == MatchType.GENERIC_URI)
         #     {
         #       UriMatch uri_match = match as UriMatch;
@@ -180,58 +96,53 @@ class CopyClipboard(Action):
         #     }
         #   }
 
-
-#     private Gee.List<BaseAction> actions;
-
-#     construct
-#     {
-#       actions = new Gee.ArrayList<BaseAction> ();
-
-#       actions.add (new Runner ());
-#       actions.add (new TerminalRunner ());
-#       actions.add (new Opener ());
-#       actions.add (new OpenFolder ());
-#       actions.add (new ClipboardCopy ());
-#     }
-
-
 # Send notification
-class SendNotification(Action):
-    def __init__(self):
-        Action.__init__(
-            title='SendNotification',
-            subtitle='Send notification'
-        )
+def send_notification(match):
+    #Notify.init ("Hello world")
+    noti = Notify.Notification.new('Sherlock', match.arg,'dialog-information')
+    noti.show()
+
 
 # Large type
-class LargeType(Action):
-    def __init__(self):
-        Action.__init__(
-            title='LargeType',
-            subtitle='...'
-        )
+def show_large_type(match):
+    pass
 
-class ShowQRCode (Action):
-    def __init__(self):
-        Action.__init__(self, 'Show QR Code')
+def show_qrcode(match):
+    pass
+    #image_file = StringIO.StringIO()
+    # text = leaf.get_text_representation()
+    # version, size, image = qrencode.encode_scaled(text, size=300)
+    # image.save(image_file, "ppm")
+    # image_contents = image_file.getvalue()
+    # image_file.close()
 
-    def execute(self, match, target=None):
+    # loader = gtk.gdk.PixbufLoader("pnm")
+    # loader.write(image_contents, len(image_contents))
+    # pixbuf = loader.get_pixbuf()
+    # loader.close()
+    # window = gtk.Window()
+    # window.set_default_size(350, 350)
+    # image = gtk.Image()
+    # image.set_from_pixbuf(pixbuf)
+    # image.show()
+    # window.add(image)
+    # ctx.environment.present_window(window)
 
-        image_file = StringIO.StringIO()
-        text = leaf.get_text_representation()
-        version, size, image = qrencode.encode_scaled(text, size=300)
-        image.save(image_file, "ppm")
-        image_contents = image_file.getvalue()
-        image_file.close()
 
-        loader = gtk.gdk.PixbufLoader("pnm")
-        loader.write(image_contents, len(image_contents))
-        pixbuf = loader.get_pixbuf()
-        loader.close()
-        window = gtk.Window()
-        window.set_default_size(350, 350)
-        image = gtk.Image()
-        image.set_from_pixbuf(pixbuf)
-        image.show()
-        window.add(image)
-        ctx.environment.present_window(window)
+
+
+
+
+
+
+actions = {
+
+    'Run': do_run,
+    'Run command': do_run_cmd,
+    'Run in terminal': do_run_in_terminal,
+    'Open': do_open,
+    'Open in folder': do_open_in_folder,
+
+    'Copy to clipboard': do_copy_to_clipboard,
+
+}

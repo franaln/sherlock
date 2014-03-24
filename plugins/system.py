@@ -1,8 +1,6 @@
 # System commands plugin
 
 from plugin import Plugin
-from objects import Match
-from actions import RunCmd
 
 class SystemPlugin(Plugin):
 
@@ -17,9 +15,7 @@ class SystemPlugin(Plugin):
 
     def __init__(self):
         Plugin.__init__(self, 'System', 'system')
-
         self._matches = []
-        self._actions = [RunCmd(), ]
 
     def get_matches(self, query):
         self.clear_matches()
@@ -27,6 +23,6 @@ class SystemPlugin(Plugin):
         cmds = self.filter(query, self.cmds, key=lambda x: x[0], include_score=True)
 
         for m in cmds:
-            self.add_match(title=m[0][0], subtitle=m[0][1], score=m[1], arg=m[0][2])
+            self.add_match(text=m[0][0], subtext=m[0][1], score=m[1], arg=m[0][2])
 
         return self._matches

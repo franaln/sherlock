@@ -8,6 +8,7 @@ from manager import PluginManager
 class Main():
 
     def __init__(self):
+
         self.menu = Menu()
         self.menu.connect('key_press_event', self.on_key_press)
         self.menu.connect('delete-event', self.close)
@@ -27,7 +28,8 @@ class Main():
         self.menu.clear_menu()
 
     def clear_matches(self):
-        del self.matches[:]
+        if self.matches:
+            del self.matches[:]
 
     def do_search(self, widget, query):
         self.clear_matches()
@@ -36,26 +38,35 @@ class Main():
             self.reset_search()
             return
 
-        query_split = query.split()
+        #query_split = query.split()
+
+        # for plugin in self.manager.get_plugins():
+        #     if query_split[0] == plugin.keyword:
+        #         matches = plugin.get_matches(query_split[1:])
+        #         self.matches += matches
+        #         break
+        # else:
 
         for plugin in self.manager.get_plugins():
-            if query_split[0] == plugin.keyword:
-                matches = plugin.get_matches(query_split[1:])
+            # if plugin.only_keyword:
+            #     continue
+
+            matches = plugin.get_matches(query)
+
+            if matches is not None:
                 self.matches += matches
-                break
-        else:
-            for plugin in self.manager.get_plugins():
-                if plugin.only_keyword:
-                    continue
 
-                matches = plugin.get_matches(query)
-                if matches is not None:
-                    self.matches += matches
+        # order matches by score
+        self.matches = sorted(self.matches, key=lambda m: m.get('score'), reverse=True)
 
+        # relevance/frequency/learning go here!?!
+
+        # show menu
         if self.matches:
             self.menu.show_menu(self.matches)
         else:
             self.reset_search()
+            # show fallback searches
             return
 
     def do_action(self):
@@ -73,10 +84,6 @@ class Main():
         action.execute(match)
         self.close()
 
-    def show_action_panel(self):
-        pass
-
-
     def on_key_press(self, window, event):
         key = Gdk.keyval_name(event.keyval)
 
@@ -86,21 +93,22 @@ class Main():
         if key == 'Escape':
             self.close()
         elif key == 'Left':
-            pass
+            self.menu.move_cursor_left()
         elif key == 'Right':
-            self.show_action_panel()
+            self.menu.move_cursor_right()
         elif key == 'Down':
             self.menu.show_menu()
-            self.menu.select_next()
+            self.menu.select_down()
         elif key == 'Up':
-            self.menu.select_prev()
+            self.menu.select_up()
         elif key == 'BackSpace':
             self.menu.rm_char()
         elif 'Return' in key:
             self.do_action()
+        elif 'Tab' in key:
+            self.menu.toggle_action_panel()
         elif 'Alt' in key or \
-             'Control' in key or \
-             'Tab' in key:
+             'Control' in key:
             pass
         else:
             self.menu.add_char(event.string)

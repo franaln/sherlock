@@ -33,7 +33,7 @@ class ScreenPlugin(Plugin):
 
         for dev in devices:
             if dev[1] == 'connected':
-                self.add_match(title=dev[0], subtitle=dev[1])
+                self.add_match(text=dev[0], subtext=dev[1])
 
 
         # Also add the combinations
