@@ -4,7 +4,7 @@ from gi.repository import Gtk, Gdk, GdkPixbuf, GObject, Pango, PangoCairo
 #-- Menu config
 menu_font = 'Sans'
 
-# Query colours
+# Bar colours
 bar_bkg_color  = (0.8, 0.8, 0.8) # '#141414'
 bar_text_color = (0.1, 0.1, 0.1)
 bar_cur_color  = (0.3, 0.3, 0.3)
@@ -12,8 +12,7 @@ bar_cur_color  = (0.3, 0.3, 0.3)
 # Menu colours
 menu_bkg_color   = (0.92, 0.92, 0.92)    # #ebebeb
 menu_sel_color   = (0.259, 0.498, 0.929) # #427fed
-menu_title_color = (0.1, 0.1, 0.1)       # #030303
-menu_sub_color   = (0.2, 0.2, 0.2)       # #050505
+menu_text_color  = (0.1, 0.1, 0.1)       # #030303
 menu_sep_color   = (0.8, 0.8, 0.8)
 
 class Menu(Gtk.Window, GObject.GObject):
@@ -27,7 +26,6 @@ class Menu(Gtk.Window, GObject.GObject):
         # config
         self.width = 480
         self.height = 60
-        self.offset = 6
         self.bar_width  = self.width - 12
         self.bar_height = self.height - 12
         self.item_height = 48
@@ -146,16 +144,16 @@ class Menu(Gtk.Window, GObject.GObject):
 
         return (width, height)
 
-    def draw_query(self, cr):
-        self.draw_rect(cr, self.offset, self.offset, self.bar_width,
+    def draw_bar(self, cr):
+        self.draw_rect(cr, 6, 6, self.bar_width,
                        self.bar_height, bar_bkg_color)
 
-        (w, h) = self.draw_text(cr, self.offset + 10, self.offset + self.bar_height/2,
+        (w, h) = self.draw_text(cr, 16, 6 + 0.5 * self.bar_height,
                        self.query, bar_text_color, 28, True)
 
         # cursor
-        cursor_x = self.offset + 12 + w
-        self.draw_rect(cr, cursor_x, self.offset+5, 1, self.bar_height-10, bar_cur_color)
+        cursor_x = w + 18
+        self.draw_rect(cr, cursor_x, 11, 1, self.bar_height-10, bar_cur_color)
 
     def draw_separator(self, cr, x, y, size, orientation='h'):
         cr.set_source_rgb(*menu_sep_color)
@@ -195,7 +193,7 @@ class Menu(Gtk.Window, GObject.GObject):
             if selected:
                 self.draw_text(cr, x, y, item.get('text'), (1, 1, 1))
             else:
-                self.draw_text(cr, x, y, item.get('text'), menu_title_color)
+                self.draw_text(cr, x, y, item.get('text'), menu_text_color)
 
             # subtext
             x = base_x + 10
@@ -203,7 +201,7 @@ class Menu(Gtk.Window, GObject.GObject):
             if selected:
                 self.draw_text(cr, x, y, item.get('subtext'), (1, 1, 1), 8)
             else:
-                self.draw_text(cr, x, y, item.get('subtext'), menu_sub_color, 8)
+                self.draw_text(cr, x, y, item.get('subtext'), menu_text_color, 8)
 
         else:
             # text
@@ -212,12 +210,12 @@ class Menu(Gtk.Window, GObject.GObject):
             if selected:
                 self.draw_text(cr, x, y, item.get('text'), (1, 1, 1))
             else:
-                self.draw_text(cr, x, y, item.get('text'), menu_title_color)
+                self.draw_text(cr, x, y, item.get('text'), menu_text_color)
 
         if selected:
             cr.set_source_rgb(1, 1, 1)
             cr.set_line_width(1.5)
-            cr.move_to(self.width-20, base_y + self.item_height/2 + 4)
+            cr.move_to(self.width-20, base_y + 0.5 * self.item_height + 4)
             cr.rel_line_to(4, -4)
             cr.rel_line_to(-4, -4)
             cr.set_line_join(cairo.LINE_JOIN_ROUND)
@@ -230,24 +228,26 @@ class Menu(Gtk.Window, GObject.GObject):
         self.draw_rect(cr, base_x, self.height, width,
                        5*self.item_height, menu_bkg_color)
 
-        cr. move_to(base_x+5, self.bar_height)
-        cr.set_source_rgb(*menu_sep_color)
-        cr.set_line_width(0.8)
-        cr.line_to(base_x+5, self.bar_height + 5 * self.item_height)
-        cr.stroke()
+        #self.draw_separator(cr, base_x, self.height,
+        #                    self.bar_height + 5 * self.item_height, 'v')
 
         for pos, action in enumerate(self.actions):
 
             base_y =  self.height + pos * self.item_height
 
+            self.draw_separator(cr, base_x, base_y+self.item_height-1, width)
+
+
+            text_color = menu_text_color
+
             if self.action_selected == pos:
-                self.draw_rect(cr, base_x, base_y, self.width,
+                self.draw_rect(cr, base_x, base_y, width,
                                self.item_height, menu_sel_color)
+                text_color = (1, 1, 1)
 
             self.draw_text(cr, base_x+10, base_y + 0.5*self.item_height,
-                           action, menu_title_color)
+                           action, text_color)
 
-            self.draw_separator(cr, base_x, base_y+self.item_height-1, width)
 
 
     def draw(self, widget, event):
@@ -259,7 +259,7 @@ class Menu(Gtk.Window, GObject.GObject):
         cr.paint()
 
         # draw bar
-        self.draw_query(cr)
+        self.draw_bar(cr)
 
         # draw menu if items
         if not self.items:
