@@ -3,7 +3,7 @@
 from gi.repository import Gtk, Gdk
 
 from menu import Menu
-from manager import PluginManager
+from manager import base_plugins, extra_plugins
 import actions
 
 class Main():
@@ -14,8 +14,6 @@ class Main():
         self.menu.connect('key_press_event', self.on_key_press)
         self.menu.connect('delete-event', self.close)
         self.menu.connect('query_changed', self.do_search)
-
-        self.manager = PluginManager()
 
         self.matches = []
 
@@ -40,13 +38,13 @@ class Main():
 
         # check if query is keyword
         query_split = query.split()
-        for plugin in self.manager.keyword_plugins:
+        for plugin in extra_plugins:
             if query_split[0] in plugin.keywords:
                 matches = plugin.get_matches(query_split[1:])
                 self.matches += matches
                 break
         else:
-            for plugin in self.manager.plugins:
+            for plugin in base_plugins:
 
                 matches = plugin.get_matches(query)
                 if matches is not None:

@@ -5,26 +5,17 @@ from plugins.calculator import CalculatorPlugin
 from plugins.screen import ScreenPlugin
 from plugins.system import SystemPlugin
 
-class PluginManager:
 
-    def __init__(self):
+# Base plugins
+# Always search in these plugins
+base_plugins = [
+    ApplicationsPlugin(),
+    CalculatorPlugin(),
+    SystemPlugin(),
+]
 
-        self.plugins = [
-            ApplicationsPlugin(),
-            CalculatorPlugin(),
-            SystemPlugin(),
-        ]
-
-        self.keyword_plugins = [
-            ScreenPlugin(),
-        ]
-
-        # self.plugins = {p.name: p for p in plugins}
-        # self.keyword_plugins = {p.name: p for p in keyword_plugins}
-
-    # def get_plugins(self):
-    #     for plugin in self.plugins: #.values():
-    #         yield plugin
-
-    # def get_plugin(self, name):
-    #     return self.plugins.get(name, None)
+# Extra plugins
+# Only search in these plugins when a keyword is provided
+extra_plugins = [
+    ScreenPlugin(),
+]

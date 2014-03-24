@@ -4,37 +4,55 @@ actions
 
 An action must be a function with match['arg'] as argument
 
+## Fallback searches
+
+## Common actions
+    * Run cmd
+    * Run application
+    * Run application in terminal
+    * Open file/folder
+    * Open file in folder
+
+## Outputs
+    * Copy to clipboard
+    * Send notification
+    * Large type
+    * QR code
+
 """
 
 import subprocess
 from gi.repository import Gio, Gdk, Notify
 
 
-## Fallback searches
+# Fallback searches
 def do_search_google():
     pass
 
 
-## Common actions
-def action_run_cmd(arg):
-    cmd_list = arg.split()
+# Common actions
+def run_cmd(arg):
+    if isinstance(arg, str):
+        cmd_list = arg.split()
     subprocess.call(cmd_list)
 
-def action_run(arg):
+def run_app(arg):
     display = Gdk.Display.get_default()
 
     app = Gio.DesktopAppInfo().new_from_filename(arg)
     app.launch(None, display.get_app_launch_context())
 
-def action_run_in_terminal(arg):
+def run_app_in_terminal(arg):
     original = Gio.DesktopAppInfo().new_from_filename(arg)
     app = Gio.AppInfo.create_from_commandline(original.get_commandline(),
                                               original.get_name(),
-                                              AppInfoCreateFlags.NEEDS_TERMINAL)
+                                              Gio.AppInfoCreateFlags.NEEDS_TERMINAL)
     display = Gdk.Display.get_default()
     app.launch(None, display.get_app_launch_context())
 
-def action_open(arg):
+    # run_cmd(['/bin/bash', arg
+
+def open_uri(arg):
     f = Gio.File.new_for_uri(arg)
 
     app_info = f.query_default_handler(None)
@@ -44,7 +62,7 @@ def action_open(arg):
     display = Gdk.Display.get_default ();
     app_info.launch(files, display.get_app_launch_context())
 
-def action_open_folder(arg):
+def open_folder(arg):
     f = Gio.File.new_for_uri(arg)
     f = f.get_parent()
 
@@ -57,8 +75,8 @@ def action_open_folder(arg):
     app_info.launch(files, display.get_app_launch_context())
 
 
-## Outputs
-def output_copy_to_clipboard(arg):
+# Outputs
+def copy_to_clipboard(arg):
     # title: "Copy to Clipboard",
     # description: "Copy selection to clipboard"
 
@@ -88,15 +106,28 @@ def output_copy_to_clipboard(arg):
         #     }
         #   }
 
-# Send notification
 def send_notification(match):
     #Notify.init ("Hello world")
     noti = Notify.Notification.new('Sherlock', match.arg,'dialog-information')
     noti.show()
 
-
-# Large type
 def show_large_type(match):
+    # def draw():
+    #     cr = Gdk.cairo_create(widget.get_window())
+
+    #     cr.set_source_rgb(0.1, 0.1, 0.1)
+    #     cr.set_operator(cairo.OPERATOR_SOURCE)
+    #     cr.paint()
+
+
+
+
+    # window = Gtk.Window()
+    # window.set_app_paintable(True)
+    # window.set_decorated(False)
+    # window.set_position(Gtk.WindowPosition.CENTER)
+    # window.set_keep_above(True)
+
     pass
 
 def show_qrcode(match):
@@ -124,19 +155,20 @@ def show_qrcode(match):
 actions = {}
 
 actions['app'] = [
-    ('Run', action_run),
-    ('Run in terminal', action_run_in_terminal),
+    ('Run', run_app),
+    ('Run in terminal', run_app_in_terminal),
 ]
 
 actions['uri'] = [
-    ('Open', action_open),
-    ('Open folder', action_open_folder),
+    ('Open', open_uri),
+    ('Open folder', open_folder),
 ]
 
 actions['cmd'] = [
-    ('Run', action_run_cmd),
+    ('Run', run_cmd),
 ]
 
 actions['text'] = [
-    ('Copy', output_copy_to_clipboard),
+    ('Copy', copy_to_clipboard),
+    ('Copy', copy_to_clipboard),
 ]
