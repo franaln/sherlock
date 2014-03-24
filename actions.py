@@ -12,6 +12,7 @@ An action must be a function with match['arg'] as argument
     * Run application in terminal
     * Open file/folder
     * Open file in folder
+    * Web search
 
 ## Outputs
     * Copy to clipboard
