@@ -6,7 +6,7 @@ from plugin import Plugin
 class CalculatorPlugin(Plugin):
 
     def __init__(self):
-        Plugin.__init__(self, 'Calculator', 'calc')
+        Plugin.__init__(self, 'Calculator')
         self._matches = []
 
     def get_matches(self, query):

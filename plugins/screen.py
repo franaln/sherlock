@@ -6,7 +6,7 @@ from utils import check_output
 
 class ScreenPlugin(Plugin):
     def __init__(self):
-        Plugin.__init__(self, 'Screen', 'screen', True)
+        Plugin.__init__(self, 'Screen', ('screen',))
         self._matches = []
 
     def check_devices(self):

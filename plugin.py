@@ -1,7 +1,10 @@
 # plugin base
 
-import os, re, string, pickle, time
-
+import os
+import re
+import string
+import pickle
+import time
 
 # Match filter flags
 MATCH_STARTSWITH = 1
@@ -22,32 +25,30 @@ split_on_delimiters = re.compile('[^a-zA-Z0-9]').split
 
 class Plugin(object):
 
-    def __init__(self, name, keywords, only_keyword=False):
+    def __init__(self, name, keywords=None):
         self.name = name
         self.keywords = keywords
-        self.only_keyword = only_keyword
 
         self._matches = []
-        self._actions = []
+        #self._actions = []
 
-    def get_actions(self, match_id=None):
-        for action in self._actions:
-            yield action
+    # def get_actions(self, match_id=None):
+    #     for action in self._actions:
+    #         yield action
 
     def get_matches(self, query):
-        """ Need to be implemented"""
-        pass
+        raise NotImplementedError
 
-    def get_default_action(self):
-        if self._actions:
-            return self._actions[0]
-        else:
-            return None
+    # def get_default_action(self):
+    #     if self._actions:
+    #         return self._actions[0]
+    #     else:
+    #         return None
 
     def clear_matches(self):
         del self._matches[:]
 
-    def add_match(self, text, subtext='', _type='text', arg=None,
+    def add_match(self, text, subtext='', type='text', arg=None,
                   uid=None, score=0):
 
         """
@@ -58,7 +59,7 @@ class Plugin(object):
              app: .desktop path,
              uri: uri,
              cmd: cmd,
-             text: original text
+             text: None
         uid:
         score: score
         """
@@ -66,7 +67,7 @@ class Plugin(object):
         match = {
             'text': text,
             'subtext': subtext,
-            'type': _type,
+            'type': type,
             'arg': arg,
             'uid': None,
             'score': score,

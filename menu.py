@@ -1,11 +1,13 @@
-import sys, math, cairo
+import sys
+import math
+import cairo
 from gi.repository import Gtk, Gdk, GdkPixbuf, GObject, Pango, PangoCairo
 
 #-- Menu config
 menu_font = 'Sans'
 
 # Bar colours
-bar_bkg_color  = (0.8, 0.8, 0.8) # '#141414'
+bar_bkg_color  = (0.8, 0.8, 0.8) # #141414
 bar_text_color = (0.1, 0.1, 0.1)
 bar_cur_color  = (0.3, 0.3, 0.3)
 
@@ -26,8 +28,8 @@ class Menu(Gtk.Window, GObject.GObject):
         # config
         self.width = 480
         self.height = 60
-        self.bar_width  = self.width - 12
-        self.bar_height = self.height - 12
+        self.bar_width  = 468 # self.width - 12
+        self.bar_height = 48  # self.height - 12
         self.item_height = 48
         self.lines = 5
         self.max_items = 20
@@ -72,14 +74,18 @@ class Menu(Gtk.Window, GObject.GObject):
         self.selected = 0
         self.hide_menu()
 
-    def toggle_action_panel(self):
-        if self.action_panel_visible:
-            self.actions = []
-            self.action_panel_visible = False
-        else:
-            # check if selected item has actions
-            self.actions = ['Run', 'Open', 'Copy']
-            self.action_panel_visible = True
+    def is_action_panel_visible(self):
+        return self.action_panel_visible
+
+    def hide_action_panel(self):
+        self.action_panel_visible = False
+        self.actions = []
+        self.queue_draw()
+
+    def show_action_panel(self, actions=None):
+        if actions is not None:
+            self.actions = list(actions)
+        self.action_panel_visible = True
         self.queue_draw()
 
     def select_down(self):
@@ -246,7 +252,7 @@ class Menu(Gtk.Window, GObject.GObject):
                 text_color = (1, 1, 1)
 
             self.draw_text(cr, base_x+10, base_y + 0.5*self.item_height,
-                           action, text_color)
+                           action[0], text_color)
 
 
 

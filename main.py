@@ -4,6 +4,7 @@ from gi.repository import Gtk, Gdk
 
 from menu import Menu
 from manager import PluginManager
+import actions
 
 class Main():
 
@@ -27,34 +28,30 @@ class Main():
     def reset_search(self):
         self.menu.clear_menu()
 
-    def clear_matches(self):
+    def do_search(self, widget, query):
+
+        # clear matches
         if self.matches:
             del self.matches[:]
-
-    def do_search(self, widget, query):
-        self.clear_matches()
 
         if not query:
             self.reset_search()
             return
 
-        #query_split = query.split()
-
-        # for plugin in self.manager.get_plugins():
-        #     if query_split[0] == plugin.keyword:
-        #         matches = plugin.get_matches(query_split[1:])
-        #         self.matches += matches
-        #         break
-        # else:
-
-        for plugin in self.manager.get_plugins():
-            # if plugin.only_keyword:
-            #     continue
-
-            matches = plugin.get_matches(query)
-
-            if matches is not None:
+        # check if query is keyword
+        query_split = query.split()
+        for plugin in self.manager.keyword_plugins:
+            if query_split[0] in plugin.keywords:
+                matches = plugin.get_matches(query_split[1:])
                 self.matches += matches
+                break
+        else:
+            for plugin in self.manager.plugins:
+
+                matches = plugin.get_matches(query)
+                if matches is not None:
+                    self.matches += matches
+
 
         # order matches by score
         self.matches = sorted(self.matches, key=lambda m: m.get('score'), reverse=True)
@@ -69,19 +66,31 @@ class Main():
             # show fallback searches
             return
 
-    def do_action(self):
+    def toggle_action_panel(self):
+        if self.menu.is_action_panel_visible():
+            self.menu.hide_action_panel()
+            return
 
-        # get selected match
-        match = self.matches[self.menu.get_selected()]
+        match = self.matches[self.menu.selected]
+        match_type = match.get('type')
 
-        # get plugin
-        plugin = self.manager.get_plugin(match.plugin)
+        _actions = actions.actions[match_type]
 
-        # get default action
-        action = plugin.get_default_action()
+        if len(_actions) < 2:
+            return
 
-        # execte action and hide
-        action.execute(match)
+        self.menu.show_action_panel(_actions)
+
+    def actionate(self):
+
+        match = self.matches[self.menu.selected]
+        match_type = match.get('type')
+
+        # get selected or defaul_action
+        action = actions.actions[match_type][self.menu.action_selected][1]
+
+        action(match.get('arg'))
+
         self.close()
 
     def on_key_press(self, window, event):
@@ -104,9 +113,9 @@ class Main():
         elif key == 'BackSpace':
             self.menu.rm_char()
         elif 'Return' in key:
-            self.do_action()
+            self.actionate()
         elif 'Tab' in key:
-            self.menu.toggle_action_panel()
+            self.toggle_action_panel()
         elif 'Alt' in key or \
              'Control' in key:
             pass

@@ -8,7 +8,7 @@ from gi.repository import Gio
 class ApplicationsPlugin(Plugin):
 
     def __init__(self):
-        Plugin.__init__(self, 'Applications', 'app')
+        Plugin.__init__(self, 'Applications')
         self._matches = []
 
     def get_apps(self):
@@ -40,6 +40,7 @@ class ApplicationsPlugin(Plugin):
 
         for m in apps:
             m[0]['score'] = m[1]
+
             self.add_match_dict(m[0])
 
         return self._matches

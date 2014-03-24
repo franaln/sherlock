@@ -9,19 +9,22 @@ class PluginManager:
 
     def __init__(self):
 
-        plugins = [
+        self.plugins = [
             ApplicationsPlugin(),
             CalculatorPlugin(),
-            ScreenPlugin(),
             SystemPlugin(),
         ]
 
-        self.plugins = {p.name: p for p in plugins}
+        self.keyword_plugins = [
+            ScreenPlugin(),
+        ]
 
+        # self.plugins = {p.name: p for p in plugins}
+        # self.keyword_plugins = {p.name: p for p in keyword_plugins}
 
-    def get_plugins(self):
-        for plugin in self.plugins.values():
-            yield plugin
+    # def get_plugins(self):
+    #     for plugin in self.plugins: #.values():
+    #         yield plugin
 
-    def get_plugin(self, name):
-        return self.plugins.get(name, None)
+    # def get_plugin(self, name):
+    #     return self.plugins.get(name, None)

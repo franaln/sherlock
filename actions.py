@@ -1,45 +1,41 @@
-# actions
+"""
+actions
+-------
+
+An action must be a function with match['arg'] as argument
+
+"""
 
 import subprocess
 from gi.repository import Gio, Gdk, Notify
 
 
 ## Fallback searches
-
 def do_search_google():
     pass
 
 
 ## Common actions
-
-def do_run_cmd(match, target=None):
-    cmd_list = match['arg'].split()
+def action_run_cmd(arg):
+    cmd_list = arg.split()
     subprocess.call(cmd_list)
 
-def do_run(match):
-    # title='Run'
-    # subtitle='Run an application, action or script'
-
+def action_run(arg):
     display = Gdk.Display.get_default()
 
-    app = Gio.DesktopAppInfo().new_from_filename(match.arg)
+    app = Gio.DesktopAppInfo().new_from_filename(arg)
     app.launch(None, display.get_app_launch_context())
 
-def do_run_in_terminal(match):
-    # title='Run in Terminal'
-    # subtitle='Run application or command in terminal'
-    original = Gio.DesktopAppInfo().new_from_filename(match.arg)
+def action_run_in_terminal(arg):
+    original = Gio.DesktopAppInfo().new_from_filename(arg)
     app = Gio.AppInfo.create_from_commandline(original.get_commandline(),
                                               original.get_name(),
                                               AppInfoCreateFlags.NEEDS_TERMINAL)
     display = Gdk.Display.get_default()
     app.launch(None, display.get_app_launch_context())
 
-def  do_open(match):
-    # title: 'Open'
-    # subtitle: 'Open using default application'
-
-    f = Gio.File.new_for_uri(match.arg)
+def action_open(arg):
+    f = Gio.File.new_for_uri(arg)
 
     app_info = f.query_default_handler(None)
     files = []
@@ -48,11 +44,8 @@ def  do_open(match):
     display = Gdk.Display.get_default ();
     app_info.launch(files, display.get_app_launch_context())
 
-def do_open_in_folder(match):
-    # title: 'Open folder'
-    # subtitle: 'Open folder containing this file'
-
-    f = Gio.File.new_for_uri(match.arg)
+def action_open_folder(arg):
+    f = Gio.File.new_for_uri(arg)
     f = f.get_parent()
 
     app_info = f.query_default_handler(None)
@@ -65,8 +58,7 @@ def do_open_in_folder(match):
 
 
 ## Outputs
-
-def do_copy_to_clipboard(match):
+def output_copy_to_clipboard(arg):
     # title: "Copy to Clipboard",
     # description: "Copy selection to clipboard"
 
@@ -129,20 +121,22 @@ def show_qrcode(match):
     # ctx.environment.present_window(window)
 
 
+actions = {}
 
+actions['app'] = [
+    ('Run', action_run),
+    ('Run in terminal', action_run_in_terminal),
+]
 
+actions['uri'] = [
+    ('Open', action_open),
+    ('Open folder', action_open_folder),
+]
 
+actions['cmd'] = [
+    ('Run', action_run_cmd),
+]
 
-
-
-actions = {
-
-    'Run': do_run,
-    'Run command': do_run_cmd,
-    'Run in terminal': do_run_in_terminal,
-    'Open': do_open,
-    'Open in folder': do_open_in_folder,
-
-    'Copy to clipboard': do_copy_to_clipboard,
-
-}
+actions['text'] = [
+    ('Copy', output_copy_to_clipboard),
+]

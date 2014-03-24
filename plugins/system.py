@@ -14,7 +14,7 @@ class SystemPlugin(Plugin):
     )
 
     def __init__(self):
-        Plugin.__init__(self, 'System', 'system')
+        Plugin.__init__(self, 'System')
         self._matches = []
 
     def get_matches(self, query):
@@ -23,6 +23,6 @@ class SystemPlugin(Plugin):
         cmds = self.filter(query, self.cmds, key=lambda x: x[0], include_score=True)
 
         for m in cmds:
-            self.add_match(text=m[0][0], subtext=m[0][1], score=m[1], arg=m[0][2])
+            self.add_match(text=m[0][0], subtext=m[0][1], score=m[1], arg=m[0][2], type='cmd')
 
         return self._matches
