@@ -1,8 +1,7 @@
-"""
-actions
--------
+# common actions
 
-An action must be a function with match['arg'] as argument
+"""
+An action must be a function with match.arg as argument
 
 ## Fallback searches
 
@@ -131,6 +130,72 @@ def show_large_type(match):
 
     pass
 
+# def show_large_type(text, ctx=None):
+#     """
+#     Show @text, large, in a result window.
+#     """
+#     import math
+
+#     text = text.strip()
+#     window = gtk.Window()
+#     label = gtk.Label()
+#     label.set_text(text)
+
+#         def set_font_size(label, fontsize=48.0):
+#                 siz_attr = pango.AttrFontDesc(
+#                                 pango.FontDescription (str(fontsize)), 0, -1)
+#                 attrs = pango.AttrList()
+#                 attrs.insert(siz_attr)
+#                 label.set_attributes(attrs)
+#         label.show()
+
+#         size = 72.0
+#         set_font_size(label, size)
+
+#         if ctx:
+#                 screen = ctx.environment.get_screen()
+#                 window.set_screen(screen)
+#         else:
+#                 screen = gtk.gdk.screen_get_default()
+
+#         maxwid = screen.get_width() - 50
+#         maxhei = screen.get_height() - 100
+#         wid, hei = label.size_request()
+
+#         # If the text contains long lines, we try to
+#         # hard-wrap the text
+#         if ((wid > maxwid or hei > maxhei) and
+#                         any(len(L) > 100 for L in text.splitlines())):
+#                 label.set_text(_wrap_paragraphs(text))
+
+#         wid, hei = label.size_request()
+
+#         if wid > maxwid or hei > maxhei:
+#                 # Round size down to fit inside
+#                 wscale = maxwid * 1.0/wid
+#                 hscale = maxhei * 1.0/hei
+#                 set_font_size(label, math.floor(min(wscale, hscale)*size) or 1.0)
+
+#         window.add(label)
+#         window.set_position(gtk.WIN_POS_CENTER)
+#         window.set_resizable(False)
+#         window.set_decorated(False)
+#         window.set_property("border-width", 10)
+#         window.modify_bg(gtk.STATE_NORMAL, gtk.gdk.color_parse("black"))
+#         label.modify_fg(gtk.STATE_NORMAL, gtk.gdk.color_parse("white"))
+
+#         def _window_destroy(widget, event):
+#             widget.destroy()
+#             return True
+#         window.connect("key-press-event", _window_destroy)
+#         window.show_all()
+#         if ctx:
+#             ctx.environment.present_window(window)
+#         else:
+#             window.present_with_time(uievents.current_event_time())
+
+
+
 def show_qrcode(match):
     pass
     #image_file = StringIO.StringIO()
@@ -171,5 +236,6 @@ actions['cmd'] = [
 
 actions['text'] = [
     ('Copy', copy_to_clipboard),
-    ('Copy', copy_to_clipboard),
+    ('Large type', copy_to_clipboard),
+    ('Show QR code', copy_to_clipboard),
 ]

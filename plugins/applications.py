@@ -1,46 +1,36 @@
 # Applications plugin
-# Open applications
 
-from plugin import Plugin
+from gi.repository import Gio, Gdk
 
-from gi.repository import Gio
+from item import Item
+import utils
 
-class ApplicationsPlugin(Plugin):
+name    = 'Applications'
+keyword = 'app'
 
-    def __init__(self):
-        Plugin.__init__(self, 'Applications')
-        self._matches = []
+def _get_apps():
+    apps = []
+    for app in Gio.app_info_get_all():
+        item = Item(
+            app.get_name(),
+            app.get_executable(),
+            'app',
+            app.get_filename(),
+        )
+        apps.append(item)
 
-    def get_apps(self):
-        apps = []
-        for app in Gio.app_info_get_all():
-            m = {
-                'text': app.get_name(),
-                'subtext': app.get_executable(),
-                'type': 'app',
-                'arg': app.get_filename(),
-                'uid': None,
-                'score': 0
-            }
-            apps.append(m)
+    return apps
 
-        return apps
+def _search_key(app):
+    return '%s %s' % (app.subtitle, app.title)
 
-    def search_key(self, app):
-        return '%s %s' % (app['subtext'], app['text'])
+def get_matches(query):
 
-    def get_matches(self, query):
-        self.clear_matches()
+    if not query:
+        return []
 
-        if not query:
-            return self._matches()
+    all_apps = utils.get_cached_data('apps', _get_apps, max_age=600)
 
-        apps = self.cached_data('apps', self.get_apps, max_age=600)
-        apps = self.filter(query, apps, key=self.search_key, include_score=True)
+    matches = utils.filter(query, all_apps, key=_search_key)
 
-        for m in apps:
-            m[0]['score'] = m[1]
-
-            self.add_match_dict(m[0])
-
-        return self._matches
+    return matches

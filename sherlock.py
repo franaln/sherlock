@@ -10,25 +10,12 @@ import sys
 import re
 import subprocess
 
-from main import Main
-
-# def install_excepthook():
-#     """ Make sure we exit when an unhandled exception occurs. """
-#     from gi.repository import Gtk
-#     old_hook = sys.excepthook
-#     def new_hook(etype, evalue, etb):
-#         old_hook(etype, evalue, etb)
-#         while Gtk.main_level():
-#             Gtk.main_quit()
-#             sys.exit()
-#     sys.excepthook = new_hook
+from main import Sherlock
 
 def main():
-    #install_excepthook()
-    #sys.excepthook = sys.__excepthook__
 
-    app = Main()
-    app.run()
+    m = Sherlock()
+    m.run()
 
     return True
 

@@ -1,22 +1,24 @@
 # Calculator plugin
 
-import re, utils
-from plugin import Plugin
+import re
+import utils
+from item import Item
 
-class CalculatorPlugin(Plugin):
+name    = 'Calculator'
+keyword = 'calc'
 
-    def __init__(self):
-        Plugin.__init__(self, 'Calculator')
-        self._matches = []
 
-    def get_matches(self, query):
-        self.clear_matches()
+def get_matches(query):
 
-        query = query.replace(' ', '').replace(',', '.')
+    query = query.replace(' ', '').replace(',', '.')
 
-        result = utils.check_output(['calc', query])
+    result = utils.check_output(['calc', query])
 
-        if result:
-            self.add_match(text=result, subtext='', score=100)
+    matches = []
 
-        return self._matches
+    if result:
+        item = Item(title=result, subtitle='',
+                    category='text')
+        matches.append((item, 100))
+
+    return matches
