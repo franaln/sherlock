@@ -1,41 +1,51 @@
-## Font
-fontname = 'Sans'
+# sherlock config
 
-## Colours
-bar_bkg_color  = (0.8, 0.8, 0.8) # #141414
-bar_text_color = (0.1, 0.1, 0.1)
-bar_cur_color  = (0.3, 0.3, 0.3)
+#------------
+# Theme/Style
+#------------
 
-menu_bkg_color   = (0.92, 0.92, 0.92)    # #ebebeb
-menu_sel_color   = (0.259, 0.498, 0.929) # #427fed
-menu_text_color  = (0.1, 0.1, 0.1)       # #030303
-menu_sep_color   = (0.8, 0.8, 0.8)
-panel_bkg_color  = (0.8, 0.8, 0.8)
+# Font
+fontname = 'Cantarell'
 
-## Size
+# Colours
+bkg_color = (0.92, 0.92, 0.92)  # #ebebeb
+bar_color = (0.8, 0.8, 0.8)     # #141414
+sep_color = (0.8, 0.8, 0.8)     # #141414
+sel_color = (0.26, 0.50, 0.93)  # #427fed
+
+text_color    = (0.1, 0.1, 0.1) # #030303
+subtext_color = (0.5, 0.5, 0.5)
+seltext_color = (1, 1, 1)
+
+# Size
 width = 480
 height = 60
-offset = 6
-item_height = 48 # = height - 2 * offset
+item_height = 48
 lines = 5
 
+#--------
+# Plugins
+#--------
 
-# Base plugins
-# - Search these plugins if no keyword given
+# Base plugins (Search these plugins if no keyword given)
 base_plugins = [
     'applications',
     'system',
     'calculator',
 ]
 
-# Extra plugins
-# - Only search in these plugins when a keyword is provided
+# Keyword plugins (Only search in these plugins when a keyword is provided)
 keyword_plugins = [
-#    'screens',
+    'screens',
 ]
 
-# Fallback plugins
-# - Use it when there are no other matches
+# Fallback plugins (Use it when there are no other matches)
 fallback_plugins = [
 
 ]
+
+#------------
+# Directories
+#------------
+
+cachedir = '/home/fran/dev/sherlock/data'

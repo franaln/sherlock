@@ -11,11 +11,13 @@ try:
 except:
     import pickle
 
+import config
+
 #-------------#
 # Cache utils #
 #-------------#
 
-cachedir = os.path.expanduser('~/dev/sherlock/data/')
+cachedir = config.cachedir
 
 def get_cachefile(filename):
     """

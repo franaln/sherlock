@@ -9,6 +9,7 @@ from gi.repository import Gtk, Gdk, GdkPixbuf, GObject
 import config
 import drawer
 import actions
+import attic
 
 class Sherlock(Gtk.Window, GObject.GObject):
 
@@ -36,6 +37,8 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.action_panel_visible = False
         self.actions = []
         self.action_selected = 0
+
+        self.attic = attic.Attic()
 
         # window
         GObject.GObject.__init__(self)
@@ -66,7 +69,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
             return
 
         first_item = 0 if (self.selected < config.lines) else \
-                     (self.selected - self.lines + 1)
+                     (self.selected - config.lines + 1)
 
         max_items = min(config.lines, len(self.items))
 
@@ -98,10 +101,9 @@ class Sherlock(Gtk.Window, GObject.GObject):
         for name in config.fallback_plugins:
             self.import_plugin(self.fallback_plugins, name)
 
-    def show_menu(self, items=None):
-        if items is not None:
-            self.items = list(items)
-        self.resize(config.width, config.height+config.item_height * config.lines)
+    def show_menu(self):
+        self.resize(config.width,
+                    config.height + config.item_height * config.lines)
         self.queue_draw()
 
     def hide_menu(self):
@@ -171,6 +173,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
         Gtk.main()
 
     def close(self, arg1=None, arg2=None):
+        self.attic.save()
         Gtk.main_quit()
 
     def reset_search(self):
@@ -205,11 +208,14 @@ class Sherlock(Gtk.Window, GObject.GObject):
                 if matches is not None:
                     self.items.extend(matches)
 
+
+        # attic
+        ## 1. Get similar queries in attic
+        ## 2. Get sum histogram
+        ## 3. Compute new score as (score * attic_score)/100
+
         # order matches by score
         self.items = sorted(self.items, key=lambda m: m[1], reverse=True)
-
-        # relevance/frequency/learning go here!?!
-
 
         # remove score
         self.items = [ m[0] for m in self.items ]
@@ -239,11 +245,11 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         match = self.items[self.selected]
 
-        # get selected or defaul_action
         action = actions.actions[match.category][self.action_selected][1]
 
         action(match.arg)
 
+        self.attic.add(self.query, match)
         self.close()
 
     def on_key_press(self, window, event):

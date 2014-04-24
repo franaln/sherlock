@@ -17,35 +17,3 @@ class Item(object):
             'category': self.category,
             'arg': self.arg
         }
-
-
-
-
-
-
-
-    # @classmethod
-    # def unicode(cls, value):
-    #     try:
-    #         items = value.iteritems()
-    #     except AttributeError:
-    #         return unicode(value)
-    #     else:
-    #         return dict(map(unicode, item) for item in items)
-
-
-    # def __str__(self):
-    #     return tostring(self.xml(), encoding='utf-8')
-
-    # def xml(self):
-    #     item = Element(u'item', self.unicode(self.attributes))
-    #     for attribute in (u'title', u'subtitle', u'icon'):
-    #         value = getattr(self, attribute)
-    #         if value is None:
-    #             continue
-    #             if len(value) == 2 and isinstance(value[1], dict):
-    #                 (value, attributes) = value
-    #             else:
-    #                 attributes = {}
-    #                 SubElement(item, attribute, self.unicode(attributes)).text = unicode(value)
-    #             return item
