@@ -25,20 +25,17 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.keyword_plugins = dict()
         self.fallback_plugins = dict()
 
-        self.load_plugins()
-
         # data
         self.query = ''
         self.cursor = 0
 
         self.items = []
         self.selected = 0
-
-        self.action_panel_visible = False
         self.actions = []
         self.action_selected = 0
 
-        self.attic = attic.Attic()
+        self.menu_visible = False
+        self.action_panel_visible = False
 
         # window
         GObject.GObject.__init__(self)
@@ -58,30 +55,14 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         self.show_all()
 
-    def draw(self, widget, event):
-        cr = Gdk.cairo_create(widget.get_window())
+        self.load_plugins()
 
-        drawer.draw_window(cr)
+        self.attic = attic.Attic()
 
-        drawer.draw_bar(cr, self.query)
 
-        if not self.items:
-            return
-
-        first_item = 0 if (self.selected < config.lines) else \
-                     (self.selected - config.lines + 1)
-
-        max_items = min(config.lines, len(self.items))
-
-        for i in range(max_items):
-            drawer.draw_item(cr, i, self.items[first_item+i],
-                           (first_item+i == self.selected))
-
-        if self.action_panel_visible:
-            drawer.draw_action_panel(cr, self.actions, self.action_selected)
-
-        return False
-
+    #---------
+    # Plugins
+    #---------
     def import_plugin(self, dict_, name):
         try:
             plugin = importlib.import_module('.'.join([self.plugins_dir, name]))
@@ -101,38 +82,188 @@ class Sherlock(Gtk.Window, GObject.GObject):
         for name in config.fallback_plugins:
             self.import_plugin(self.fallback_plugins, name)
 
+    #-------------
+    # Draw window
+    #-------------
+    def draw(self, widget, event):
+        cr = Gdk.cairo_create(widget.get_window())
+
+        drawer.draw_window(cr)
+        drawer.draw_bar(cr, self.query)
+
+        if not self.items:
+            return
+
+        first_item = 0 if (self.selected < config.lines) else \
+                     (self.selected - config.lines + 1)
+
+        max_items = min(config.lines, len(self.items))
+
+        for i in range(max_items):
+            drawer.draw_item(cr, i, self.items[first_item+i],
+                           (first_item+i == self.selected))
+
+        if self.action_panel_visible:
+            drawer.draw_action_panel(cr, self.actions, self.action_selected)
+
+        return False
+
+    #------
+    # Menu
+    #------
     def show_menu(self):
+        if not self.items:
+            self.get_history()
         self.resize(config.width,
-                    config.height + config.item_height * config.lines)
+                    config.height + config.item_height*config.lines)
         self.queue_draw()
+        self.menu_visible = True
 
     def hide_menu(self):
         self.resize(config.width, config.height)
         self.queue_draw()
+        self.menu_visible = False
 
     def clear_menu(self):
         self.items = []
         self.selected = 0
         self.hide_menu()
 
-    def is_action_panel_visible(self):
-        return self.action_panel_visible
+    #--------------
+    # Action panel
+    #--------------
+    def show_action_panel(self):
+
+        match = self.items[self.selected]
+        actions_ = actions.actions[match.category]
+
+        if len(actions_) < 2:
+            return
+
+        if actions_:
+            self.actions = list(actions_)
+        self.action_panel_visible = True
+        self.queue_draw()
 
     def hide_action_panel(self):
+        if not self.action_panel_visible:
+            return
+
         self.action_panel_visible = False
         self.actions = []
         self.action_selected = 0
         self.queue_draw()
 
-    def show_action_panel(self, actions=None):
-        if actions is not None:
-            self.actions = list(actions)
-        self.action_panel_visible = True
-        self.queue_draw()
+    def toggle_action_panel(self):
+        if self.action_panel_visible:
+            self.hide_action_panel()
+        else:
+            self.show_action_panel()
+
+    def actionate(self):
+        match = self.items[self.selected]
+
+        action = actions.actions[match.category][self.action_selected][1]
+
+        self.attic.add(self.query, match)
+
+        ret = action(match.arg)
+
+        self.close()
+
+    #--------
+    # Search
+    #--------
+    def get_history(self):
+        history = self.attic.get_last()
+        self.items = [h[2] for h in history]
+
+    def do_search(self, widget, query):
+
+        if self.items:
+            del self.items[:]
+
+        if not query:
+            self.reset_search()
+            return
+
+        query_split = query.split()
+        keyword = query_split[0]
+
+        if keyword in self.keyword_plugins:
+            self.items = self.keyword_plugins[keyword].get_matches(query_split[1:])
+
+        else:
+            for plugin in self.base_plugins.values():
+
+                matches = plugin.get_matches(query)
+                if matches:
+                    self.items.extend(matches)
+
+        if not self.items:
+            for plugin in self.fallback_plugins.values():
+                matches = plugin.get_matches(query)
+                if matches:
+                    self.items.extend(matches)
+
+
+        # attic
+        ## 1. Get similar queries in attic
+        ## 2. Get sum histogram
+        ## 3. Compute new score as (score * attic_score)/100
+
+        # order matches by score
+        self.items = sorted(self.items, key=lambda m: m[1], reverse=True)
+
+        # remove score
+        self.items = [ m[0] for m in self.items ]
+
+        # show menu
+        if self.items:
+            self.show_menu()
+        else:
+            self.clear_menu()
+            return
+
+
+    #--------------
+    # Key press cb
+    #--------------
+    def on_key_press(self, window, event):
+        key = Gdk.keyval_name(event.keyval)
+
+        if event.state & Gdk.ModifierType.CONTROL_MASK:
+            return
+
+        if key == 'Escape':
+            self.close()
+        elif key == 'Left':
+            self.move_cursor_left()
+        elif key == 'Right':
+            self.move_cursor_right()
+        elif key == 'Down':
+            if not self.menu_visible:
+                self.show_menu()
+            else:
+                self.select_down()
+        elif key == 'Up':
+            self.select_up()
+        elif key == 'BackSpace':
+            self.rm_char()
+        elif 'Return' in key:
+            self.actionate()
+        elif 'Tab' in key:
+            self.toggle_action_panel()
+        elif 'Alt' in key or \
+             'Control' in key:
+            pass
+        else:
+            self.add_char(event.string)
+
 
     def select_down(self):
         if self.action_panel_visible:
-            if self.action_selected == len(self.actions) -1:
+            if self.action_selected == len(self.actions) - 1:
                 return
             self.action_selected += 1
         else:
@@ -169,114 +300,13 @@ class Sherlock(Gtk.Window, GObject.GObject):
     def move_cursor_right(self):
         pass
 
+
+    #-------------
+    # Run & close
+    #-------------
     def run(self):
         Gtk.main()
 
-    def close(self, arg1=None, arg2=None):
+    def close(self, *args):
         self.attic.save()
         Gtk.main_quit()
-
-    def reset_search(self):
-        self.clear_menu()
-
-    def do_search(self, widget, query):
-
-        # clear matches
-        if self.items:
-            del self.items[:]
-
-        if not query:
-            self.reset_search()
-            return
-
-        query_split = query.split()
-        keyword = query_split[0]
-
-        if keyword in self.keyword_plugins:
-            self.items = self.keyword_plugins[keyword].get_matches(query_split[1:])
-
-        else:
-            for plugin in self.base_plugins.values():
-
-                matches = plugin.get_matches(query)
-                if matches is not None:
-                    self.items.extend(matches)
-
-        if not self.items:
-            for plugin in self.fallback_plugins.values():
-                matches = plugin.get_matches(query)
-                if matches is not None:
-                    self.items.extend(matches)
-
-
-        # attic
-        ## 1. Get similar queries in attic
-        ## 2. Get sum histogram
-        ## 3. Compute new score as (score * attic_score)/100
-
-        # order matches by score
-        self.items = sorted(self.items, key=lambda m: m[1], reverse=True)
-
-        # remove score
-        self.items = [ m[0] for m in self.items ]
-
-        # show menu
-        if self.items:
-            self.show_menu()
-        else:
-            self.reset_search()
-            return
-
-    def toggle_action_panel(self):
-        if self.is_action_panel_visible():
-            self.hide_action_panel()
-            return
-
-        match = self.items[self.selected]
-
-        _actions = actions.actions[match.category]
-
-        if len(_actions) < 2:
-            return
-
-        self.show_action_panel(_actions)
-
-    def actionate(self):
-
-        match = self.items[self.selected]
-
-        action = actions.actions[match.category][self.action_selected][1]
-
-        action(match.arg)
-
-        self.attic.add(self.query, match)
-        self.close()
-
-    def on_key_press(self, window, event):
-        key = Gdk.keyval_name(event.keyval)
-
-        if event.state & Gdk.ModifierType.CONTROL_MASK:
-            return
-
-        if key == 'Escape':
-            self.close()
-        elif key == 'Left':
-            self.move_cursor_left()
-        elif key == 'Right':
-            self.move_cursor_right()
-        elif key == 'Down':
-            self.show_menu()
-            self.select_down()
-        elif key == 'Up':
-            self.select_up()
-        elif key == 'BackSpace':
-            self.rm_char()
-        elif 'Return' in key:
-            self.actionate()
-        elif 'Tab' in key:
-            self.toggle_action_panel()
-        elif 'Alt' in key or \
-             'Control' in key:
-            pass
-        else:
-            self.add_char(event.string)

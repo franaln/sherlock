@@ -19,7 +19,7 @@ An action must be a function with match as argument
 """
 
 import subprocess
-from gi.repository import Gtk, Gio, Gdk, Notify
+from gi.repository import Gtk, Gio, Gdk, Notify, Pango
 
 
 def do_search_google():
@@ -94,7 +94,7 @@ def send_notification(match):
     noti = Notify.Notification.new('Sherlock', match.arg,'dialog-information')
     noti.show()
 
-def show_large_type(match):
+def show_large_type(arg):
     # def draw():
     #     cr = Gdk.cairo_create(widget.get_window())
 
@@ -102,77 +102,70 @@ def show_large_type(match):
     #     cr.set_operator(cairo.OPERATOR_SOURCE)
     #     cr.paint()
 
-    # window = Gtk.Window()
-    # window.set_app_paintable(True)
-    # window.set_decorated(False)
-    # window.set_position(Gtk.WindowPosition.CENTER)
-    # window.set_keep_above(True)
+    window = Gtk.Window()
 
-    pass
+    text = arg.strip()
+    #     window = gtk.Window()
+    label = Gtk.Label()
+    label.set_text(text)
 
-# def show_large_type(text, ctx=None):
-#     """
-#     Show @text, large, in a result window.
-#     """
-#     import math
+    print(text)
 
-#     text = text.strip()
-#     window = gtk.Window()
-#     label = gtk.Label()
-#     label.set_text(text)
+    # def set_font_size(label, fontsize=48.0):
+    #     siz_attr = Pango.AttrFontDesc(
+    #         Pango.FontDescription(str(fontsize)), 0, -1)
+    #     attrs = Pango.AttrList()
+    #     attrs.insert(siz_attr)
+    #     label.set_attributes(attrs)
+    #     label.show()
 
-#         def set_font_size(label, fontsize=48.0):
-#                 siz_attr = pango.AttrFontDesc(
-#                                 pango.FontDescription (str(fontsize)), 0, -1)
-#                 attrs = pango.AttrList()
-#                 attrs.insert(siz_attr)
-#                 label.set_attributes(attrs)
-#         label.show()
+    #size = 72.0
+    #set_font_size(label, size)
 
-#         size = 72.0
-#         set_font_size(label, size)
+    #if ctx:
+    #                 screen = ctx.environment.get_screen()
+    #                 window.set_screen(screen)
+    #         else:
+    #screen = Gdk.screen_get_default()
 
-#         if ctx:
-#                 screen = ctx.environment.get_screen()
-#                 window.set_screen(screen)
-#         else:
-#                 screen = gtk.gdk.screen_get_default()
+    #maxwid = screen.get_width() - 50
+    #maxhei = screen.get_height() - 100
+    #wid, hei = label.size_request()
 
-#         maxwid = screen.get_width() - 50
-#         maxhei = screen.get_height() - 100
-#         wid, hei = label.size_request()
+    # If the text contains long lines, we try to
+    # hard-wrap the text
+    # if ((wid > maxwid or hei > maxhei) and
+    #     any(len(L) > 100 for L in text.splitlines())):
+    #     label.set_text(_wrap_paragraphs(text))
 
-#         # If the text contains long lines, we try to
-#         # hard-wrap the text
-#         if ((wid > maxwid or hei > maxhei) and
-#                         any(len(L) > 100 for L in text.splitlines())):
-#                 label.set_text(_wrap_paragraphs(text))
+    # wid, hei = label.size_request()
 
-#         wid, hei = label.size_request()
+    # if wid > maxwid or hei > maxhei:
+    #     # Round size down to fit inside
+    #     wscale = maxwid * 1.0/wid
+    #     hscale = maxhei * 1.0/hei
+    #     set_font_size(label, math.floor(min(wscale, hscale)*size) or 1.0)
 
-#         if wid > maxwid or hei > maxhei:
-#                 # Round size down to fit inside
-#                 wscale = maxwid * 1.0/wid
-#                 hscale = maxhei * 1.0/hei
-#                 set_font_size(label, math.floor(min(wscale, hscale)*size) or 1.0)
+    window.add(label)
 
-#         window.add(label)
-#         window.set_position(gtk.WIN_POS_CENTER)
-#         window.set_resizable(False)
-#         window.set_decorated(False)
-#         window.set_property("border-width", 10)
-#         window.modify_bg(gtk.STATE_NORMAL, gtk.gdk.color_parse("black"))
-#         label.modify_fg(gtk.STATE_NORMAL, gtk.gdk.color_parse("white"))
+    #window.set_app_paintable(True)
+    window.set_decorated(False)
+    window.set_position(Gtk.WindowPosition.CENTER)
+    window.set_keep_above(True)
+    window.set_resizable(False)
+    #window.set_property("border-width", 10)
+    #window.modify_bg(gtk.STATE_NORMAL, gtk.gdk.color_parse("black"))
+    #         label.modify_fg(gtk.STATE_NORMAL, gtk.gdk.color_parse("white"))
 
-#         def _window_destroy(widget, event):
-#             widget.destroy()
-#             return True
-#         window.connect("key-press-event", _window_destroy)
-#         window.show_all()
-#         if ctx:
-#             ctx.environment.present_window(window)
-#         else:
-#             window.present_with_time(uievents.current_event_time())
+    def _window_destroy(widget, event):
+        widget.destroy()
+        return True
+    window.connect('key-press-event', _window_destroy)
+    #window.show_all()
+    #         if ctx:
+    #             ctx.environment.present_window(window)
+    #         else:
+    window.show_all() #present_with_time(uievents.current_event_time())
 
 
 
@@ -198,24 +191,26 @@ def show_qrcode(match):
     # ctx.environment.present_window(window)
 
 
+outputs = [
+    ('Copy', copy_to_clipboard),
+    ('Large type', show_large_type),
+    ('Show QR code', show_qrcode),
+]
+
 actions = {}
 
-actions['app'] = (
+actions['app'] = [
     ('Run', run_app),
     ('Run in terminal', run_app_in_terminal),
-)
+]
 
-actions['uri'] = (
+actions['uri'] = [
     ('Open', open_uri),
     ('Open folder', open_folder),
-)
+]
 
-actions['cmd'] = (
+actions['cmd'] = [
     ('Run', run_cmd),
-)
+]
 
-actions['text'] = (
-    ('Copy', copy_to_clipboard),
-    ('Large type', copy_to_clipboard),
-    ('Show QR code', copy_to_clipboard),
-)
+actions['text'] = outputs

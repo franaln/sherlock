@@ -1,18 +1,6 @@
-# import plugins.applications as pa
-
-
-# print('Query: "ini"')
-# print(pa.get_matches('ini'))
-
-# print('-'*10)
-
-# print('Query: "evin"')
-# print(pa.get_matches('evin'))
-
-# print('-'*10)
+# test
 
 from main import Sherlock
-
 
 test_queries = [
     'ini',  # --> no matches

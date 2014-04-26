@@ -17,7 +17,7 @@ import config
 # Cache utils #
 #-------------#
 
-cachedir = config.cachedir
+cachedir = config.cache_dir
 
 def get_cachefile(filename):
     """

@@ -26,7 +26,6 @@ lines = 5
 #--------
 # Plugins
 #--------
-
 # Base plugins (Search these plugins if no keyword given)
 base_plugins = [
     'applications',
@@ -41,11 +40,9 @@ keyword_plugins = [
 
 # Fallback plugins (Use it when there are no other matches)
 fallback_plugins = [
-
 ]
 
 #------------
 # Directories
 #------------
-
-cachedir = '/home/fran/dev/sherlock/data'
+cache_dir = '/home/fran/dev/sherlock/data'

@@ -1,6 +1,6 @@
 # Applications plugin
 
-from gi.repository import Gio, Gdk
+from gi.repository import Gio
 
 from item import Item
 import utils
@@ -27,7 +27,7 @@ def _search_key(app):
 def get_matches(query):
 
     if not query:
-        return []
+        return False
 
     all_apps = utils.get_cached_data('apps', _get_apps, max_age=600)
 

@@ -9,6 +9,9 @@ class Item(object):
         if category == 'text' and arg is None:
             self.arg = self.title
 
+    def __str__(self):
+        return '%s' % self.title
+
     @classmethod
     def from_dict(cls, d):
         return cls(d['title'], d['subtitle'], d['category'], d['arg'])
