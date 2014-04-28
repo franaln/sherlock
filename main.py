@@ -4,7 +4,7 @@ import os
 import sys
 import math
 import importlib
-from gi.repository import Gtk, Gdk, GdkPixbuf, GObject
+from gi.repository import Gtk, Gdk, GObject
 
 import config
 import drawer
@@ -184,7 +184,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
             del self.items[:]
 
         if not query:
-            self.reset_search()
+            self.clear_menu()
             return
 
         query_split = query.split()
@@ -253,13 +253,13 @@ class Sherlock(Gtk.Window, GObject.GObject):
         elif 'Return' in key:
             self.actionate()
         elif 'Tab' in key:
-            self.toggle_action_panel()
+            if self.items:
+                self.toggle_action_panel()
         elif 'Alt' in key or \
              'Control' in key:
             pass
         else:
             self.add_char(event.string)
-
 
     def select_down(self):
         if self.action_panel_visible:
