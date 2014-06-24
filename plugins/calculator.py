@@ -9,6 +9,9 @@ keyword = 'calc'
 
 def get_matches(query):
 
+    if not any(i in query for i in '+-*/%^'):
+        return False
+
     query = query.replace(' ', '').replace(',', '.')
 
     result = utils.check_output(['calc', query])
