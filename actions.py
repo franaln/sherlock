@@ -72,13 +72,6 @@ def open_folder(arg):
 
 # Outputs
 def copy_to_clipboard(arg):
-    # title: "Copy to Clipboard",
-    # description: "Copy selection to clipboard"
-
-    # cb = Gtk.Clipboard.get(Gdk.SELECTION_PRIMARY)
-    # cb.set_text(arg, -1)
-    # cb.store()
-
     # "primary":
     xsel_proc = subprocess.Popen(['xsel', '-pi'], stdin=subprocess.PIPE)
     xsel_proc.communicate(arg.encode('utf-8'))
@@ -87,11 +80,10 @@ def copy_to_clipboard(arg):
     xsel_proc = subprocess.Popen(['xsel', '-bi'], stdin=subprocess.PIPE)
     xsel_proc.communicate(arg.encode('utf-8'))
 
-    print('Copied to clipboard: %s' % arg)
 
 def send_notification(match):
     #Notify.init ("Hello world")
-    noti = Notify.Notification.new('Sherlock', match.arg,'dialog-information')
+    noti = Notify.Notification.new('Sherlock', match.arg, 'dialog-information')
     noti.show()
 
 def show_large_type(arg):
@@ -191,26 +183,26 @@ def show_qrcode(match):
     # ctx.environment.present_window(window)
 
 
-outputs = [
-    ('Copy', copy_to_clipboard),
-    ('Large type', show_large_type),
-    ('Show QR code', show_qrcode),
-]
+actions = {
 
-actions = {}
+    'app': [
+        ('Run', run_app),
+        ('Run in terminal', run_app_in_terminal),
+    ],
 
-actions['app'] = [
-    ('Run', run_app),
-    ('Run in terminal', run_app_in_terminal),
-]
+    'uri': [
+        ('Open', open_uri),
+        ('Open folder', open_folder),
+    ],
 
-actions['uri'] = [
-    ('Open', open_uri),
-    ('Open folder', open_folder),
-]
+    'cmd': [
+        ('Run', run_cmd),
+    ],
 
-actions['cmd'] = [
-    ('Run', run_cmd),
-]
+    'text': [
+        ('Copy', copy_to_clipboard),
+        ('Large type', show_large_type),
+        ('Show QR code', show_qrcode),
+    ],
 
-actions['text'] = outputs
+}
