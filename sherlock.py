@@ -11,7 +11,6 @@ from main import Sherlock
 def main():
     m = Sherlock()
     m.run()
-
     return True
 
 if __name__ == '__main__':

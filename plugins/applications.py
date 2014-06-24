@@ -1,12 +1,12 @@
 # Applications plugin
 
+# FIX: i want to eliminate th gtk dependecies.
 from gi.repository import Gio
 
 from item import Item
 import utils
 
-name    = 'Applications'
-keyword = 'app'
+name = 'Applications'
 
 def _get_apps():
     apps = []

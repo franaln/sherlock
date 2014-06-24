@@ -105,14 +105,28 @@ def draw_item(cr, pos, item, selected):
     #     default_action_name = actions.actions[item.category][0][0]
     #     draw_text(cr, width-60, middle_y, default_action_name, (1, 1, 1), 10)
 
-    #     # arrow
-    cr.set_source_rgb(1, 1, 1)
-    cr.set_line_width(1.5)
-    cr.move_to(config.width-10, base_y + 0.5 * config.item_height + 4)
-    cr.rel_line_to(4, -4)
-    cr.rel_line_to(-4, -4)
-    cr.set_line_join(cairo.LINE_JOIN_ROUND)
-    cr.stroke()
+    # arrow
+    # cr.set_source_rgb(1, 1, 1)
+    # cr.set_line_width(1.5)
+    # cr.move_to(config.width-10, base_y + 0.5 * config.item_height + 4)
+    # cr.rel_line_to(4, -4)
+    # cr.rel_line_to(-4, -4)
+    # cr.set_line_join(cairo.LINE_JOIN_ROUND)
+    # cr.stroke()
+
+    # Colour
+    # if item.category == 'text':
+    #     color = config.txt_color
+    # elif item.category == 'app':
+    #     color = config.app_color
+    # elif item.category == 'uri':
+    #     color = config.uri_color
+    # elif item.category == 'cmd':
+    #     color = config.cmd_color
+    # print (item.category)
+    # draw_rect(cr, 0, base_y, 2,
+    #               config.item_height, color)
+
 
 
 def draw_action_panel(cr, actions, selected):

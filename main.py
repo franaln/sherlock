@@ -10,6 +10,7 @@ import config
 import drawer
 import actions
 import attic
+from item import Item
 
 class Sherlock(Gtk.Window, GObject.GObject):
 
@@ -21,7 +22,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         # plugins
         self.plugins_dir = 'plugins'
-        self.base_plugins = dict()
+        self.base_plugins = [] #dict()
         self.keyword_plugins = dict()
         self.fallback_plugins = dict()
 
@@ -63,24 +64,30 @@ class Sherlock(Gtk.Window, GObject.GObject):
     #---------
     # Plugins
     #---------
-    def import_plugin(self, dict_, name):
+    def import_plugin(self, name):
         try:
-            plugin = importlib.import_module('.'.join([self.plugins_dir, name]))
+            plugin = importlib.import_module('%s.%s' % (self.plugins_dir, name))
         except ImportError:
-            return
+            return None
 
-        if hasattr(plugin, 'keyword'):
-            dict_[plugin.keyword] = plugin
+        return plugin
 
     def load_plugins(self):
+
         for name in config.base_plugins:
-            self.import_plugin(self.base_plugins, name)
+            plugin = self.import_plugin(name)
+            if plugin is not None:
+                self.base_plugins.append(plugin)
 
-        for name in config.keyword_plugins:
-            self.import_plugin(self.keyword_plugins, name)
+        for kw, name in config.keyword_plugins.items():
+            if os.path.isfile('%s/%s.py' % (self.plugins_dir, name)):
+                self.keyword_plugins[kw] = name
 
-        for name in config.fallback_plugins:
-            self.import_plugin(self.fallback_plugins, name)
+        for text, name in config.fallback_plugins.items():
+            if os.path.isfile('%s/%s.py' % (self.plugins_dir, name)):
+                self.fallback_plugins[text] = name
+
+
 
     #-------------
     # Draw window
@@ -187,24 +194,41 @@ class Sherlock(Gtk.Window, GObject.GObject):
             self.clear_menu()
             return
 
-        query_split = query.split()
-        keyword = query_split[0]
-
-        if keyword in self.keyword_plugins:
-            self.items = self.keyword_plugins[keyword].get_matches(query_split[1:])
+        # check if query match keyword
+        for keyword, name in self.keyword_plugins.items():
+            if query.startswith(keyword):
+                plugin = self.import_plugin(name)
+                self.items = plugin.get_matches(query.replace(keyword, ''))
+                break
 
         else:
-            for plugin in self.base_plugins.values():
+
+            # get matches from base plugins
+            for plugin in self.base_plugins:
 
                 matches = plugin.get_matches(query)
                 if matches:
                     self.items.extend(matches)
+
 
         if not self.items:
-            for plugin in self.fallback_plugins.values():
-                matches = plugin.get_matches(query)
-                if matches:
-                    self.items.extend(matches)
+
+
+
+
+            for text in self.fallback_plugins.keys():
+
+                title = text.replace('query', '\'%s\'' % query)
+
+                it = Item(title)
+
+                self.items.append((it, 100))
+
+
+            # for plugin in self.fallback_plugins.values():
+            #     matches = plugin.get_matches(query)
+            #     if matches:
+            #         self.items.extend(matches)
 
 
         # attic
@@ -285,7 +309,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.queue_draw()
 
     def add_char(self, char):
-        self.query += char
+        self.query = '%s%s' % (self.query, char)
         self.queue_draw()
         self.emit('query_changed', self.query)
 

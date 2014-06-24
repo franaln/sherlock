@@ -17,11 +17,18 @@ text_color    = (0.1, 0.1, 0.1) # #030303
 subtext_color = (0.5, 0.5, 0.5)
 seltext_color = (1, 1, 1)
 
+app_color = (1.0, 0.0, 0.0)
+uri_color = (0.0, 1.0, 0.0)
+cmd_color = (0.0, 0.0, 1.0)
+txt_color = (0.4, 0.4, 0.4)
+
 # Size
 width = 480
 height = 60
 item_height = 48
 lines = 5
+
+
 
 #--------
 # Plugins
@@ -34,13 +41,16 @@ base_plugins = [
 ]
 
 # Keyword plugins (Only search in these plugins when a keyword is provided)
-keyword_plugins = [
-    'screens',
-]
+keyword_plugins = {
+    'scr': 'screens',
+}
 
 # Fallback plugins (Use it when there are no other matches)
-fallback_plugins = [
-]
+fallback_plugins = {
+    'Search /home for query ...': 'calculator',
+    'Search google for query ...': 'calculator',
+}
+
 
 #------------
 # Directories
