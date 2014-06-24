@@ -5,7 +5,7 @@
 #------------
 
 # Font
-fontname = 'Cantarell'
+fontname = 'Sans'
 
 # Colours
 bkg_color = (0.92, 0.92, 0.92)  # #ebebeb
@@ -15,7 +15,7 @@ sel_color = (0.26, 0.50, 0.93)  # #427fed
 
 text_color    = (0.1, 0.1, 0.1) # #030303
 subtext_color = (0.5, 0.5, 0.5)
-seltext_color = (1, 1, 1)
+seltext_color = (1.0, 1.0, 1.0)
 
 app_color = (1.0, 0.0, 0.0)
 uri_color = (0.0, 1.0, 0.0)
@@ -47,8 +47,8 @@ keyword_plugins = {
 
 # Fallback plugins (Use it when there are no other matches)
 fallback_plugins = {
-    'Search /home for query ...': 'calculator',
-    'Search google for query ...': 'calculator',
+    'Search /home for query': 'calculator',
+    'Search google for query': 'calculator',
 }
 
 
