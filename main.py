@@ -22,7 +22,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         # plugins
         self.plugins_dir = 'plugins'
-        self.base_plugins = [] #dict()
+        self.base_plugins = []
         self.keyword_plugins = dict()
         self.fallback_plugins = dict()
 
@@ -107,8 +107,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
         max_items = min(config.lines, len(self.items))
 
         for i in range(max_items):
-            drawer.draw_item(cr, i, self.items[first_item+i],
-                           (first_item+i == self.selected))
+            drawer.draw_item(cr, i, self.items[first_item+i], (first_item+i == self.selected))
 
         if self.action_panel_visible:
             drawer.draw_action_panel(cr, self.actions, self.action_selected)
@@ -172,7 +171,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         action = actions.actions[match.category][self.action_selected][1]
 
-        self.attic.add(self.query, match)
+        self.attic.add(self.query, match, None)
 
         ret = action(match.arg)
 
@@ -183,7 +182,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
     #--------
     def get_history(self):
         history = self.attic.get_last()
-        self.items = [h[2] for h in history]
+        self.items = [Item.from_dict(h[2]) for h in history]
 
     def do_search(self, widget, query):
 
@@ -212,9 +211,6 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
 
         if not self.items:
-
-
-
 
             for text in self.fallback_plugins.keys():
 

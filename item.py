@@ -18,15 +18,14 @@ class Item(object):
                 self.category == other.category and
                 self.arg == other.arg)
 
+    @classmethod
+    def from_dict(cls, d):
+        return cls(d['title'], d['subtitle'], d['category'], d['arg'])
 
-    # @classmethod
-    # def from_dict(cls, d):
-    #     return cls(d['title'], d['subtitle'], d['category'], d['arg'])
-
-    # def to_dict(self):
-    #     return {
-    #         'title': self.title,
-    #         'subtitle': self.subtitle,
-    #         'category': self.category,
-    #         'arg': self.arg
-    #     }
+    def to_dict(self):
+        return {
+            'title': self.title,
+            'subtitle': self.subtitle,
+            'category': self.category,
+            'arg': self.arg
+        }
