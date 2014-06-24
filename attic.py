@@ -15,6 +15,8 @@ except:
 
 attic_path = '/home/fran/dev/sherlock/data/attic'
 
+history_size = 100
+
 class Attic:
 
     def __init__(self):
@@ -34,52 +36,40 @@ class Attic:
             pickle.dump(self.events, f)
             pickle.dump(self.attic, f)
 
-    def add(self, query, item):
+    def add(self, query, item, action):
 
-        if item.category == 'text':
-            return
+        # if item.category == 'text':
+        #     return
 
         timestamp = datetime.now()
-        event = (timestamp, query, item)
+
+        event = (timestamp, query, item.to_dict(), action)
 
         self.events.insert(0, event)
 
-        if not query in self.attic:
-            self.attic[query] = dict()
+        if len(self.events) > history_size:
+            del self.events[history_size:]
 
-        for it, count in self.attic[query].items():
+        # if not query in self.attic:
+        #     self.attic[query] = dict()
 
-            if it == item:
-                count += 1
-                break
-        else:
-            self.attic[query][item] = 0
+        # for it, count in self.attic[query].items():
 
-        self.attic[query][item] += 1
+        #     if it == item:
+        #         count += 1
+        #         break
+        # else:
+        #     self.attic[query][item] = 0
+
+        # self.attic[query][item] += 1
 
     def remove(self):
         pass
 
     def get_last(self):
-        return self.attic
+        return self.events
 
         # Implement score and nearest queries!
 
     def analise(self):
         pass
-
-
-# attic[query] = [
-#     item_id: count,
-#     item_id: count,
-# ]
-
-# cada value del dict es un histograma de counts vs items normalizados a 100%
-
-# si no tienen score les asigno este...
-
-# si tienen
-
-#        filter   attic
-# item1  80%        80% ->  80%
-# item2  50%        20% -> 100%

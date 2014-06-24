@@ -5,7 +5,6 @@ import utils
 from item import Item
 
 name    = 'Calculator'
-keyword = 'calc'
 
 def get_matches(query):
 

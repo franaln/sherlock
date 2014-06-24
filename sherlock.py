@@ -1,10 +1,7 @@
 #! /usr/bin/env python3
 # Sherlock
 
-import os
 import sys
-import re
-import subprocess
 
 from main import Sherlock
 

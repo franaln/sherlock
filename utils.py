@@ -79,11 +79,7 @@ def clear_cache():
     if os.path.exists(get_cachedir()):
         for filename in os.listdir(get_cachedir()):
             path = os.path.join(get_cachedir(), filename)
-            if os.path.isdir(path):
-                shutil.rmtree(path)
-            else:
-                os.unlink(path)
-            self.logger.debug('Deleted : %r', path)
+            os.unlink(path)
 
 
 #--------------#
@@ -116,7 +112,7 @@ def filter(query, items, key=lambda x: x, ascending=False,
     * query: query to test items against
     * items: iterable of items to test (list or tuple)
     * key: function to get comparison key from items. Must return a
-    * unicode string. The default simply returns the item.
+    unicode string. The default simply returns the item.
     * ascending: True to get worst matches first
     * min_score: Ignore results with a score lower than this if is non-zero
     * max_results
