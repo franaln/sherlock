@@ -22,7 +22,7 @@ def _get_apps():
     return apps
 
 def _search_key(app):
-    return '%s %s' % (app.subtitle, app.title)
+    return '%s %s' % (app.title, app.subtitle)
 
 def get_matches(query):
 
