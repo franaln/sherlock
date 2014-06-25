@@ -21,7 +21,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
     def __init__(self):
 
         # plugins
-        self.plugins_dir = 'plugins'
+        self.plugins_dir = 'plugins' # FIX
         self.base_plugins = []
         self.keyword_plugins = dict()
         self.fallback_plugins = dict()
@@ -37,6 +37,9 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         self.menu_visible = False
         self.action_panel_visible = False
+
+        # Attic
+        self.attic = attic.Attic()
 
         # window
         GObject.GObject.__init__(self)
@@ -56,9 +59,8 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         self.show_all()
 
+        # load plugins
         self.load_plugins()
-
-        self.attic = attic.Attic()
 
 
     #---------
@@ -194,10 +196,17 @@ class Sherlock(Gtk.Window, GObject.GObject):
             return
 
         # check if query match keyword
+        print (self.keyword_plugins)
+
         for keyword, name in self.keyword_plugins.items():
             if query.startswith(keyword):
+                print('yes')
                 plugin = self.import_plugin(name)
-                self.items = plugin.get_matches(query.replace(keyword, ''))
+                matches = plugin.get_matches(query.replace(keyword, ''))
+
+                if matches:
+                    self.items.extend(matches)
+
                 break
 
         else:
