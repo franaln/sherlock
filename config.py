@@ -33,19 +33,25 @@ lines = 5
 #--------
 # Plugins
 #--------
-# Base plugins (Search these plugins if no keyword given)
+# Base plugins
+# (Search these plugins if no keyword given)
 base_plugins = [
     'applications',
     'system',
     'calculator',
 ]
 
-# Keyword plugins (Only search in these plugins when a keyword is provided)
+# Keyword plugins
 keyword_plugins = {
-    'scr': 'screens',
+    'display': 'screens',
+    'disks': 'disks',
+    'g ': 'google',
+    '/': 'explorer',
+
 }
 
-# Fallback plugins (Use it when there are no other matches)
+# Fallback plugins
+# (Use it when there are no other matches)
 fallback_plugins = {
     'Search /home for query': 'calculator',
     'Search google for query': 'calculator',
