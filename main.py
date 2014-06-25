@@ -209,7 +209,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
                 if matches:
                     self.items.extend(matches)
 
-
+        # fallback plugins
         if not self.items:
 
             for text in self.fallback_plugins.keys():
@@ -233,10 +233,10 @@ class Sherlock(Gtk.Window, GObject.GObject):
         ## 3. Compute new score as (score * attic_score)/100
 
         # order matches by score
-        self.items = sorted(self.items, key=lambda m: m[1], reverse=True)
+        #self.items = sorted(self.items, key=lambda m: m[1], reverse=True)
 
         # remove score
-        self.items = [ m[0] for m in self.items ]
+        #self.items = [ m[0] for m in self.items ]
 
         # show menu
         if self.items:
