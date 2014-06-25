@@ -31,6 +31,18 @@ def get_matches(query):
 
     all_apps = utils.get_cached_data('apps', _get_apps, max_age=600)
 
-    matches = utils.filter(query, all_apps, key=_search_key)
+    ##matches = utils.filter(query, all_apps, key=_search_key)
+
+    matches = []
+
+    for app in all_apps:
+        if app is None:
+            continue
+
+        print(app.title, app.subtitle)
+
+        if query in app.title or (app.subtitle and query in app.subtitle):
+            matches.append(app)
+
 
     return matches
