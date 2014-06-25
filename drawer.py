@@ -1,10 +1,9 @@
-# draw menu
+# drawer
 
 import cairo
 from gi.repository import Pango, PangoCairo
 
 import config
-
 
 def draw_rect(cr, x, y, width, height, color):
     cr.set_source_rgb(*color)
@@ -43,17 +42,17 @@ def draw_window(cr):
 
 def draw_bar(cr, query):
     """
-    6px
-    ---------------------------
-    6px |10px Query|              | 6px
-    ---------------------------
-    6px
+                    6px
+        ---------------------------
+    6px |10px query|              | 6px
+        ---------------------------
+                    6px
     """
 
     draw_rect(cr, 6, 6, config.width-12,
               config.height-12, config.bar_color)
 
-    (w, h) = draw_text(cr, 16, 30,
+    (w, h) = draw_text(cr, 16, config.height*0.5,
                        query, config.text_color, 28)
 
     # cursor
@@ -70,7 +69,7 @@ def draw_item(cr, pos, item, selected):
 
     # pos -> (x, y)
     base_y = config.height + pos * config.item_height
-    middle_y = base_y + config.item_height * 0.5
+    middle_y = base_y + 0.5 * config.item_height
 
     draw_separator(cr, 0, base_y+config.item_height-1, config.width)
 

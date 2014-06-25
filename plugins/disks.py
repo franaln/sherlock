@@ -17,6 +17,9 @@ def get_matches(query):
 
         disk = line.split() ##// [filesystem, size, used, avail, use%, mount]
 
-        matches.append(Item(disk[0]))
+        title = '%s %s (%s)' % (disk[0], disk[1], disk[4])
+        subtitle = disk[5]
+
+        matches.append(Item(title, subtitle))
 
     return matches
