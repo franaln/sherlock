@@ -155,7 +155,7 @@ def filter(query, items, key=lambda x: x, ascending=False,
 
         # item starts with query
         if (match_on & MATCH_STARTSWITH and
-                value.lower().startswith(query)):
+            value.lower().startswith(query)):
             score = 100.0 - (len(value) / len(query))
 
         if not score and match_on & MATCH_CAPITALS:
@@ -242,7 +242,7 @@ def get_selection():
     """ get clipboard content """
     return subprocess.Popen(["xclip", "-selection", "clipboard", "-o"], stdout=subprocess.PIPE).communicate()[0]
 
-def check_output(cmd_list):
+def get_cmd_output(cmd_list):
     try:
         output = subprocess.check_output(cmd_list, stderr=subprocess.DEVNULL)
     except subprocess.CalledProcessError:

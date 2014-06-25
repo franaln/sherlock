@@ -68,13 +68,14 @@ class Sherlock(Gtk.Window, GObject.GObject):
     #---------
     def import_plugin(self, name):
         try:
-            plugin = importlib.import_module('%s.%s' % (self.plugins_dir, name))
+            plugin = importlib.import_module(name)
         except ImportError:
             return None
-
         return plugin
 
     def load_plugins(self):
+
+        sys.path.append(self.plugins_dir)
 
         for name in config.base_plugins:
             plugin = self.import_plugin(name)
@@ -82,13 +83,12 @@ class Sherlock(Gtk.Window, GObject.GObject):
                 self.base_plugins.append(plugin)
 
         for kw, name in config.keyword_plugins.items():
-            if os.path.isfile('%s/%s.py' % (self.plugins_dir, name)):
+            if os.path.isfile(os.path.join(self.plugins_dir, '%s.py' % name)):
                 self.keyword_plugins[kw] = name
 
         for text, name in config.fallback_plugins.items():
-            if os.path.isfile('%s/%s.py' % (self.plugins_dir, name)):
+            if os.path.isfile(os.path.join(self.plugins_dir, '%s.py' % name)):
                 self.fallback_plugins[text] = name
-
 
 
     #-------------
@@ -116,6 +116,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         return False
 
+
     #------
     # Menu
     #------
@@ -137,19 +138,19 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.selected = 0
         self.hide_menu()
 
+
     #--------------
     # Action panel
     #--------------
     def show_action_panel(self):
-
         match = self.items[self.selected]
-        actions_ = actions.actions[match.category]
+        match_actions = actions.actions[match.category]
 
-        if len(actions_) < 2:
+        if len(match_actions) < 2:
             return
 
-        if actions_:
-            self.actions = list(actions_)
+        if match_actions:
+            self.actions = list(match_actions)
         self.action_panel_visible = True
         self.queue_draw()
 
@@ -170,7 +171,6 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
     def actionate(self):
         match = self.items[self.selected]
-
         action = actions.actions[match.category][self.action_selected][1]
 
         self.attic.add(self.query, match, None)
@@ -178,6 +178,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
         ret = action(match.arg)
 
         self.close()
+
 
     #--------
     # Search
@@ -218,7 +219,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
                 if matches:
                     self.items.extend(matches)
 
-
+        # fallback plugins
         if not self.items:
 
             for text in self.fallback_plugins.keys():

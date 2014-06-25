@@ -13,7 +13,7 @@ def get_matches(query):
 
     query = query.replace(' ', '').replace(',', '.')
 
-    result = utils.check_output(['calc', query])
+    result = utils.get_cmd_output(['calc', query])
 
     if result:
         item = Item(title=result, subtitle='',
