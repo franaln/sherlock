@@ -190,6 +190,8 @@ class Sherlock(Gtk.Window, GObject.GObject):
         if self.items:
             del self.items[:]
 
+        self.hide_action_panel()
+
         if not query:
             self.clear_menu()
             return
