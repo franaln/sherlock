@@ -6,15 +6,7 @@ try:
 except:
     import pickle
 
-
-# class Event:
-#     def __init__(self, query, item):
-#         self.time = time.time()
-#         self.query = query
-#         self.item = item
-
 attic_path = '/home/fran/dev/sherlock/data/attic'
-
 history_size = 100
 
 class Attic:

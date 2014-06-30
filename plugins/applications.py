@@ -22,7 +22,9 @@ def _get_apps():
     return apps
 
 def _search_key(app):
-    return '%s %s' % (app.title, app.subtitle)
+    if app.subtitle and app.subtitle is not None:
+        return app.subtitle
+    return app.title
 
 def get_matches(query):
 
