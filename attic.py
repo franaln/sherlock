@@ -66,10 +66,13 @@ class Attic:
     def remove(self):
         pass
 
-    def get_last(self):
-        return self.events
+    def get_item(self):
+        for event in self.events:
+            yield event[2]
 
-        # Implement score and nearest queries!
+    def get_query(self):
+        for event in self.events:
+            yield event[1]
 
     def analise(self):
         pass
