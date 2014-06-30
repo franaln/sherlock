@@ -17,11 +17,6 @@ text_color    = (0.1, 0.1, 0.1) # #030303
 subtext_color = (0.5, 0.5, 0.5)
 seltext_color = (1.0, 1.0, 1.0)
 
-app_color = (1.0, 0.0, 0.0)
-uri_color = (0.0, 1.0, 0.0)
-cmd_color = (0.0, 0.0, 1.0)
-txt_color = (0.4, 0.4, 0.4)
-
 # Size
 width = 480
 height = 60
