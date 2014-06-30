@@ -58,16 +58,17 @@ class Attic:
     def remove(self):
         pass
 
-    def get_item_history(self):
+    def get_item(self):
         for event in self.events:
             yield event[2]
 
-    def get_query_history(self):
+    def get_query(self):
         for event in self.events:
             yield event[1]
 
-
-        # Implement score and nearest queries!
+    def get_query(self):
+        for event in self.events:
+            yield event[1]
 
     def analise(self):
         pass

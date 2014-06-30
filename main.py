@@ -9,7 +9,8 @@ from gi.repository import Gtk, Gdk, GObject
 import config
 import drawer
 import actions
-import attic
+
+from attic import Attic
 from item import Item
 
 class Sherlock(Gtk.Window, GObject.GObject):
@@ -21,7 +22,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
     def __init__(self):
 
         # plugins
-        self.plugins_dir = 'plugins'
+        self.plugins_dir = 'plugins' # FIX
         self.base_plugins = []
         self.keyword_plugins = dict()
         self.fallback_plugins = dict()
@@ -37,6 +38,10 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         self.menu_visible = False
         self.action_panel_visible = False
+        #self.file_navigation_mode = False
+
+        # Attic
+        self.attic = Attic()
 
         # window
         GObject.GObject.__init__(self)
@@ -52,13 +57,12 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.connect('draw', self.draw)
         self.connect('key_press_event', self.on_key_press)
         self.connect('delete-event', self.close)
-        self.connect('query_changed', self.do_search)
+        self.connect('query_changed', self.on_query_changed)
 
         self.show_all()
 
+        # load plugins
         self.load_plugins()
-
-        self.attic = attic.Attic()
 
 
     #---------
@@ -98,7 +102,9 @@ class Sherlock(Gtk.Window, GObject.GObject):
         drawer.draw_window(cr)
         drawer.draw_bar(cr, self.query)
 
-        if not self.items:
+        #if not self.items:
+        #    return
+        if not self.menu_visible:
             return
 
         first_item = 0 if (self.selected < config.lines) else \
@@ -119,8 +125,6 @@ class Sherlock(Gtk.Window, GObject.GObject):
     # Menu
     #------
     def show_menu(self):
-        if not self.items:
-            self.get_history()
         self.resize(config.width,
                     config.height + config.item_height*config.lines)
         self.queue_draw()
@@ -185,7 +189,27 @@ class Sherlock(Gtk.Window, GObject.GObject):
         history = self.attic.get_last()
         self.items = [Item.from_dict(h[2]) for h in history]
 
-    def do_search(self, widget, query):
+
+    def show_previous_queries(self):
+
+        pass
+
+
+    def enter_file_navigation(self, query):
+        import filenavigation as fn
+
+        #path = query
+        #fn.get_path_content(query)
+
+        #path = query
+
+
+        #self.file_navigation_mode = True
+
+        self.items  = fn.get_matches(query)
+
+
+    def do_search(self, query):
 
         if self.items:
             del self.items[:]
@@ -196,21 +220,17 @@ class Sherlock(Gtk.Window, GObject.GObject):
             self.clear_menu()
             return
 
+
+
         # check if query match keyword
-        for keyword, name in self.keyword_plugins.items():
-            if query.startswith(keyword):
-                plugin = self.import_plugin(name)
-                self.items = plugin.get_matches(query.replace(keyword, ''))
-                break
+        #else:
 
-        else:
+        # get matches from base plugins
+        for plugin in self.base_plugins:
 
-            # get matches from base plugins
-            for plugin in self.base_plugins:
-
-                matches = plugin.get_matches(query)
-                if matches:
-                    self.items.extend(matches)
+            matches = plugin.get_matches(query)
+            if matches:
+                self.items.extend(matches)
 
         # fallback plugins
         if not self.items:
@@ -249,6 +269,39 @@ class Sherlock(Gtk.Window, GObject.GObject):
             return
 
 
+    def clear_search(self):
+        self.selected = 0
+
+    def on_query_changed(self, widget, query):
+
+        self.clear_search()
+
+        # File navigation
+        if query.startswith('/') or query.startswith('~/'):
+            self.enter_file_navigation(query)
+
+        # Keyword plugin
+        elif query.startswith('!'):
+
+            query = query[1:]
+
+            for keyword, name in self.keyword_plugins.items():
+                if query.startswith(keyword):
+                    print(name)
+                    plugin = self.import_plugin(name)
+                    matches = plugin.get_matches(query.replace(keyword, ''))
+
+                    if matches:
+                        self.items.extend(matches)
+
+                break
+
+        # else: search
+        else:
+            self.do_search(query)
+
+        self.show_menu()
+
     #--------------
     # Key press cb
     #--------------
@@ -260,19 +313,29 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         if key == 'Escape':
             self.close()
+
         elif key == 'Left':
             self.move_cursor_left()
         elif key == 'Right':
-            self.move_cursor_right()
+            #self.move_cursor_right()
+            self.update_query(self.items[self.selected].subtitle)
+
+
         elif key == 'Down':
             if not self.menu_visible:
+                if not self.query:
+                    self.get_history()
                 self.show_menu()
             else:
                 self.select_down()
         elif key == 'Up':
-            self.select_up()
+            if not self.query or self.selected == 0:
+                self.show_previous_query()
+            else:
+                self.select_up()
+
         elif key == 'BackSpace':
-            self.rm_char()
+            self.del_char()
         elif 'Return' in key:
             self.actionate()
         elif 'Tab' in key:
@@ -283,6 +346,15 @@ class Sherlock(Gtk.Window, GObject.GObject):
             pass
         else:
             self.add_char(event.string)
+
+    #---
+    def show_previous_query(self):
+        try:
+            self.query_history
+        except AttributeError:
+            self.query_history =  self.attic.get_query()
+
+        self.update_query(next(self.query_history))
 
     def select_down(self):
         if self.action_panel_visible:
@@ -312,9 +384,13 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.queue_draw()
         self.emit('query_changed', self.query)
 
-    def rm_char(self):
+    def del_char(self):
         self.query = self.query[:-1]
         self.queue_draw()
+        self.emit('query_changed', self.query)
+
+    def update_query(self, query):
+        self.query = query
         self.emit('query_changed', self.query)
 
     def move_cursor_left(self):

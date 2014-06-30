@@ -240,7 +240,7 @@ def filter(query, items, key=lambda x: x, ascending=False,
 
 def get_selection():
     """ get clipboard content """
-    return subprocess.Popen(["xclip","-selection", "clipboard", "-o"], stdout=subprocess.PIPE).communicate()[0]
+    return subprocess.Popen(["xclip", "-selection", "clipboard", "-o"], stdout=subprocess.PIPE).communicate()[0]
 
 def get_cmd_output(cmd_list):
     try:
@@ -258,3 +258,18 @@ def is_running(name):
         return True
 
     return False
+
+# def xselSetClipboard(text):
+#     p = Popen(['xsel', '-i'], stdin=PIPE)
+#     try:
+#         # works on Python 3 (bytes() requires an encoding)
+#         p.communicate(input=bytes(text, 'utf-8'))
+#     except TypeError:
+#         # works on Python 2 (bytes() only takes one argument)
+#         p.communicate(input=bytes(text))
+
+
+# def xselGetClipboard():
+#     p = Popen(['xsel', '-o'], stdin=PIPE)
+#     stdout, stderr = p.communicate()
+#     return bytes.decode(stdout)
