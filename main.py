@@ -102,9 +102,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
         drawer.draw_window(cr)
         drawer.draw_bar(cr, self.query)
 
-        #if not self.items:
-        #    return
-        if not self.menu_visible:
+        if not self.menu_visible or not self.items:
             return
 
         first_item = 0 if (self.selected < config.lines) else \

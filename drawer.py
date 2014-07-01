@@ -22,6 +22,8 @@ seltext_color = config.seltext_color
 
 bar_height_middle = bar_height*0.5
 
+
+
 def draw_rect(cr, x, y, width, height, color):
     cr.set_source_rgb(*color)
     cr.rectangle(x, y, width, height)
@@ -57,40 +59,11 @@ def draw_text(cr, x, y, text, color, size=12):
     cr.move_to(x, y - h/2)
     PangoCairo.show_layout(cr, layout)
 
-def draw_query(cr, text):
-
-    x = 16
-    y =  bar_height*0.5
-
-    color = config.text_color
-    size = 28
-
-    layout = PangoCairo.create_layout(cr)
-
-    set_font(layout, size)
-
-    layout.set_text(u'%s' % text, -1)
-    cr.set_source_rgb(*color)
-    PangoCairo.update_layout(cr, layout)
-
-    w, h = layout.get_pixel_size()
-
-    while w > 440:
-        size = size - 1
-        set_font(layout, size)
-        w, h = layout.get_pixel_size()
-
-    cr.move_to(x, y - h/2)
-    PangoCairo.show_layout(cr, layout)
-
-    draw_rect(cr, w+18, 11, 2, 38, text_color)
-
-    return w, h
-
 def draw_window(cr):
     cr.set_source_rgb(*bkg_color)
     cr.set_operator(cairo.OPERATOR_SOURCE)
     cr.paint()
+
 
 def draw_bar(cr, query):
     """
@@ -101,11 +74,31 @@ def draw_bar(cr, query):
                     6px
     """
 
-    draw_rect(cr, 6, 6, bar_width-12,
-              bar_height-12, bar_color)
+    draw_rect(cr, 6, 6, 468, 48, bar_color)
 
-    draw_query(cr, query)
+    query_x = 16
+    query_y = 30
 
+    layout = PangoCairo.create_layout(cr)
+
+    size = 28
+    set_font(layout, size)
+
+    layout.set_text(u'%s' % query, -1)
+    cr.set_source_rgb(*text_color)
+    PangoCairo.update_layout(cr, layout)
+
+    query_w, query_h = layout.get_pixel_size()
+
+    while query_w > 440:
+        size = size - 1
+        set_font(layout, size)
+        query_w, query_h = layout.get_pixel_size()
+
+    cr.move_to(query_x, query_y - 0.5*query_h)
+    PangoCairo.show_layout(cr, layout)
+
+    draw_rect(cr, query_w+18, 11, 2, 38, text_color)
 
 
 def draw_item(cr, pos, item, selected):
