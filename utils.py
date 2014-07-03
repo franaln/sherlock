@@ -220,8 +220,10 @@ def filter(query, items, key=lambda x: x, ascending=False,
             # use "reversed" score (i.e. highest becomes lowest) and
             # value as sort key. This means items with the same score
             # will be sorted in alphabetical not reverse alphabetical order
+            #results[(100.0 / score, value.lower(), i)] = (item, round(score, 2))
 
-            results[(100.0 / score, value.lower(), i)] = (item, round(score, 2))
+            item.score = round(score, 2)
+            results[(100.0 / score, value.lower(), i)] = item
 
     # sort on keys, then discard the keys
     keys = sorted(results.keys(), reverse=ascending)
@@ -230,7 +232,7 @@ def filter(query, items, key=lambda x: x, ascending=False,
     if max_results and len(results) > max_results:
         results = results[:max_results]
 
-    # return list of (item, score)
+    # return list of ordered items
     return results
 
 

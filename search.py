@@ -19,23 +19,7 @@ def get_apps():
 
     return apps
 
-def _search_key(app):
-    return '%s %s' % (app.title, app.subtitle)
-
-
-
-
-def get_matches(query):
-
-    matches = []
-
-    if not query:
-        return matches
-
-    # Applications
-    all_apps = utils.get_cached_data('apps', _get_apps, max_age=600)
-
-    # System commands
+def get_system_commands():
     lock = Item('Lock', 'Lock the screen', 'cmd', 'slimlock')
 
     logout = Item('Logout', '', 'cmd', 'killall compiz')
@@ -51,7 +35,26 @@ def get_matches(query):
 
     hibernate = Item('Hibernate', 'Suspend to disk', 'cmd', 'systemctl hibernate')
 
-    system_cmds = [lock, logout, sleep, sleep2, halt, halt2, reboot, reboot2, hibernate]
+    return [lock, logout, sleep, sleep2, halt, halt2, reboot, reboot2, hibernate]
+
+def get_calc_result():
+    pass
+
+
+
+
+def get_matches(query):
+
+    matches = []
+
+    if not query:
+        return matches
+
+    # Applications
+    all_apps = utils.get_cached_data('apps', _get_apps, max_age=600)
+
+    # System commands
+    system_cmds = get_system_commands()
 
     # Files
 

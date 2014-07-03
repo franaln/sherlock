@@ -12,11 +12,11 @@ history_size = 100
 class Attic:
 
     def __init__(self):
-        self.events = []
-        self.attic = dict()
-
         if os.path.isfile(attic_path):
             self.load()
+        else:
+            self.events = []
+            self.attic = dict()
 
     def load(self):
         with open(attic_path, 'rb') as f:
@@ -30,30 +30,26 @@ class Attic:
 
     def add(self, query, item, action):
 
-        # if item.category == 'text':
-        #     return
-
         timestamp = datetime.now()
 
-        event = (timestamp, query, item.to_dict(), action)
+        item_dict = item.to_dict()
+
+        event = (timestamp, query, item_dict, action)
 
         self.events.insert(0, event)
 
         if len(self.events) > history_size:
             del self.events[history_size:]
 
-        # if not query in self.attic:
-        #     self.attic[query] = dict()
+        if not query in self.attic:
+            self.attic[query] = []
 
-        # for it, count in self.attic[query].items():
-
-        #     if it == item:
-        #         count += 1
-        #         break
-        # else:
-        #     self.attic[query][item] = 0
-
-        # self.attic[query][item] += 1
+        for n, it in enumerate(self.attic[query]):
+            if it[0] == item_dict:
+                self.attic[query][n][1] += 1
+                break
+        else:
+            self.attic[query].append( [item_dict, 0] )
 
     def remove(self):
         pass
@@ -66,9 +62,22 @@ class Attic:
         for event in self.events:
             yield event[1]
 
-    def get_query(self):
-        for event in self.events:
-            yield event[1]
+    def get_histogram(self, query):
+        if query not in self.attic:
+            return False
+
+        histogram = list(self.attic[query])
+        print(histogram)
+
+        total = 0
+        for b in histogram:
+            total += b[1]
+
+        print(total)
+        for b in histogram:
+            b[1] = b[1] / total
+
+        return histogram
 
     def analise(self):
         pass

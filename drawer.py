@@ -44,13 +44,11 @@ def draw_text(cr, x, y, w, h, text, color, size=12):
     PangoCairo.update_layout(cr, layout)
 
     tw, th = layout.get_pixel_size()
-
     cr.set_source_rgb(*color)
     cr.move_to(x, y + (h/2 - th/2))
-
     PangoCairo.show_layout(cr, layout)
 
-def draw_window(cr):
+def draw_background(cr):
     cr.set_source_rgb(*bkg_color)
     cr.set_operator(cairo.OPERATOR_SOURCE)
     cr.paint()
@@ -134,16 +132,16 @@ def draw_item(cr, pos, item, selected):
     if selected:
 
         #     default_action_name = actions.actions[item.category][0][0]
-        draw_text(cr, 420, base_y, 60, item_height, 'Copy', seltext_color, 10)
+        draw_text(cr, 420, base_y, 60, item_height, 'test', seltext_color, 8)
 
-    # arrow
-    # cr.set_source_rgb(1, 1, 1)
-    # cr.set_line_width(1.5)
-    # cr.move_to(config.width-10, base_y + 0.5 * config.item_height + 4)
-    # cr.rel_line_to(4, -4)
-    # cr.rel_line_to(-4, -4)
-    # cr.set_line_join(cairo.LINE_JOIN_ROUND)
-    # cr.stroke()
+        # arrow
+        cr.set_source_rgb(1, 1, 1)
+        cr.set_line_width(1.5)
+        cr.move_to(470, base_y + item_height/2 + 4)
+        cr.rel_line_to(4, -4)
+        cr.rel_line_to(-4, -4)
+        cr.set_line_join(cairo.LINE_JOIN_ROUND)
+        cr.stroke()
 
     # Colour
     # if item.category == 'text':
@@ -158,6 +156,9 @@ def draw_item(cr, pos, item, selected):
     # draw_rect(cr, 0, base_y, 2,
     #               config.item_height, color)
 
+
+def draw_scrollbar(cr):
+    pass
 
 
 def draw_action_panel(cr, actions, selected):

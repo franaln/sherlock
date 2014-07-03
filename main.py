@@ -43,7 +43,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         self.menu_visible = False
         self.action_panel_visible = False
-        #self.file_navigation_mode = False
+        self.file_navigation_mode = False
 
         # Attic
         self.attic = Attic()
@@ -61,6 +61,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.connect('draw', self.draw)
         self.connect('key_press_event', self.on_key_press)
         self.connect('delete-event', self.close)
+        self.connect('focus-out-event', self.close)
         self.connect('query_changed', self.on_query_changed)
 
         self.show_all()
@@ -91,6 +92,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
         for kw, name in config.keyword_plugins.items():
             if os.path.isfile(os.path.join(self.plugins_dir, '%s.py' % name)):
                 self.keyword_plugins[kw] = name
+                print(name)
 
         for text, name in config.fallback_plugins.items():
             if os.path.isfile(os.path.join(self.plugins_dir, '%s.py' % name)):
@@ -103,7 +105,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
     def draw(self, widget, event):
         cr = Gdk.cairo_create(widget.get_window())
 
-        drawer.draw_window(cr)
+        drawer.draw_background(cr)
         drawer.draw_bar(cr, self.query)
 
         if not self.menu_visible or not self.items:
@@ -117,8 +119,13 @@ class Sherlock(Gtk.Window, GObject.GObject):
         for i in range(max_items):
             drawer.draw_item(cr, i, self.items[first_item+i], (first_item+i == self.selected))
 
+
+
         if self.action_panel_visible:
             drawer.draw_action_panel(cr, self.actions, self.action_selected)
+        else:
+            pass
+            #drawer.draw_scrollbar(cr)
 
         return False
 
@@ -187,64 +194,13 @@ class Sherlock(Gtk.Window, GObject.GObject):
     #--------
     # Search
     #--------
-    def get_history(self):
-        history = self.attic.get_last()
-        self.items = [Item.from_dict(h[2]) for h in history]
+    def basic_search(self, query):
 
-
-    def show_previous_queries(self):
-
-        pass
-
-
-    def enter_file_navigation(self, query):
-        import filenavigation as fn
-
-        #path = query
-        #fn.get_path_content(query)
-
-        #path = query
-
-
-        #self.file_navigation_mode = True
-
-        self.items  = fn.get_matches(query)
-
-
-    def do_search(self, query):
-
-        if self.items:
-            del self.items[:]
-
-        self.hide_action_panel()
-
-        if not query:
-            self.clear_menu()
-            return
-
-
-
-        # check if query match keyword
-        #else:
-
-        # get matches from base plugins
         for plugin in self.base_plugins:
 
             matches = plugin.get_matches(query)
             if matches:
                 self.items.extend(matches)
-
-        # fallback plugins
-        if not self.items:
-
-            for text in self.fallback_plugins.keys():
-
-                title = text.replace('query', '\'%s\'' % query)
-
-                it = Item(title)
-
-                self.items.append((it, 100))
-
 
             # for plugin in self.fallback_plugins.values():
             #     matches = plugin.get_matches(query)
@@ -256,38 +212,69 @@ class Sherlock(Gtk.Window, GObject.GObject):
         ## 1. Get similar queries in attic
         ## 2. Get sum histogram
         ## 3. Compute new score as (score * attic_score)/100
+        histogram = self.attic.get_histogram(query)
+
+        # Reorder using attic info
+        #for item in self.items:
+        #if histogram:
+
+        print(histogram)
+            # total = 0
+            # for item, count in histogram:
+            #     total += count
+
+            #     for item in self.items:
+
+            #     print(item, count)
+
+            # for item, count in histogram:
+            #     total += count
+            #     print(item, count)
 
         # order matches by score
-        self.items = sorted(self.items, key=lambda m: m[1], reverse=True)
+        #self.items = sorted(self.items, key=lambda m: m[1], reverse=True)
 
         # remove score
-        self.items = [ m[0] for m in self.items ]
+        #self.items = [ m[0] for m in self.items ]
 
-        # show menu
-        if self.items:
-            self.show_menu()
-        else:
-            self.clear_menu()
-            return
 
+
+    # def get_history(self):
+    #     history = self.attic.get_last()
+    #     self.items = [Item.from_dict(h[2]) for h in history]
+
+    # def show_previous_queries(self):
+
+    #     pass
 
     def clear_search(self):
+        if self.items:
+            del self.items[:]
+
         self.selected = 0
+        self.file_navigation_mode = False
+        self.hide_action_panel()
+
 
     def on_query_changed(self, widget, query):
 
         self.clear_search()
 
+        if not query:
+            self.clear_menu()
+            return
+
         # File navigation
         if query.startswith('/') or query.startswith('~/'):
-            self.enter_file_navigation(query)
+            import filenavigation
+            self.items  = filenavigation.get_matches(query)
+            self.file_navigation_mode = True
 
         # Keyword plugin
         elif query.startswith('!'):
-
             query = query[1:]
-
             for keyword, name in self.keyword_plugins.items():
+                print(keyword, query)
                 if query.startswith(keyword):
                     print(name)
                     plugin = self.import_plugin(name)
@@ -296,13 +283,24 @@ class Sherlock(Gtk.Window, GObject.GObject):
                     if matches:
                         self.items.extend(matches)
 
-                break
+                    break
 
-        # else: search
         else:
-            self.do_search(query)
+            self.basic_search(query)
 
-        self.show_menu()
+        # fallback plugins
+        # if not self.items:
+        #     for text in self.fallback_plugins.keys():
+        #         title = text.replace('query', '\'%s\'' % query)
+        #         it = Item(title)
+        #         self.items.append((it, 100))
+
+        # show menu
+        if self.items:
+            self.show_menu()
+        else:
+            self.clear_menu()
+            return
 
     #--------------
     # Key press cb

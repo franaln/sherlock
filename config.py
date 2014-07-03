@@ -32,9 +32,7 @@ base_plugins = [
 keyword_plugins = {
     'display': 'screens',
     'disks': 'disks',
-    'g ': 'google',
-    '/': 'explorer',
-
+    'test': 'disks',
 }
 
 # Fallback plugins
