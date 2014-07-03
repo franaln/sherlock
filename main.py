@@ -92,7 +92,6 @@ class Sherlock(Gtk.Window, GObject.GObject):
         for kw, name in config.keyword_plugins.items():
             if os.path.isfile(os.path.join(self.plugins_dir, '%s.py' % name)):
                 self.keyword_plugins[kw] = name
-                print(name)
 
         for text, name in config.fallback_plugins.items():
             if os.path.isfile(os.path.join(self.plugins_dir, '%s.py' % name)):
@@ -218,7 +217,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
         #for item in self.items:
         #if histogram:
 
-        print(histogram)
+        #print(histogram)
             # total = 0
             # for item, count in histogram:
             #     total += count
@@ -274,7 +273,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
         elif query.startswith('!'):
             query = query[1:]
             for keyword, name in self.keyword_plugins.items():
-                print(keyword, query)
+                #print(keyword, query)
                 if query.startswith(keyword):
                     print(name)
                     plugin = self.import_plugin(name)
