@@ -21,6 +21,11 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
     def __init__(self):
 
+        # config
+        self.width = 480
+        self.height = 70
+        self.lines = 5
+
         # plugins
         self.plugins_dir = 'plugins' # FIX
         self.base_plugins = []
@@ -46,13 +51,12 @@ class Sherlock(Gtk.Window, GObject.GObject):
         # window
         GObject.GObject.__init__(self)
         super().__init__(type=Gtk.WindowType.TOPLEVEL)
-
         self.set_app_paintable(True)
         self.set_decorated(False)
         self.set_position(Gtk.WindowPosition.CENTER)
         self.set_keep_above(True)
         self.set_title('Sherlock')
-        self.set_size_request(config.width, config.height)
+        self.set_size_request(self.width, self.height)
 
         self.connect('draw', self.draw)
         self.connect('key_press_event', self.on_key_press)
@@ -105,10 +109,10 @@ class Sherlock(Gtk.Window, GObject.GObject):
         if not self.menu_visible or not self.items:
             return
 
-        first_item = 0 if (self.selected < config.lines) else \
-                     (self.selected - config.lines + 1)
+        first_item = 0 if (self.selected < self.lines) else \
+                     (self.selected - self.lines + 1)
 
-        max_items = min(config.lines, len(self.items))
+        max_items = min(self.lines, len(self.items))
 
         for i in range(max_items):
             drawer.draw_item(cr, i, self.items[first_item+i], (first_item+i == self.selected))
@@ -123,13 +127,13 @@ class Sherlock(Gtk.Window, GObject.GObject):
     # Menu
     #------
     def show_menu(self):
-        self.resize(config.width,
-                    config.height + config.item_height*config.lines)
+        self.resize(self.width,
+                    self.height + 48 * 5) #config.item_height*config.lines)
         self.queue_draw()
         self.menu_visible = True
 
     def hide_menu(self):
-        self.resize(config.width, config.height)
+        self.resize(self.width, self.height)
         self.queue_draw()
         self.menu_visible = False
 
@@ -313,7 +317,11 @@ class Sherlock(Gtk.Window, GObject.GObject):
             self.close()
 
         elif key == 'Left':
-            self.move_cursor_left()
+            #self.move_cursor_left()
+            idx = self.items[self.selected].subtitle.rfind('/')
+
+            self.update_query(self.items[self.selected].subtitle[:idx])
+
         elif key == 'Right':
             #self.move_cursor_right()
             self.update_query(self.items[self.selected].subtitle)

@@ -5,7 +5,7 @@
 #------------
 
 # Font
-fontname = 'Sans'
+fontname = 'Cantarell' #Sans'
 
 # Colours
 bkg_color = (0.92, 0.92, 0.92)  # #ebebeb
@@ -16,14 +16,6 @@ sel_color = (0.26, 0.50, 0.93)  # #427fed
 text_color    = (0.1, 0.1, 0.1) # #030303
 subtext_color = (0.5, 0.5, 0.5)
 seltext_color = (1.0, 1.0, 1.0)
-
-# Size
-width = 480
-height = 60
-item_height = 48
-lines = 5
-
-
 
 #--------
 # Plugins
