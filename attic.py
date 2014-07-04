@@ -49,7 +49,7 @@ class Attic:
                 self.attic[query][n][1] += 1
                 break
         else:
-            self.attic[query].append( [item_dict, 0] )
+            self.attic[query].append( [item_dict, 1] )
 
     def remove(self):
         pass
@@ -66,16 +66,14 @@ class Attic:
         if query not in self.attic:
             return False
 
-        histogram = list(self.attic[query])
-        print(histogram)
+        histogram = []
 
         total = 0
-        for b in histogram:
+        for b in self.attic[query]:
             total += b[1]
 
-        print(total)
-        for b in histogram:
-            b[1] = b[1] / total
+        for b in self.attic[query]:
+            histogram.append(b[1]/total)
 
         return histogram
 
