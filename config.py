@@ -1,4 +1,5 @@
 # sherlock config
+import os
 
 #------------
 # Theme/Style
@@ -21,6 +22,7 @@ seltext_color = (1.0, 1.0, 1.0)
 #--------
 # Plugins
 #--------
+
 # Base plugins
 # (Search these plugins if no keyword given)
 base_plugins = [
@@ -48,4 +50,4 @@ fallback_plugins = {
 #------------
 # Directories
 #------------
-cache_dir = '/home/fran/dev/sherlock/data'
+cache_dir = os.path.expanduser('~/.cache/sherlock/')

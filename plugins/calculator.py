@@ -17,7 +17,7 @@ def get_matches(query):
 
     if result:
         item = Item(title=result, subtitle='',
-                    category='text')
-        return [(item, 100), ]
+                    category='text', score=100)
+        return [item, ]
 
     return False

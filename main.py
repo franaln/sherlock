@@ -117,7 +117,8 @@ class Sherlock(Gtk.Window, GObject.GObject):
         max_items = min(self.lines, n_items)
 
         for i in range(max_items):
-            drawer.draw_item(cr, i, self.items[first_item+i], (first_item+i == self.selected))
+            drawer.draw_item(cr, i, self.items[first_item+i],
+                             (first_item+i == self.selected))
 
         if self.action_panel_visible:
             drawer.draw_action_panel(cr, self.actions, self.action_selected)
@@ -196,26 +197,28 @@ class Sherlock(Gtk.Window, GObject.GObject):
     def basic_search(self, query):
 
         for plugin in self.base_plugins:
-
             matches = plugin.get_matches(query)
             if matches:
                 self.items.extend(matches)
 
-            # for plugin in self.fallback_plugins.values():
-            #     matches = plugin.get_matches(query)
-            #     if matches:
-            #         self.items.extend(matches)
 
+        #for item in self.items:
+        #    print(item.title, item.score)
 
         # attic
         ## 1. Get similar queries in attic
         ## 2. Get sum histogram
         ## 3. Compute new score as (score * attic_score)/100
-        histogram = self.attic.get_histogram(query)
+        #histogram = self.attic.get_histogram(query)
+        #self.attic.sort_items(query, self.items)
 
+        #for item in self.items:
+        #    print(item.title, item.score)
         # Reorder using attic info
         #for item in self.items:
         #if histogram:
+
+        #    for b in histogram:
 
         #print(histogram)
             # total = 0
@@ -231,10 +234,10 @@ class Sherlock(Gtk.Window, GObject.GObject):
             #     print(item, count)
 
         # order matches by score
-        #self.items = sorted(self.items, key=lambda m: m[1], reverse=True)
+        self.items = sorted(self.items, key=lambda m: m.score, reverse=True)
 
         # remove score
-        #self.items = [ m[0] for m in self.items ]
+        #self.items = [ m[ for m in self.items ]
 
 
 

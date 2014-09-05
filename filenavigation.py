@@ -41,6 +41,6 @@ def get_matches(query):
 
 
     if query:
-        return [m[0] for m in utils.filter(query, items, key=lambda m: m.title)]
+        return [m for m in utils.filter(query, items, key=lambda m: m.title)]
 
     return items
