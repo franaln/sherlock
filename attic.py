@@ -77,5 +77,38 @@ class Attic:
 
         return histogram
 
+
+    def sort_items(self, query, items):
+
+        if query not in self.attic:
+            return False
+
+        #histogram = []
+
+        total = 0
+        for b in self.attic[query]:
+            total += b[1]
+
+        #for b in self.attic[query]:
+        #    histogram.append(b[1]/total)
+
+        #for item in items:
+
+        for sitem, count in self.attic[query]:
+
+            for item in items:
+                if item == sitem:
+                    item.score *= sitem[1]/total
+
+
+
+
+
+
+
+
+
+        pass
+
     def analise(self):
         pass
