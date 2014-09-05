@@ -6,7 +6,9 @@ try:
 except:
     import pickle
 
-attic_path = '/home/fran/dev/sherlock/data/attic'
+import config
+
+attic_path = os.path.join(config.cache_dir, 'attic')
 history_size = 100
 
 class Attic:
