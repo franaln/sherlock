@@ -20,6 +20,8 @@ class Attic:
             self.events = []
             self.attic = dict()
 
+        self.pos = -1
+
     def load(self):
         with open(attic_path, 'rb') as f:
             self.events = pickle.load(f)
@@ -33,7 +35,6 @@ class Attic:
     def add(self, query, item, action):
 
         timestamp = datetime.now()
-
         item_dict = item.to_dict()
 
         event = (timestamp, query, item_dict, action)
@@ -51,18 +52,16 @@ class Attic:
                 self.attic[query][n][1] += 1
                 break
         else:
-            self.attic[query].append( [item_dict, 1] )
+            self.attic[query].append([item_dict, 1])
 
     def remove(self):
         pass
 
-    def get_item(self):
-        for event in self.events:
-            yield event[2]
-
     def get_query(self):
-        for event in self.events:
-            yield event[1]
+        self.pos += 1
+        if self.pos >= len(self.events):
+            return None
+        return self.events[self.pos][1]
 
     def get_histogram(self, query):
         if query not in self.attic:
