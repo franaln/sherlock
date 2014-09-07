@@ -113,7 +113,8 @@ class Sherlock(Gtk.Window, GObject.GObject):
         first_item = 0 if (self.selected < self.lines) else \
                      (self.selected - self.lines + 1)
 
-        max_items = min(self.lines, len(self.items))
+        n_items = len(self.items)
+        max_items = min(self.lines, n_items)
 
         for i in range(max_items):
             drawer.draw_item(cr, i, self.items[first_item+i],
@@ -122,8 +123,9 @@ class Sherlock(Gtk.Window, GObject.GObject):
         if self.action_panel_visible:
             drawer.draw_action_panel(cr, self.actions, self.action_selected)
         else:
-            pass
-            #drawer.draw_scrollbar(cr)
+            if n_items > self.lines:
+                scroll_perc = self.selected/n_items
+                drawer.draw_scrollbar(cr, scroll_perc)
 
         return False
 
@@ -313,7 +315,6 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         elif key == 'Left':
             idx = self.items[self.selected].subtitle.rfind('/')
-
             self.update_query(self.items[self.selected].subtitle[:idx])
 
         elif key == 'Right':
@@ -321,17 +322,18 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         elif key == 'Down':
             if not self.menu_visible:
-                if not self.query:
-                    self.get_history()
-                self.show_menu()
+                #if not self.query:
+                #    self.get_history()
+                if self.items:
+                    self.show_menu()
             else:
                 self.select_down()
 
         elif key == 'Up':
-            if not self.query or self.selected == 0:
-                self.show_previous_query()
-            else:
-                self.select_up()
+            #if not self.query or self.selected == 0:
+            #    self.show_previous_query()
+            #else:
+            self.select_up()
 
         elif key == 'BackSpace':
             self.del_char()

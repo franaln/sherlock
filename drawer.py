@@ -5,11 +5,12 @@ from gi.repository import Pango, PangoCairo
 
 import config
 
-fontname = config.fontname
-bkg_color = config.bkg_color
-bar_color = config.bar_color
-sep_color = config.sep_color
-sel_color = config.sel_color
+fontname      = config.fontname
+bkg_color     = config.bkg_color
+bar_color     = config.bar_color
+sep_color     = config.sep_color
+sel_color     = config.sel_color
+scroll_color  = config.scroll_color
 text_color    = config.text_color
 subtext_color = config.subtext_color
 seltext_color = config.seltext_color
@@ -100,7 +101,6 @@ def draw_item(cr, pos, item, selected):
     # pos -> (x, y)
     item_height = 48
     base_y = 70 + pos * item_height
-    #middle_y = base_y + 0.5 * item_height
 
     if selected:
         draw_rect(cr, 0, base_y, 480, item_height, sel_color)
@@ -110,7 +110,6 @@ def draw_item(cr, pos, item, selected):
     text_h = item_height * 0.5
 
     if item.subtitle:
-
         if selected:
             draw_text(cr, 10, base_y+2, 400, text_h, item.title, seltext_color, 14)
         else:
@@ -144,8 +143,10 @@ def draw_item(cr, pos, item, selected):
         cr.stroke()
 
 
-def draw_scrollbar(cr):
-    pass
+def draw_scrollbar(cr, perc):
+    #draw_rect(cr, 476, 70, 4, 310, bkg_color)
+    #draw_rect(cr, 476, 70, 2, 20, text_color)
+    draw_rect(cr, 478, 70+220*perc, 2, 20, scroll_color)
 
 
 def draw_action_panel(cr, actions, selected):
@@ -164,7 +165,7 @@ def draw_action_panel(cr, actions, selected):
         if selected == pos:
             text_color = config.seltext_color
             draw_rect(cr, 336, base_y, 144,
-                      30, config.sel_color)
+                      30, sel_color)
 
         draw_text(cr, 346, base_y, 140, 30,
                   action[0], text_color, 10)
