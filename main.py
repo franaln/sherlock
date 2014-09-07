@@ -27,7 +27,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.lines = 5
 
         # plugins
-        self.plugins_dir = 'plugins' # FIX
+        self.plugins_dir = '/home/fran/dev/sherlock/plugins' # FIX
         self.base_plugins = []
         self.keyword_plugins = dict()
         self.fallback_plugins = dict()
@@ -133,7 +133,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
     #------
     def show_menu(self):
         self.resize(self.width,
-                    self.height + 48 * 5)
+                    self.height + 240)
         self.queue_draw()
         self.menu_visible = True
 
@@ -199,7 +199,6 @@ class Sherlock(Gtk.Window, GObject.GObject):
             if matches:
                 self.items.extend(matches)
 
-
         #for item in self.items:
         #    print(item.title, item.score)
 
@@ -207,9 +206,9 @@ class Sherlock(Gtk.Window, GObject.GObject):
         ## 1. Get similar queries in attic
         ## 2. Get sum histogram
         ## 3. Compute new score as (score * attic_score)/100
-        #histogram = self.attic.get_histogram(query)
+        histogram = self.attic.get_histogram(query)
         #self.attic.sort_items(query, self.items)
-
+        print (histogram)
         #for item in self.items:
         #    print(item.title, item.score)
         # Reorder using attic info
@@ -234,8 +233,6 @@ class Sherlock(Gtk.Window, GObject.GObject):
         # order matches by score
         self.items = sorted(self.items, key=lambda m: m.score, reverse=True)
 
-        # remove score
-        #self.items = [ m[ for m in self.items ]
 
 
 
@@ -315,15 +312,12 @@ class Sherlock(Gtk.Window, GObject.GObject):
             self.close()
 
         elif key == 'Left':
-            #self.move_cursor_left()
             idx = self.items[self.selected].subtitle.rfind('/')
 
             self.update_query(self.items[self.selected].subtitle[:idx])
 
         elif key == 'Right':
-            #self.move_cursor_right()
             self.update_query(self.items[self.selected].subtitle)
-
 
         elif key == 'Down':
             if not self.menu_visible:
@@ -332,6 +326,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
                 self.show_menu()
             else:
                 self.select_down()
+
         elif key == 'Up':
             if not self.query or self.selected == 0:
                 self.show_previous_query()
@@ -340,25 +335,26 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         elif key == 'BackSpace':
             self.del_char()
+
         elif 'Return' in key:
             self.actionate()
+
         elif 'Tab' in key:
             if self.items:
                 self.toggle_action_panel()
+
         elif 'Alt' in key or \
              'Control' in key:
             pass
+
         else:
             self.add_char(event.string)
 
     #---
     def show_previous_query(self):
-        try:
-            self.query_history
-        except AttributeError:
-            self.query_history =  self.attic.get_query()
-
-        self.update_query(next(self.query_history))
+        query = self.attic.get_query()
+        if query is not None:
+            self.update_query(query)
 
     def select_down(self):
         if self.action_panel_visible:

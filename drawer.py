@@ -131,8 +131,8 @@ def draw_item(cr, pos, item, selected):
     # Default action and more actions arrow
     if selected:
 
-        #     default_action_name = actions.actions[item.category][0][0]
-        draw_text(cr, 420, base_y, 60, item_height, 'test', seltext_color, 8)
+        # default_action_name = actions.actions[item.category][0][0]
+        # draw_text(cr, 420, base_y, 60, item_height, 'test', seltext_color, 8)
 
         # arrow
         cr.set_source_rgb(1, 1, 1)
@@ -142,19 +142,6 @@ def draw_item(cr, pos, item, selected):
         cr.rel_line_to(-4, -4)
         cr.set_line_join(cairo.LINE_JOIN_ROUND)
         cr.stroke()
-
-    # Colour
-    # if item.category == 'text':
-    #     color = config.txt_color
-    # elif item.category == 'app':
-    #     color = config.app_color
-    # elif item.category == 'uri':
-    #     color = config.uri_color
-    # elif item.category == 'cmd':
-    #     color = config.cmd_color
-    # print (item.category)
-    # draw_rect(cr, 0, base_y, 2,
-    #               config.item_height, color)
 
 
 def draw_scrollbar(cr):
