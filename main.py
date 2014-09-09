@@ -34,7 +34,6 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         # data
         self.query = ''
-        self.cursor = 0
 
         self.items = []
         self.selected = 0
@@ -236,8 +235,6 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.items = sorted(self.items, key=lambda m: m.score, reverse=True)
 
 
-
-
     # def get_history(self):
     #     history = self.attic.get_last()
     #     self.items = [Item.from_dict(h[2]) for h in history]
@@ -266,11 +263,12 @@ class Sherlock(Gtk.Window, GObject.GObject):
         # File navigation
         if query.startswith('/') or query.startswith('~/'):
             import filenavigation
-            self.items  = filenavigation.get_matches(query)
+            self.items = filenavigation.get_matches(query)
             self.file_navigation_mode = True
 
         # Keyword plugin
         elif query.startswith('!'):
+            self.file_navigation_mode = False
             query = query[1:]
             for keyword, name in self.keyword_plugins.items():
                 #print(keyword, query)
@@ -285,6 +283,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
                     break
 
         else:
+            self.file_navigation_mode = False
             self.basic_search(query)
 
         # fallback plugins
@@ -308,17 +307,21 @@ class Sherlock(Gtk.Window, GObject.GObject):
         key = Gdk.keyval_name(event.keyval)
 
         if event.state & Gdk.ModifierType.CONTROL_MASK:
+            if key == 'BackSpace':
+                self.update_query('')
             return
 
         if key == 'Escape':
             self.close()
 
         elif key == 'Left':
-            idx = self.items[self.selected].subtitle.rfind('/')
-            self.update_query(self.items[self.selected].subtitle[:idx])
+            if self.file_navigation_mode == True:
+                idx = self.items[self.selected].subtitle[:-1].rfind('/')
+                self.update_query(self.items[self.selected].subtitle[:idx])
 
         elif key == 'Right':
-            self.update_query(self.items[self.selected].subtitle)
+            if self.file_navigation_mode == True and self.selected >= 0:
+                self.update_query(self.items[self.selected].subtitle)
 
         elif key == 'Down':
             if not self.menu_visible:
@@ -393,13 +396,8 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
     def update_query(self, query):
         self.query = query
+        self.cursor = len(query)
         self.emit('query_changed', self.query)
-
-    def move_cursor_left(self):
-        pass
-
-    def move_cursor_right(self):
-        pass
 
 
     #-------------

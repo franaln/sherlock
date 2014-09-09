@@ -28,17 +28,10 @@ def get_matches(query):
         abspath = os.path.join(path, p)
 
         if os.path.isdir(abspath):
-            #title = '%s/' % p
             abspath += '/'
-        #else:
-        title = p
 
-        subtitle = abspath
-
-        it = Item(title, subtitle)
-
+        it = Item(p, abspath)
         items.append(it)
-
 
     if query:
         return [m for m in utils.filter(query, items, key=lambda m: m.title)]
