@@ -1,14 +1,11 @@
 # Calculator plugin
 
-import re
 import utils
 from item import Item
 
-name    = 'Calculator'
-
 def get_matches(query):
 
-    if not any(i in query for i in '+-*/%^'):
+    if not any(i in query for i in '+-*/%^)('):
         return False
 
     query = query.replace(' ', '').replace(',', '.')
