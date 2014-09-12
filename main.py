@@ -4,6 +4,7 @@ import os
 import sys
 import math
 import importlib
+import multiprocessing
 from gi.repository import Gtk, Gdk, GObject
 
 import config
@@ -12,6 +13,7 @@ import actions
 
 from attic import Attic
 from item import Item
+
 
 class Sherlock(Gtk.Window, GObject.GObject):
 
@@ -28,7 +30,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         # plugins
         self.plugins_dir = '/home/fran/dev/sherlock/plugins' # FIX
-        self.base_plugins = []
+        self.base_plugins = dict()
         self.keyword_plugins = dict()
         self.fallback_plugins = dict()
 
@@ -86,7 +88,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
         for name in config.base_plugins:
             plugin = self.import_plugin(name)
             if plugin is not None:
-                self.base_plugins.append(plugin)
+                self.base_plugins[name] = plugin
 
         for kw, name in config.keyword_plugins.items():
             if os.path.isfile(os.path.join(self.plugins_dir, '%s.py' % name)):
@@ -133,10 +135,10 @@ class Sherlock(Gtk.Window, GObject.GObject):
     # Menu
     #------
     def show_menu(self):
+        self.menu_visible = True
+        self.queue_draw()
         self.resize(self.width,
                     self.height + 240)
-        self.queue_draw()
-        self.menu_visible = True
 
     def hide_menu(self):
         self.resize(self.width, self.height)
@@ -193,12 +195,35 @@ class Sherlock(Gtk.Window, GObject.GObject):
     #--------
     # Search
     #--------
-    def basic_search(self, query):
+    def search(self, name, plugin, query, items):
+        items[name] = plugin.get_matches(query)
+        return
 
-        for plugin in self.base_plugins:
-            matches = plugin.get_matches(query)
+    def basic_search(self, query):
+        jobs = []
+        manager = multiprocessing.Manager()
+
+        items = manager.dict()
+
+        for name, plugin in self.base_plugins.items():
+            #     matches = plugin.get_matches(query)
+            #     if matches:
+            #         items.extend(matches)
+
+            p = multiprocessing.Process(target=self.search, args=(name, plugin, query, items))
+            jobs.append(p)
+            p.start()
+
+        for j in jobs:
+            j.join()
+
+        # while any([job.is_alive() for job in jobs]):
+        for matches in items.values():
             if matches:
                 self.items.extend(matches)
+            #self.items = sorted(self.items, key=lambda m: m.score, reverse=True)
+            #     self.show_menu()
+
 
         #for item in self.items:
         #    print(item.title, item.score)
@@ -207,9 +232,9 @@ class Sherlock(Gtk.Window, GObject.GObject):
         ## 1. Get similar queries in attic
         ## 2. Get sum histogram
         ## 3. Compute new score as (score * attic_score)/100
-        histogram = self.attic.get_histogram(query)
+        #histogram = self.attic.get_histogram(query)
         #self.attic.sort_items(query, self.items)
-        print (histogram)
+        #print (histogram)
         #for item in self.items:
         #    print(item.title, item.score)
         # Reorder using attic info
@@ -235,6 +260,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.items = sorted(self.items, key=lambda m: m.score, reverse=True)
 
 
+
     # def get_history(self):
     #     history = self.attic.get_last()
     #     self.items = [Item.from_dict(h[2]) for h in history]
@@ -250,7 +276,6 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.selected = 0
         self.file_navigation_mode = False
         self.hide_action_panel()
-
 
     def on_query_changed(self, widget, query):
 
@@ -273,7 +298,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
             for keyword, name in self.keyword_plugins.items():
                 #print(keyword, query)
                 if query.startswith(keyword):
-                    print(name)
+
                     plugin = self.import_plugin(name)
                     matches = plugin.get_matches(query.replace(keyword, ''))
 
@@ -293,12 +318,13 @@ class Sherlock(Gtk.Window, GObject.GObject):
         #         it = Item(title)
         #         self.items.append((it, 100))
 
+
         # show menu
         if self.items:
             self.show_menu()
         else:
             self.clear_menu()
-            return
+
 
     #--------------
     # Key press cb

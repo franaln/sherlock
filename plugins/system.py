@@ -3,16 +3,14 @@
 from item import Item
 import utils
 
-name = 'System'
-
 _cmds = (
-    Item('Lock',      'Lock the screen',      'cmd', 'slimlock'),
-    #Item('Logout',    '',                     'cmd', 'openbox --exit'),
-    Item('Logout',    '',                     'cmd', 'killall compiz'),
-    Item('Sleep',     'Suspend to RAM',       'cmd', 'systmectl suspend'),
-    Item('Power off', 'Power off the system', 'cmd', 'systemctl poweroff'),
-    Item('Reboot',    'Reboot the system',    'cmd', 'systemctl reboot'),
-    Item('Hibernate', 'Suspend to disk',      'cmd', 'systemctl hibernate'),
+    Item('Lock',      '',  'cmd', 'slimlock'),
+    Item('Logout',    '',  'cmd', 'openbox --exit'),
+    #Item('Logout',    '', 'cmd', 'killall compiz'),
+    Item('Sleep',     '',  'cmd', 'systmectl suspend'),
+    Item('Power off', '',  'cmd', 'systemctl poweroff'),
+    Item('Reboot',    '',  'cmd', 'systemctl reboot'),
+    Item('Hibernate', '',  'cmd', 'systemctl hibernate'),
 )
 
 
