@@ -9,7 +9,6 @@ def get_matches(query):
     query = os.path.expanduser(query)
 
     idx = query.rfind('/')
-
     if idx >= 0:
         path = query[:idx+1]
         query = query[idx+1:]
@@ -34,6 +33,6 @@ def get_matches(query):
         items.append(it)
 
     if query:
-        return [m for m in utils.filter(query, items, key=lambda m: m.title)]
+        return utils.filter(query, items, key=lambda m: m.title)
 
     return items

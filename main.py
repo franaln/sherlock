@@ -195,8 +195,8 @@ class Sherlock(Gtk.Window, GObject.GObject):
     #--------
     # Search
     #--------
-    def search(self, name, plugin, query, items):
-        items[name] = plugin.get_matches(query)
+    def search(self, name, query, items):
+        items[name] = self.base_plugins[name].get_matches(query)
         return
 
     def basic_search(self, query):
@@ -205,17 +205,23 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         items = manager.dict()
 
-        for name, plugin in self.base_plugins.items():
-            #     matches = plugin.get_matches(query)
-            #     if matches:
-            #         items.extend(matches)
+        for name in self.base_plugins.keys():
+            #matches = plugin.get_matches(query)
+            #     #     if matches:
+            #     #         items.extend(matches)
 
-            p = multiprocessing.Process(target=self.search, args=(name, plugin, query, items))
+            p = multiprocessing.Process(target=self.search, args=(name, query, items))
             jobs.append(p)
             p.start()
 
         for j in jobs:
             j.join()
+
+
+        #output = [p.get() for p in results]
+        #print(output)
+
+
 
         # while any([job.is_alive() for job in jobs]):
         for matches in items.values():
@@ -342,8 +348,8 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         elif key == 'Left':
             if self.file_navigation_mode == True:
-                idx = self.items[self.selected].subtitle[:-1].rfind('/')
-                self.update_query(self.items[self.selected].subtitle[:idx])
+                idx = self.query[:-1].rfind('/')
+                self.update_query(self.query[:idx]+'/')
 
         elif key == 'Right':
             if self.file_navigation_mode == True and self.selected >= 0:
