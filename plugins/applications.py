@@ -6,8 +6,6 @@ from gi.repository import Gio
 from item import Item
 import utils
 
-name = 'Applications'
-
 def _get_apps():
     apps = []
     for app in Gio.app_info_get_all():

@@ -7,6 +7,7 @@ test_queries = [
     'nau',  # --> (apps) nautilus
     'sle',  # --> (system) sleep
     '2+2',  # --> (calc) 4
+    'Susy', # --> (files) ~/Susy
 ]
 
 s = Sherlock()
@@ -15,7 +16,8 @@ s = Sherlock()
 for query in test_queries:
     print('---\nQuery: {}'.format(query))
 
-    s.do_search(None, query)
+    s.clear_search()
+    s.basic_search(query)
 
     if s.items:
         print('Matches:')

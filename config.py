@@ -34,9 +34,7 @@ base_plugins = [
 
 # Keyword plugins
 keyword_plugins = {
-    'display': 'screens',
     'disks': 'disks',
-    'test': 'disks',
 }
 
 # Fallback plugins
