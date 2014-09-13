@@ -197,7 +197,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
     #--------
     def start_file_navigation(self):
         import filenavigation
-        self.items = filenavigation.get_matches(query)
+        self.items = filenavigation.get_matches(self.query)
         self.file_navigation_mode = True
 
 
@@ -304,9 +304,8 @@ class Sherlock(Gtk.Window, GObject.GObject):
             self.file_navigation_mode = False
             query = query[1:]
             for keyword, name in self.keyword_plugins.items():
-                #print(keyword, query)
-                if query.startswith(keyword):
 
+                if query.startswith(keyword):
                     plugin = self.import_plugin(name)
                     matches = plugin.get_matches(query.replace(keyword, ''))
 
@@ -324,7 +323,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
             for text in self.fallback_plugins.keys():
                 title = text.replace('query', '\'%s\'' % query)
                 it = Item(title)
-                self.items.append((it, 100))
+                self.items.append(it)
 
         # show menu
         if self.items:
