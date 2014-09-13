@@ -29,7 +29,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.lines = 5
 
         # plugins
-        self.plugins_dir = '/home/fran/dev/sherlock/plugins' # FIX
+        self.plugins_dir = config.plugins_dir
         self.base_plugins = dict()
         self.keyword_plugins = dict()
         self.fallback_plugins = dict()
@@ -195,6 +195,16 @@ class Sherlock(Gtk.Window, GObject.GObject):
     #--------
     # Search
     #--------
+    def start_file_navigation(self):
+        import filenavigation
+        self.items = filenavigation.get_matches(query)
+        self.file_navigation_mode = True
+
+
+
+    #--------
+    # Search
+    #--------
     def search(self, name, query, items):
         items[name] = self.base_plugins[name].get_matches(query)
         return
@@ -216,11 +226,6 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         for j in jobs:
             j.join()
-
-
-        #output = [p.get() for p in results]
-        #print(output)
-
 
 
         # while any([job.is_alive() for job in jobs]):
@@ -273,7 +278,6 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
     # def show_previous_queries(self):
 
-    #     pass
 
     def clear_search(self):
         if self.items:
@@ -293,9 +297,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         # File navigation
         if query.startswith('/') or query.startswith('~/'):
-            import filenavigation
-            self.items = filenavigation.get_matches(query)
-            self.file_navigation_mode = True
+            self.start_file_navigation()
 
         # Keyword plugin
         elif query.startswith('!'):
@@ -318,12 +320,11 @@ class Sherlock(Gtk.Window, GObject.GObject):
             self.basic_search(query)
 
         # fallback plugins
-        # if not self.items:
-        #     for text in self.fallback_plugins.keys():
-        #         title = text.replace('query', '\'%s\'' % query)
-        #         it = Item(title)
-        #         self.items.append((it, 100))
-
+        if not self.items:
+            for text in self.fallback_plugins.keys():
+                title = text.replace('query', '\'%s\'' % query)
+                it = Item(title)
+                self.items.append((it, 100))
 
         # show menu
         if self.items:

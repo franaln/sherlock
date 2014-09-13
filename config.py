@@ -50,4 +50,5 @@ fallback_plugins = {
 #------------
 # Directories
 #------------
+plugins_dir = os.path.expanduser('~/dev/sherlock/plugins/')
 cache_dir = os.path.expanduser('~/.cache/sherlock/')
