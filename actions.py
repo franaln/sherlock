@@ -21,6 +21,7 @@ An action must be a function with match as argument
 import subprocess
 from gi.repository import Gtk, Gio, Gdk, Notify, Pango
 
+import utils
 
 def do_search_google():
     pass
@@ -28,9 +29,7 @@ def do_search_google():
 
 # Common actions
 def run_cmd(arg):
-    if isinstance(arg, str):
-        cmd_list = arg.split()
-    subprocess.call(cmd_list)
+    utils.run_cmd(arg)
 
 def run_app(arg):
     display = Gdk.Display.get_default()

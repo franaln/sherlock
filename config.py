@@ -34,9 +34,7 @@ base_plugins = [
 
 # Keyword plugins
 keyword_plugins = {
-    'display': 'screens',
     'disks': 'disks',
-    'test': 'disks',
 }
 
 # Fallback plugins
@@ -50,4 +48,5 @@ fallback_plugins = {
 #------------
 # Directories
 #------------
+plugins_dir = os.path.expanduser('~/dev/sherlock/plugins/')
 cache_dir = os.path.expanduser('~/.cache/sherlock/')

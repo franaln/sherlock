@@ -8,6 +8,7 @@ import multiprocessing
 from gi.repository import Gtk, Gdk, GObject
 
 import config
+import utils
 import drawer
 import actions
 
@@ -29,7 +30,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.lines = 5
 
         # plugins
-        self.plugins_dir = '/home/fran/dev/sherlock/plugins' # FIX
+        self.plugins_dir = config.plugins_dir
         self.base_plugins = dict()
         self.keyword_plugins = dict()
         self.fallback_plugins = dict()
@@ -137,8 +138,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
     def show_menu(self):
         self.menu_visible = True
         self.queue_draw()
-        self.resize(self.width,
-                    self.height + 240)
+        self.resize(self.width, self.height + 240)
 
     def hide_menu(self):
         self.resize(self.width, self.height)
@@ -169,7 +169,6 @@ class Sherlock(Gtk.Window, GObject.GObject):
     def hide_action_panel(self):
         if not self.action_panel_visible:
             return
-
         self.action_panel_visible = False
         self.actions = []
         self.action_selected = 0
@@ -186,8 +185,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
         action = actions.actions[match.category][self.action_selected][1]
 
         self.attic.add(self.query, match, None)
-
-        ret = action(match.arg)
+        action(match.arg)
 
         self.close()
 
@@ -195,38 +193,32 @@ class Sherlock(Gtk.Window, GObject.GObject):
     #--------
     # Search
     #--------
-    def search(self, name, plugin, query, items):
-        items[name] = plugin.get_matches(query)
+    def start_file_navigation(self):
+        import filenavigation
+        self.items = filenavigation.get_matches(self.query)
+        self.file_navigation_mode = True
+
+    def search_worker(self, name, query, items):
+        items[name] = self.base_plugins[name].get_matches(query)
         return
 
     def basic_search(self, query):
+
         jobs = []
         manager = multiprocessing.Manager()
-
         items = manager.dict()
 
-        for name, plugin in self.base_plugins.items():
-            #     matches = plugin.get_matches(query)
-            #     if matches:
-            #         items.extend(matches)
-
-            p = multiprocessing.Process(target=self.search, args=(name, plugin, query, items))
+        for name in self.base_plugins.keys():
+            p = multiprocessing.Process(target=self.search_worker, args=(name, query, items))
             jobs.append(p)
             p.start()
 
         for j in jobs:
             j.join()
 
-        # while any([job.is_alive() for job in jobs]):
         for matches in items.values():
             if matches:
                 self.items.extend(matches)
-            #self.items = sorted(self.items, key=lambda m: m.score, reverse=True)
-            #     self.show_menu()
-
-
-        #for item in self.items:
-        #    print(item.title, item.score)
 
         # attic
         ## 1. Get similar queries in attic
@@ -257,7 +249,8 @@ class Sherlock(Gtk.Window, GObject.GObject):
             #     print(item, count)
 
         # order matches by score
-        self.items = sorted(self.items, key=lambda m: m.score, reverse=True)
+        self.items  = utils.filter(query, self.items, key=lambda x: x.title)
+        #self.items = sorted(self.items, key=lambda m: m.score, reverse=True)
 
 
 
@@ -267,7 +260,6 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
     # def show_previous_queries(self):
 
-    #     pass
 
     def clear_search(self):
         if self.items:
@@ -287,18 +279,15 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         # File navigation
         if query.startswith('/') or query.startswith('~/'):
-            import filenavigation
-            self.items = filenavigation.get_matches(query)
-            self.file_navigation_mode = True
+            self.start_file_navigation()
 
         # Keyword plugin
         elif query.startswith('!'):
             self.file_navigation_mode = False
             query = query[1:]
             for keyword, name in self.keyword_plugins.items():
-                #print(keyword, query)
-                if query.startswith(keyword):
 
+                if query.startswith(keyword):
                     plugin = self.import_plugin(name)
                     matches = plugin.get_matches(query.replace(keyword, ''))
 
@@ -307,17 +296,17 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
                     break
 
+        # Basic search
         else:
             self.file_navigation_mode = False
             self.basic_search(query)
 
         # fallback plugins
-        # if not self.items:
-        #     for text in self.fallback_plugins.keys():
-        #         title = text.replace('query', '\'%s\'' % query)
-        #         it = Item(title)
-        #         self.items.append((it, 100))
-
+        if not self.items:
+            for text in self.fallback_plugins.keys():
+                title = text.replace('query', '\'%s\'' % query)
+                it = Item(title)
+                self.items.append(it)
 
         # show menu
         if self.items:
@@ -342,12 +331,12 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         elif key == 'Left':
             if self.file_navigation_mode == True:
-                idx = self.items[self.selected].subtitle[:-1].rfind('/')
-                self.update_query(self.items[self.selected].subtitle[:idx])
+                idx = self.query[:-1].rfind('/')
+                self.update_query(self.query[:idx]+'/')
 
         elif key == 'Right':
             if self.file_navigation_mode == True and self.selected >= 0:
-                self.update_query(self.items[self.selected].subtitle)
+                self.update_query(self.items[self.selected].arg)
 
         elif key == 'Down':
             if not self.menu_visible:
