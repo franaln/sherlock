@@ -138,8 +138,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
     def show_menu(self):
         self.menu_visible = True
         self.queue_draw()
-        self.resize(self.width,
-                    self.height + 240)
+        self.resize(self.width, self.height + 240)
 
     def hide_menu(self):
         self.resize(self.width, self.height)
@@ -170,7 +169,6 @@ class Sherlock(Gtk.Window, GObject.GObject):
     def hide_action_panel(self):
         if not self.action_panel_visible:
             return
-
         self.action_panel_visible = False
         self.actions = []
         self.action_selected = 0
@@ -187,8 +185,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
         action = actions.actions[match.category][self.action_selected][1]
 
         self.attic.add(self.query, match, None)
-
-        ret = action(match.arg)
+        action(match.arg)
 
         self.close()
 
@@ -201,44 +198,27 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.items = filenavigation.get_matches(self.query)
         self.file_navigation_mode = True
 
-
-
-    #--------
-    # Search
-    #--------
-    def search(self, name, query, items):
+    def search_worker(self, name, query, items):
         items[name] = self.base_plugins[name].get_matches(query)
         return
 
     def basic_search(self, query):
+
         jobs = []
         manager = multiprocessing.Manager()
-
         items = manager.dict()
 
         for name in self.base_plugins.keys():
-            #matches = plugin.get_matches(query)
-            #     #     if matches:
-            #     #         items.extend(matches)
-
-            p = multiprocessing.Process(target=self.search, args=(name, query, items))
+            p = multiprocessing.Process(target=self.search_worker, args=(name, query, items))
             jobs.append(p)
             p.start()
 
         for j in jobs:
             j.join()
 
-
-        # while any([job.is_alive() for job in jobs]):
         for matches in items.values():
             if matches:
                 self.items.extend(matches)
-            #self.items = sorted(self.items, key=lambda m: m.score, reverse=True)
-            #     self.show_menu()
-
-
-        #for item in self.items:
-        #    print(item.title, item.score)
 
         # attic
         ## 1. Get similar queries in attic
@@ -316,6 +296,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
                     break
 
+        # Basic search
         else:
             self.file_navigation_mode = False
             self.basic_search(query)
