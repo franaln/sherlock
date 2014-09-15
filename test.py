@@ -21,6 +21,6 @@ for query in test_queries:
 
     if s.items:
         print('Matches:')
-        print(', '.join([i.title for i in s.items]))
+        print(', '.join([i.title for i in s.items[:10]]))
     else:
         print('No matches!')

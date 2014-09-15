@@ -86,17 +86,6 @@ def clear_cache():
 # Filter utils #
 #--------------#
 
-# Match filter flags
-MATCH_STARTSWITH = 1
-MATCH_CAPITALS = 2
-MATCH_ATOM = 4
-MATCH_INITIALS_STARTSWITH = 8
-MATCH_INITIALS_CONTAIN = 16
-MATCH_INITIALS = 24
-MATCH_SUBSTRING = 32
-MATCH_ALLCHARS = 64
-MATCH_ALL = 127
-
 # Anchor characters in a name
 INITIALS = string.ascii_uppercase + string.digits
 
@@ -125,8 +114,7 @@ def distance(str1, str2):
 
 
 def filter(query, items, key=lambda x: x, ascending=False,
-           include_score=True, min_score=0, max_results=0,
-           match_on=MATCH_ALL ^ MATCH_ALLCHARS):
+           min_score=0, max_results=0):
     """ search filter. Returns list of items that match query.
     (Taken from Alfred workflow)
 
@@ -137,20 +125,6 @@ def filter(query, items, key=lambda x: x, ascending=False,
     * ascending: True to get worst matches first
     * min_score: Ignore results with a score lower than this if is non-zero
     * max_results
-    * match_on: Filter option flags.
-
-    Matching rules
-    --------------
-    By default, filter uses all of the following flags in this order
-    1. MATCH_STARTSWITH: Item search key startswith query (case-insensitive).
-    2. MATCH_CAPITALS: The list of capital letters in item search key starts with query (query may be lower-case). E.g., of would match OmniFocus, gc would match Google Chrome
-    3. MATCH_ATOM: Search key is split into "atoms" on non-word characters (.,-,' etc.). Matches if query is one of these atoms (case-insensitive).
-    4. MATCH_INITIALS_STARTSWITH: Initials are the first characters of the above-described "atoms" (case-insensitive).
-    5. MATCH_INITIALS_CONTAIN: query is a substring of the above-described initials.
-    6. MATCH_INITIALS: Combination of (4) and (5).
-    7. MATCH_SUBSTRING: Match if query is a substring of item search key (case-insensitive).
-    8. MATCH_ALLCHARS: Matches if all characters in query appear in item search key in the same order (case-insensitive).
-    9. MATCH_ALL: Combination of all the above. The default.
     """
 
     results = {}
@@ -165,74 +139,67 @@ def filter(query, items, key=lambda x: x, ascending=False,
     search = re.compile(pattern, re.IGNORECASE).search
 
     for i, item in enumerate(items):
-        rule = None
         score = 0
         value = key(item)
 
-        # pre-filter any items that do not contain all characters of 'query'
-        # to save on running several more expensive tests
-        if not queryset <= set(value.lower()):
-            continue
+        if item.no_filter:
+            score = 100.0
+        else:
+            # pre-filter any items that do not contain all characters of 'query'
+            # to save on running several more expensive tests
+            if not queryset <= set(value.lower()):
+                continue
 
-        # item starts with query
-        if (match_on & MATCH_STARTSWITH and
-            value.lower().startswith(query)):
+        # item starts with query (case-insensitive)
+        if value.lower().startswith(query):
             score = 100.0 - (len(value) / len(query))
 
-        if not score and match_on & MATCH_CAPITALS:
-            # query matches capitalised letters in item,
-            # e.g. of = OmniFocus
-            initials = ''.join([c for c in value if c in INITIALS])
-            if initials.lower().startswith(query):
-                score = 100.0 - (len(initials) / len(query))
+            if not score:
+                # query matches capitalised letters in item,
+                # e.g. of = OmniFocus
+                initials = ''.join([c for c in value if c in INITIALS])
+                if initials.lower().startswith(query):
+                    score = 100.0 - (len(initials) / len(query))
 
         if not score:
-            if (match_on & MATCH_ATOM or
-                    match_on & MATCH_INITIALS_CONTAIN or
-                    match_on & MATCH_INITIALS_STARTSWITH):
-                # split the item into "atoms", i.e. words separated by
-                # spaces or other non-word characters
-                atoms = [s.lower() for s in split_on_delimiters(value)]
-                # print('atoms : %s  -->  %s' % (value, atoms))
-                # initials of the atoms
-                initials = ''.join([s[0] for s in atoms if s])
+            # split the item into "atoms", i.e. words separated by
+            # spaces or other non-word characters
+            atoms = [s.lower() for s in split_on_delimiters(value)]
+            # print('atoms : %s  -->  %s' % (value, atoms))
+            # initials of the atoms
+            initials = ''.join([s[0] for s in atoms if s])
 
-            if match_on & MATCH_ATOM:
-                # is 'query' one of the atoms in item?
-                # similar to substring, but scores more highly, as it's
-                # a word within the item
-                if query in atoms:
-                    score = 100.0 - (len(value) / len(query))
+            # is 'query' one of the atoms in item?
+            # similar to substring, but scores more highly, as it's
+            # a word within the item
+            if query in atoms:
+                score = 100.0 - (len(value) / len(query))
 
         if not score:
             # 'query' matches start (or all) of the initials of the
             # atoms, e.g. 'himym' matches 'How I Met Your Mother'
             # *and* 'how i met your mother' (the capitals rule only
             # matches the former)
-            if (match_on & MATCH_INITIALS_STARTSWITH and
-                    initials.startswith(query)):
+            if initials.startswith(query):
                 score = 100.0 - (len(initials) / len(query))
 
             # 'query' is a substring of initials, e.g. 'doh' matches
             # 'The Dukes of Hazzard'
-            elif (match_on & MATCH_INITIALS_CONTAIN and
-                    query in initials):
+            elif query in initials:
                 score = 95.0 - (len(initials) / len(query))
 
         if not score:
             # 'query' is a substring of item
-            if match_on & MATCH_SUBSTRING and query in value.lower():
-                    score = 90.0 - (len(value) / len(query))
+            if query in value.lower():
+                score = 90.0 - (len(value) / len(query))
 
         if not score:
             # finally, assign a score based on how close together the
             # characters in query are in item.
-            if match_on & MATCH_ALLCHARS:
-                match = search(value)
-                if match:
-                    score = 100.0 / ((1 + match.start()) *
-                                     (match.end() - match.start() + 1))
-                    rule = MATCH_ALLCHARS
+            match = search(value)
+            if match:
+                score = 100.0 / ((1 + match.start()) *
+                                 (match.end() - match.start() + 1))
 
         if min_score and score < min_score:
             continue

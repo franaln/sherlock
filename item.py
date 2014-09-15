@@ -2,12 +2,13 @@ import os
 
 class Item(object):
 
-    def __init__(self, title, subtitle='', category='text', arg=None, score=0.0):
+    def __init__(self, title, subtitle='', category='text', arg=None, score=0.0, no_filter=False):
         self.title = title
         self.subtitle = subtitle
         self.category = category
         self.arg = arg
         self.score = score
+        self.no_filter = no_filter
 
         if category == 'text' and arg is None:
             self.arg = self.title

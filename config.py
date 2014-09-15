@@ -40,8 +40,8 @@ keyword_plugins = {
 # Fallback plugins
 # (Use it when there are no other matches)
 fallback_plugins = {
-    'Search /home for query': 'calculator',
-    'Search google for query': 'calculator',
+    #'Search /home for query': 'calculator',
+    #'Search google for query': 'calculator',
 }
 
 
