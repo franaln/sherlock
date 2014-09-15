@@ -29,8 +29,4 @@ def get_matches(query):
     if not query:
         return False
 
-    all_apps = utils.get_cached_data('apps', _get_apps, max_age=600)
-
-    matches = utils.filter(query, all_apps, key=_search_key)
-
-    return matches
+    return utils.get_cached_data('apps', _get_apps, max_age=600)

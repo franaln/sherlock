@@ -3,7 +3,7 @@
 import os
 import time
 import utils
-from item import Item
+from item import ItemUri
 
 
 def update_db(cache_path):
@@ -13,8 +13,6 @@ def get_cache_data_age(cache_path):
     if not os.path.exists(cache_path):
         return 0
     return time.time() - os.stat(cache_path).st_mtime
-
-
 
 def get_matches(query):
 
@@ -26,7 +24,7 @@ def get_matches(query):
     cache_path = utils.get_cachefile('files.cache')
 
     age = utils.get_cached_data_age('files')
-    if age > 60 or not os.path.exists(cache_path):
+    if age > 300 or not os.path.exists(cache_path):
         print('updating')
         update_db(cache_path)
 
@@ -36,11 +34,7 @@ def get_matches(query):
         if '/.' in f:
             continue
 
-        item = Item(
-            os.path.basename(f),
-            f,
-            'uri',
-        )
+        item = ItemUri(f)
         matches.append(item)
 
     return matches

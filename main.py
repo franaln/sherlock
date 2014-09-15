@@ -8,6 +8,7 @@ import multiprocessing
 from gi.repository import Gtk, Gdk, GObject
 
 import config
+import utils
 import drawer
 import actions
 
@@ -268,7 +269,8 @@ class Sherlock(Gtk.Window, GObject.GObject):
             #     print(item, count)
 
         # order matches by score
-        self.items = sorted(self.items, key=lambda m: m.score, reverse=True)
+        self.items  = utils.filter(query, self.items, key=lambda x: x.title)
+        #self.items = sorted(self.items, key=lambda m: m.score, reverse=True)
 
 
 
@@ -353,7 +355,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         elif key == 'Right':
             if self.file_navigation_mode == True and self.selected >= 0:
-                self.update_query(self.items[self.selected].subtitle)
+                self.update_query(self.items[self.selected].arg)
 
         elif key == 'Down':
             if not self.menu_visible:
