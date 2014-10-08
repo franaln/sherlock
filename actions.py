@@ -47,26 +47,10 @@ def run_app_in_terminal(arg):
     # run_cmd(['/bin/bash', arg
 
 def open_uri(arg):
-    f = Gio.File.new_for_uri(arg)
-
-    app_info = f.query_default_handler(None)
-    files = []
-    files.append(f)
-
-    display = Gdk.Display.get_default ();
-    app_info.launch(files, display.get_app_launch_context())
+    run_cmd('setsid rifle '+arg)
 
 def open_folder(arg):
-    f = Gio.File.new_for_uri(arg)
-    f = f.get_parent()
-
-    app_info = f.query_default_handler(None)
-
-    files = []
-    files.append(f)
-
-    display = Gdk.Display.get_default()
-    app_info.launch(files, display.get_app_launch_context())
+    run_cmd('setsid nautilus '+arg.split('/')[0])
 
 
 # Outputs
