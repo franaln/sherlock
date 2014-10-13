@@ -1,7 +1,7 @@
 # Calculator plugin
 
 import utils
-from item import Item
+from items import Item
 
 def get_matches(query):
 

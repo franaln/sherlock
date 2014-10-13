@@ -90,6 +90,7 @@ class Attic:
         for b in self.attic[query]:
             total += b[1]
 
+        print (total)
         #for b in self.attic[query]:
         #    histogram.append(b[1]/total)
 
@@ -99,8 +100,9 @@ class Attic:
 
             for item in items:
                 if item == sitem:
+                    print (item.score)
                     item.score *= sitem[1]/total
-
+                    print (item.score)
 
 
 

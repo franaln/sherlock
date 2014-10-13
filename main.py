@@ -11,9 +11,8 @@ import config
 import utils
 import drawer
 import actions
-
+import items as items_
 from attic import Attic
-from item import Item
 
 
 class Sherlock(Gtk.Window, GObject.GObject):
@@ -68,7 +67,6 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         self.show_all()
 
-        # load plugins
         self.load_plugins()
 
 
@@ -88,6 +86,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         for name in config.base_plugins:
             plugin = self.import_plugin(name)
+
             if plugin is not None:
                 self.base_plugins[name] = plugin
 
@@ -124,10 +123,6 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         if self.action_panel_visible:
             drawer.draw_action_panel(cr, self.actions, self.action_selected)
-        else:
-            if n_items > self.lines:
-                scroll_perc = self.selected/n_items
-                drawer.draw_scrollbar(cr, scroll_perc)
 
         return False
 
@@ -156,7 +151,8 @@ class Sherlock(Gtk.Window, GObject.GObject):
     #--------------
     def show_action_panel(self):
         match = self.items[self.selected]
-        match_actions = actions.actions[match.category]
+        print(match.category)
+        match_actions = items_.actions[match.category]
 
         if len(match_actions) < 2:
             return
@@ -182,22 +178,67 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
     def actionate(self):
         match = self.items[self.selected]
-        action = actions.actions[match.category][self.action_selected][1]
+        action_name = items_.actions[match.category][self.action_selected][1]
 
+        print(match, action_name, match.arg)
         self.attic.add(self.query, match, None)
+
+        if action_name == 'explore':
+            self.update_query(match.arg)
+            return
+
+        action = getattr(actions, action_name)
+
         action(match.arg)
 
         self.close()
 
 
+    #-----------------
+    # File navigation
+    #-----------------
+    def file_navigation(self, query):
+        self.file_navigation_mode = True
+
+        query = os.path.expanduser(query)
+
+        idx = query.rfind('/')
+        if idx >= 0:
+            path = query[:idx+1]
+            query = query[idx+1:]
+        else:
+            path = query
+            query = ''
+
+        path_content = os.listdir(path)
+
+        items  = []
+        for p in path_content:
+            if p.startswith('.'):
+                continue
+
+            abspath = os.path.join(path, p)
+
+            it = items_.ItemUri(abspath)
+            items.append(it)
+
+        self.items = items
+
+        return query
+
+    def file_navigation_cd(self):
+        self.update_query(self.items[self.selected].arg)
+
+    def file_navigation_back(self):
+        idx = self.query[:-1].rfind('/')
+        self.update_query(self.query[:idx]+'/')
+
+    def explore(self, arg):
+        self.file_navigation(arg)
+
     #--------
     # Search
     #--------
-    def start_file_navigation(self):
-        import filenavigation
-        self.items = filenavigation.get_matches(self.query)
-        self.file_navigation_mode = True
-
     def search_worker(self, name, query, items):
         items[name] = self.base_plugins[name].get_matches(query)
         return
@@ -220,47 +261,6 @@ class Sherlock(Gtk.Window, GObject.GObject):
             if matches:
                 self.items.extend(matches)
 
-        # attic
-        ## 1. Get similar queries in attic
-        ## 2. Get sum histogram
-        ## 3. Compute new score as (score * attic_score)/100
-        #histogram = self.attic.get_histogram(query)
-        #self.attic.sort_items(query, self.items)
-        #print (histogram)
-        #for item in self.items:
-        #    print(item.title, item.score)
-        # Reorder using attic info
-        #for item in self.items:
-        #if histogram:
-
-        #    for b in histogram:
-
-        #print(histogram)
-            # total = 0
-            # for item, count in histogram:
-            #     total += count
-
-            #     for item in self.items:
-
-            #     print(item, count)
-
-            # for item, count in histogram:
-            #     total += count
-            #     print(item, count)
-
-        # order matches by score
-        self.items  = utils.filter(query, self.items, key=lambda x: x.title)
-        #self.items = sorted(self.items, key=lambda m: m.score, reverse=True)
-
-
-
-    # def get_history(self):
-    #     history = self.attic.get_last()
-    #     self.items = [Item.from_dict(h[2]) for h in history]
-
-    # def show_previous_queries(self):
-
-
     def clear_search(self):
         if self.items:
             del self.items[:]
@@ -279,7 +279,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         # File navigation
         if query.startswith('/') or query.startswith('~/'):
-            self.start_file_navigation()
+            query = self.file_navigation(query)
 
         # Keyword plugin
         elif query.startswith('!'):
@@ -288,8 +288,15 @@ class Sherlock(Gtk.Window, GObject.GObject):
             for keyword, name in self.keyword_plugins.items():
 
                 if query.startswith(keyword):
-                    plugin = self.import_plugin(name)
-                    matches = plugin.get_matches(query.replace(keyword, ''))
+
+                    query = query[len(keyword):].strip()
+
+                    if isinstance(name, str):
+                        self.keyword_plugins[keyword] = self.import_plugin(name)
+                    else:
+                        pass
+
+                    matches = self.keyword_plugins[keyword].get_matches(query)
 
                     if matches:
                         self.items.extend(matches)
@@ -307,6 +314,10 @@ class Sherlock(Gtk.Window, GObject.GObject):
                 title = text.replace('query', '\'%s\'' % query)
                 it = Item(title)
                 self.items.append(it)
+
+        # order matches by score
+        if query:
+            self.items = utils.filter(query, self.items, key=lambda x: x.title)
 
         # show menu
         if self.items:
@@ -330,13 +341,12 @@ class Sherlock(Gtk.Window, GObject.GObject):
             self.close()
 
         elif key == 'Left':
-            if self.file_navigation_mode == True:
-                idx = self.query[:-1].rfind('/')
-                self.update_query(self.query[:idx]+'/')
+            if self.file_navigation_mode:
+                self.file_navigation_back()
 
         elif key == 'Right':
-            if self.file_navigation_mode == True and self.selected >= 0:
-                self.update_query(self.items[self.selected].arg)
+            if self.file_navigation_mode and self.selected >= 0:
+                self.file_navigation_cd()
 
         elif key == 'Down':
             if not self.menu_visible:
@@ -348,10 +358,10 @@ class Sherlock(Gtk.Window, GObject.GObject):
                 self.select_down()
 
         elif key == 'Up':
-            #if not self.query or self.selected == 0:
-            #    self.show_previous_query()
-            #else:
-            self.select_up()
+            if not self.query:
+                self.show_previous_query()
+            else:
+                self.select_up()
 
         elif key == 'BackSpace':
             self.del_char()
@@ -424,3 +434,46 @@ class Sherlock(Gtk.Window, GObject.GObject):
     def close(self, *args):
         self.attic.save()
         Gtk.main_quit()
+
+
+
+    #     print('#####')
+    #     #for item in self.items:
+    #     #    print(item.title, item.score)
+    #     # attic
+    #     ## 1. Get similar queries in attic
+    #     ## 2. Get sum histogram
+    #     ## 3. Compute new score as (score * attic_score)/100
+    #     #histogram = self.attic.get_histogram(query)
+    #     self.attic.sort_items(query, self.items)
+    #     #print (histogram)
+    #     # Reorder using attic info
+    #     #for item in self.items:
+    #     #if histogram:
+
+    #     #    for b in histogram:
+
+    #     #print(histogram)
+    #         # total = 0
+    #         # for item, count in histogram:
+    #         #     total += count
+
+    #         #     for item in self.items:
+
+    #         #     print(item, count)
+
+    #         # for item, count in histogram:
+    #         #     total += count
+    #         #     print(item, count)
+
+    #     #self.items = sorted(self.items, key=lambda m: m.score, reverse=True)
+    #     #print('---')
+    #     #for item in self.items:
+    #     #    print(item.title, item.score)
+    #     print('#####')
+
+
+
+    # # def get_history(self):
+    # #     history = self.attic.get_last()
+    # #     self.items = [Item.from_dict(h[2]) for h in history]

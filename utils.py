@@ -92,7 +92,6 @@ INITIALS = string.ascii_uppercase + string.digits
 # Split on non-letters, numbers
 split_on_delimiters = re.compile('[^a-zA-Z0-9]').split
 
-
 def distance(str1, str2):
     """ return the Levenshtein distance
     between two strings """
@@ -111,7 +110,6 @@ def distance(str1, str2):
                           d[i-1][j-1]+(not str1[i-1] == str2[j-1]))
 
     return d[len(str1)][len(str2)]
-
 
 def filter(query, items, key=lambda x: x, ascending=False,
            min_score=0, max_results=0):

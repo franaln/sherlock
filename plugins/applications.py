@@ -3,7 +3,7 @@
 # FIX: i want to eliminate th gtk dependecies.
 from gi.repository import Gio
 
-from item import Item
+from items import Item
 import utils
 
 def _get_apps():

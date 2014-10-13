@@ -52,6 +52,9 @@ def open_uri(arg):
 def open_folder(arg):
     run_cmd('setsid nautilus '+arg.split('/')[0])
 
+def explore(arg):
+    pass
+
 
 # Outputs
 def copy_to_clipboard(arg):
@@ -164,28 +167,3 @@ def show_qrcode(match):
     # image.show()
     # window.add(image)
     # ctx.environment.present_window(window)
-
-
-actions = {
-
-    'app': [
-        ('Run', run_app),
-        ('Run in terminal', run_app_in_terminal),
-    ],
-
-    'uri': [
-        ('Open', open_uri),
-        ('Open folder', open_folder),
-    ],
-
-    'cmd': [
-        ('Run', run_cmd),
-    ],
-
-    'text': [
-        ('Copy', copy_to_clipboard),
-        ('Large type', show_large_type),
-        ('Show QR code', show_qrcode),
-    ],
-
-}

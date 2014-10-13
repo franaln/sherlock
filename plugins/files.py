@@ -1,40 +1,25 @@
 # Files plugin
 
 import os
-import time
 import utils
-from item import ItemUri
+from items import ItemUri
 
+def _get_files():
+    files = []
 
-def update_db(cache_path):
-    utils.run_cmd('updatedb -l 0 -U %s -o %s' % (os.path.expanduser('~/'), cache_path))
+    for root, dirnames, filenames in os.walk("/home/fran/Dropbox"):
+        for fn in filenames+dirnames:
+            path = os.path.join(root, fn)
 
-def get_cache_data_age(cache_path):
-    if not os.path.exists(cache_path):
-        return 0
-    return time.time() - os.stat(cache_path).st_mtime
+            if '/.' in path:
+                continue
+
+            item = ItemUri(path)
+            files.append(item)
+
+    return files
+
 
 def get_matches(query):
 
-    if not query or len(query) < 3:
-        return False
-
-    matches = []
-
-    cache_path = utils.get_cachefile('files.cache')
-
-    age = utils.get_cached_data_age('files')
-    if age > 300 or not os.path.exists(cache_path):
-        print('updating')
-        update_db(cache_path)
-
-    locate_output = utils.get_cmd_output(['locate', '-ei', '-d', cache_path, query])
-
-    for f in locate_output.split('\n'):
-        if '/.' in f:
-            continue
-
-        item = ItemUri(f)
-        matches.append(item)
-
-    return matches
+    return utils.get_cached_data('files', _get_files, max_age=1000)

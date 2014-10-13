@@ -4,13 +4,14 @@ import cairo
 from gi.repository import Pango, PangoCairo
 
 import config
+import items
 
 fontname      = config.fontname
 bkg_color     = config.bkg_color
 bar_color     = config.bar_color
 sep_color     = config.sep_color
 sel_color     = config.sel_color
-scroll_color  = config.scroll_color
+scroll_color  = config.scl_color
 text_color    = config.text_color
 subtext_color = config.subtext_color
 seltext_color = config.seltext_color
@@ -92,10 +93,10 @@ def draw_bar(cr, query):
 
 def draw_item(cr, pos, item, selected):
     """
-    ---------------------------------------
-    | TEXT                  |             |
-    | subtext               |             |
-    ---------------------------------------
+    ---------------------------------
+    | TEXT                  |       |
+    | subtext               |       |
+    ---------------------------------
     """
 
     # pos -> (x, y)
@@ -130,8 +131,8 @@ def draw_item(cr, pos, item, selected):
     # Default action and more actions arrow
     if selected:
 
-        # default_action_name = actions.actions[item.category][0][0]
-        # draw_text(cr, 420, base_y, 60, item_height, 'test', seltext_color, 8)
+        action_name = items.actions[item.category][0][0]
+        draw_text(cr, 420, base_y, 60, item_height, action_name, seltext_color, 8)
 
         # arrow
         cr.set_source_rgb(1, 1, 1)
@@ -144,9 +145,7 @@ def draw_item(cr, pos, item, selected):
 
 
 def draw_scrollbar(cr, perc):
-    #draw_rect(cr, 476, 70, 4, 310, bkg_color)
-    #draw_rect(cr, 476, 70, 2, 20, text_color)
-    draw_rect(cr, 478, 70+220*perc, 2, 20, scroll_color)
+    draw_rect(cr, 478, 70+220*perc, 2, 20, scl_color)
 
 
 def draw_action_panel(cr, actions, selected):
