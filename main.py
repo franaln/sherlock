@@ -151,7 +151,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
     #--------------
     def show_action_panel(self):
         match = self.items[self.selected]
-        print(match.category)
+
         match_actions = items_.actions[match.category]
 
         if len(match_actions) < 2:

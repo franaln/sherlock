@@ -29,12 +29,12 @@ base_plugins = [
     'applications',
     'system',
     'calculator',
+    'files',
 ]
 
 # Keyword plugins
 keyword_plugins = {
     'disks': 'disks',
-    'find': 'files2',
 }
 
 # Fallback plugins
