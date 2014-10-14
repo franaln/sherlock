@@ -1,6 +1,6 @@
 # System commands plugin
 
-from item import Item
+from items import Item
 import utils
 
 _cmds = (

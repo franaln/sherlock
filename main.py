@@ -77,6 +77,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
         try:
             plugin = importlib.import_module(name)
         except ImportError:
+            print('error loading plugin %s. continue ...' % name)
             return None
         return plugin
 
@@ -180,7 +181,6 @@ class Sherlock(Gtk.Window, GObject.GObject):
         match = self.items[self.selected]
         action_name = items_.actions[match.category][self.action_selected][1]
 
-        print(match, action_name, match.arg)
         self.attic.add(self.query, match, None)
 
         if action_name == 'explore':
@@ -317,7 +317,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         # order matches by score
         if query:
-            self.items = utils.filter(query, self.items, key=lambda x: x.title)
+            self.items = utils.filter(query, self.items, key=lambda x: x.title, min_score=60.0)
 
         # show menu
         if self.items:
