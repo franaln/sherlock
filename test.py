@@ -17,10 +17,10 @@ for query in test_queries:
     print('---\nQuery: {}'.format(query))
 
     s.clear_search()
-    s.basic_search(query)
+    s.on_query_changed(None, query)
 
     if s.items:
         print('Matches:')
-        print(', '.join([i.title for i in s.items[:10]]))
+        print(', '.join(['%s (%s)' % (i.title, i.score) for i in s.items[:10]]))
     else:
         print('No matches!')
