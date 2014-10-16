@@ -317,7 +317,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         # order matches by score
         if query:
-            self.items = utils.filter(query, self.items, key=lambda x: x.title, min_score=60.0)
+            self.items = utils.filter(query, self.items, key=lambda x: x.title, min_score=60.0, max_results=50)
 
         # show menu
         if self.items:
