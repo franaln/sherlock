@@ -158,7 +158,7 @@ def filter(query, items, key=lambda x: x, ascending=False,
             # e.g. of = OmniFocus
             initials = ''.join([c for c in value if c in INITIALS])
             if initials.lower().startswith(query):
-                score = 100.0 - (len(initials) / query_len)
+                score = 99.0 - (len(initials) / query_len)
 
         if not score:
             # split the item into "atoms", i.e. words separated by
@@ -172,7 +172,7 @@ def filter(query, items, key=lambda x: x, ascending=False,
             # similar to substring, but scores more highly, as it's
             # a word within the item
             if query in atoms:
-                score = 100.0 - (len(value) / query_len)
+                score = 98.0 - (len(value) / query_len)
 
         if not score:
             # 'query' matches start (or all) of the initials of the
@@ -180,7 +180,7 @@ def filter(query, items, key=lambda x: x, ascending=False,
             # *and* 'how i met your mother' (the capitals rule only
             # matches the former)
             if initials.startswith(query):
-                score = 100.0 - (len(initials) / query_len)
+                score = 97.0 - (len(initials) / query_len)
 
             # 'query' is a substring of initials, e.g. 'doh' matches
             # 'The Dukes of Hazzard'
@@ -197,7 +197,7 @@ def filter(query, items, key=lambda x: x, ascending=False,
             # characters in query are in item.
             match = search(value)
             if match:
-                score = 100.0 / ((1 + match.start()) *
+                score = 85.0 / ((1 + match.start()) *
                                  (match.end() - match.start() + 1))
 
         if min_score and score < min_score:
