@@ -3,9 +3,10 @@
 import os
 import sys
 import math
+import time
 import importlib
 import multiprocessing
-from gi.repository import Gtk, Gdk, GObject
+from gi.repository import Gtk, Gdk, GObject, GLib
 
 import config
 import utils
@@ -69,6 +70,9 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         self.load_plugins()
 
+        self.counter = 0
+        self.query_updated = False
+        GLib.timeout_add(250, self.check_query)
 
     #---------
     # Plugins
@@ -270,7 +274,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.hide_action_panel()
 
     def on_query_changed(self, widget, query):
-
+        print('searching')
         self.clear_search()
 
         if not query:
@@ -410,19 +414,28 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.queue_draw()
 
     def add_char(self, char):
+        self.counter = time.time()
+        self.query_updated = True
         self.query = '%s%s' % (self.query, char)
         self.queue_draw()
-        self.emit('query_changed', self.query)
 
     def del_char(self):
+        self.counter = time.time()
+        self.query_updated = True
         self.query = self.query[:-1]
         self.queue_draw()
-        self.emit('query_changed', self.query)
 
     def update_query(self, query):
+        self.counter = time.time()
+        self.query_updated = True
         self.query = query
         self.cursor = len(query)
-        self.emit('query_changed', self.query)
+
+    def check_query(self):
+        if time.time() > (self.counter + 0.25) and self.query_updated:
+            self.query_updated = False
+            self.emit('query_changed', self.query)
+        return True
 
 
     #-------------
@@ -434,46 +447,3 @@ class Sherlock(Gtk.Window, GObject.GObject):
     def close(self, *args):
         self.attic.save()
         Gtk.main_quit()
-
-
-
-    #     print('#####')
-    #     #for item in self.items:
-    #     #    print(item.title, item.score)
-    #     # attic
-    #     ## 1. Get similar queries in attic
-    #     ## 2. Get sum histogram
-    #     ## 3. Compute new score as (score * attic_score)/100
-    #     #histogram = self.attic.get_histogram(query)
-    #     self.attic.sort_items(query, self.items)
-    #     #print (histogram)
-    #     # Reorder using attic info
-    #     #for item in self.items:
-    #     #if histogram:
-
-    #     #    for b in histogram:
-
-    #     #print(histogram)
-    #         # total = 0
-    #         # for item, count in histogram:
-    #         #     total += count
-
-    #         #     for item in self.items:
-
-    #         #     print(item, count)
-
-    #         # for item, count in histogram:
-    #         #     total += count
-    #         #     print(item, count)
-
-    #     #self.items = sorted(self.items, key=lambda m: m.score, reverse=True)
-    #     #print('---')
-    #     #for item in self.items:
-    #     #    print(item.title, item.score)
-    #     print('#####')
-
-
-
-    # # def get_history(self):
-    # #     history = self.attic.get_last()
-    # #     self.items = [Item.from_dict(h[2]) for h in history]
