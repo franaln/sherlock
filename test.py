@@ -12,11 +12,9 @@ test_queries = [
 
 s = Sherlock()
 
-
 for query in test_queries:
     print('---\nQuery: {}'.format(query))
 
-    s.clear_search()
     s.on_query_changed(None, query)
 
     if s.items:
