@@ -30,6 +30,8 @@ def _get_files():
     return files
 
 
+files = utils.get_cached_data('files', _get_files, max_age=1000)
+
 def get_matches(query):
 
-    return utils.get_cached_data('files', _get_files, max_age=1000)
+    return files

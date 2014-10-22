@@ -19,14 +19,9 @@ def _get_apps():
 
     return apps
 
-def _search_key(app):
-    if app.subtitle and app.subtitle is not None:
-        return app.subtitle
-    return app.title
+
+applications = utils.get_cached_data('apps', _get_apps, max_age=600)
 
 def get_matches(query):
 
-    if not query:
-        return False
-
-    return utils.get_cached_data('apps', _get_apps, max_age=600)
+    return applications
