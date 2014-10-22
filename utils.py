@@ -111,20 +111,13 @@ def distance(str1, str2):
 
     return d[len(str1)][len(str2)]
 
-def filter(query, items, key=lambda x: x, ascending=False,
-           min_score=0, max_results=0):
+def filter(query, items, key=lambda x: x, min_score=0, max_results=0):
     """ search filter. Returns list of items that match query.
-    (Taken from Alfred workflow)
-
     * query: query to test items against
     * items: iterable of items to test (list or tuple)
     * key: function to get comparison key from items. Must return a
     unicode string. The default simply returns the item.
-    * ascending: True to get worst matches first
-    * min_score: Ignore results with a score lower than this if is non-zero
-    * max_results
     """
-
     results = {}
     query = query.lower()
     querylen = len(query)
@@ -137,6 +130,7 @@ def filter(query, items, key=lambda x: x, ascending=False,
     pattern = ''.join(pattern)
     search = re.compile(pattern, re.IGNORECASE).search
 
+    # Loop over items
     for i, item in enumerate(items):
         score = 0
         value = key(item)
@@ -159,7 +153,7 @@ def filter(query, items, key=lambda x: x, ascending=False,
             # e.g. of = OmniFocus
             initials = ''.join([c for c in value if c in INITIALS])
             if initials.lower().startswith(query):
-                score = 99.0 - (len(initials) / querylen)
+                score = 95.0 - (len(initials) / querylen)
 
         if not score:
             # split the item into "atoms", i.e. words separated by
@@ -213,7 +207,7 @@ def filter(query, items, key=lambda x: x, ascending=False,
             results[(100.0 / score, value.lower(), i)] = item
 
     # sort on keys, then discard the keys
-    keys = sorted(results.keys(), reverse=ascending)
+    keys = sorted(results.keys(), reverse=False)
     results = [results.get(k) for k in keys]
 
     if max_results and len(results) > max_results:
