@@ -127,7 +127,7 @@ def filter(query, items, key=lambda x: x, ascending=False,
 
     results = {}
     query = query.lower()
-    query_len = len(query)
+    querylen = len(query)
     queryset = set(query)
 
     # Build pattern: include all characters
@@ -140,6 +140,7 @@ def filter(query, items, key=lambda x: x, ascending=False,
     for i, item in enumerate(items):
         score = 0
         value = key(item)
+        valuelen = len(value)
 
         if item.no_filter:
             score = 100.0
@@ -151,14 +152,14 @@ def filter(query, items, key=lambda x: x, ascending=False,
 
         # item starts with query (case-insensitive)
         if value.lower().startswith(query):
-            score = 100.0 - (len(value) / query_len)
+            score = 100.0 - (valuelen / querylen)
 
         if not score:
             # query matches capitalised letters in item,
             # e.g. of = OmniFocus
             initials = ''.join([c for c in value if c in INITIALS])
             if initials.lower().startswith(query):
-                score = 99.0 - (len(initials) / query_len)
+                score = 99.0 - (len(initials) / querylen)
 
         if not score:
             # split the item into "atoms", i.e. words separated by
@@ -172,7 +173,7 @@ def filter(query, items, key=lambda x: x, ascending=False,
             # similar to substring, but scores more highly, as it's
             # a word within the item
             if query in atoms:
-                score = 98.0 - (len(value) / query_len)
+                score = 98.0 - (valuelen / querylen)
 
         if not score:
             # 'query' matches start (or all) of the initials of the
@@ -180,25 +181,25 @@ def filter(query, items, key=lambda x: x, ascending=False,
             # *and* 'how i met your mother' (the capitals rule only
             # matches the former)
             if initials.startswith(query):
-                score = 97.0 - (len(initials) / query_len)
+                score = 97.0 - (len(initials) / querylen)
 
             # 'query' is a substring of initials, e.g. 'doh' matches
             # 'The Dukes of Hazzard'
             elif query in initials:
-                score = 95.0 - (len(initials) / query_len)
+                score = 95.0 - (len(initials) / querylen)
 
         if not score:
             # 'query' is a substring of item
             if query in value.lower():
-                score = 90.0 - (len(value) / query_len)
+                score = 90.0 - (valuelen / querylen)
 
-        if not score:
-            # finally, assign a score based on how close together the
-            # characters in query are in item.
-            match = search(value)
-            if match:
-                score = 85.0 / ((1 + match.start()) *
-                                 (match.end() - match.start() + 1))
+        # if not score:
+        #     # finally, assign a score based on how close together the
+        #     # characters in query are in item.
+        #     match = search(value)
+        #     if match:
+        #         score = 85.0 / ((1 + match.start()) *
+        #                          (match.end() - match.start() + 1))
 
         if min_score and score < min_score:
             continue

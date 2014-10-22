@@ -243,25 +243,11 @@ class Sherlock(Gtk.Window, GObject.GObject):
     #--------
     # Search
     #--------
-    def search_worker(self, name, query, items):
-        items[name] = self.base_plugins[name].get_matches(query)
-        return
-
     def basic_search(self, query):
 
-        jobs = []
-        manager = multiprocessing.Manager()
-        items = manager.dict()
-
         for name in self.base_plugins.keys():
-            p = multiprocessing.Process(target=self.search_worker, args=(name, query, items))
-            jobs.append(p)
-            p.start()
+            matches = self.base_plugins[name].get_matches(query)
 
-        for j in jobs:
-            j.join()
-
-        for matches in items.values():
             if matches:
                 self.items.extend(matches)
 
@@ -274,7 +260,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.hide_action_panel()
 
     def on_query_changed(self, widget, query):
-        print('searching')
+
         self.clear_search()
 
         if not query:
