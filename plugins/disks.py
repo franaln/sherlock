@@ -1,6 +1,6 @@
 # Disks plugin
 
-from item import Item
+from items import Item
 import utils
 
 def get_matches(query):
