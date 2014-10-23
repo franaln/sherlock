@@ -7,6 +7,8 @@ except:
     import pickle
 
 import config
+import utils
+from items import Item
 
 attic_path = os.path.join(config.cache_dir, 'attic')
 history_size = 100
@@ -63,55 +65,35 @@ class Attic:
             return None
         return self.events[self.pos][1]
 
-    def get_histogram(self, query):
-        if query not in self.attic:
-            return False
+    def sort(self, query, items):
 
-        histogram = []
+        if query not in self.attic:
+            return
 
         total = 0
         for b in self.attic[query]:
             total += b[1]
-
-        for b in self.attic[query]:
-            histogram.append(b[1]/total)
-
-        return histogram
-
-
-    def sort_items(self, query, items):
-
-        if query not in self.attic:
-            return False
-
-        #histogram = []
-
-        total = 0
-        for b in self.attic[query]:
-            total += b[1]
-
-        print (total)
-        #for b in self.attic[query]:
-        #    histogram.append(b[1]/total)
-
-        #for item in items:
 
         for sitem, count in self.attic[query]:
-
             for item in items:
                 if item == sitem:
-                    print (item.score)
                     item.score *= sitem[1]/total
-                    print (item.score)
 
+    def get_similar(self, query):
 
+        similar_items = []
 
+        for q in self.attic.keys():
 
+            if q == query:
+                continue
 
+            d = utils.distance(query,q)
 
+            if d < 2:
+                print(query, q, d)
+                items = self.attic[q]
 
+                similar_items.extend([Item.from_dict(i[0]) for i in items])
 
-        pass
-
-    def analise(self):
-        pass
+        return similar_items

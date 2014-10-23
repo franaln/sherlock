@@ -259,6 +259,8 @@ class Sherlock(Gtk.Window, GObject.GObject):
             self.clear_menu()
             return
 
+        matches = []
+
         # File navigation
         if query.startswith('/') or query.startswith('~/'):
             query = self.file_navigation(query)
@@ -278,10 +280,10 @@ class Sherlock(Gtk.Window, GObject.GObject):
                     else:
                         pass
 
-                    matches = self.keyword_plugins[keyword].get_matches(query)
+                    plugin_matches = self.keyword_plugins[keyword].get_matches(query)
 
-                    if matches:
-                        self.items.extend(matches)
+                    if plugin_matches:
+                        matches.extend(plugin_matches)
 
                     break
 
@@ -289,24 +291,30 @@ class Sherlock(Gtk.Window, GObject.GObject):
         else:
             self.file_navigation_mode = False
             for name in self.base_plugins.keys():
-                matches = self.base_plugins[name].get_matches(query)
+                plugin_matches = self.base_plugins[name].get_matches(query)
 
-                if matches:
-                    self.items.extend(matches)
+                if plugin_matches:
+                    matches.extend(plugin_matches)
 
         # fallback plugins
         if not self.items:
             for text in self.fallback_plugins.keys():
                 title = text.replace('query', '\'%s\'' % query)
-                it = Item(title)
-                self.items.append(it)
+                it = items_.Item(title)
+                matches.append(it)
 
         # order matches by score
         if query:
-            self.items = utils.filter(query, self.items, key=lambda x: x.title, min_score=60.0, max_results=50)
+            matches = utils.filter(query, matches, key=lambda x: x.title, min_score=60.0, max_results=50)
+
+            self.attic.sort(query, matches)
+
+            if len(query) > 1:
+                matches.extend(self.attic.get_similar(query))
 
         # show menu
-        if self.items:
+        if matches:
+            self.items = matches
             self.show_menu()
         else:
             self.clear_menu()
