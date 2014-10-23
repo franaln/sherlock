@@ -33,7 +33,12 @@ class ItemText(Item):
 class ItemUri(Item):
     def __init__(self, path):
         name = os.path.basename(path)
-        path = path+'/' if os.path.isdir(path) else path
+        path = path
+
+        if os.path.isdir(path):
+            name = '%s/' % name
+            path = '%s/' % path
+
         Item.__init__(self, title=name, subtitle=path, category='uri', arg=path)
 
 class ItemApp(Item):
