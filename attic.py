@@ -91,7 +91,6 @@ class Attic:
             d = utils.distance(query,q)
 
             if d < 2:
-                print(query, q, d)
                 items = self.attic[q]
 
                 similar_items.extend([Item.from_dict(i[0]) for i in items])
