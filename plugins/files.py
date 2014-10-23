@@ -6,8 +6,11 @@ from items import ItemUri
 
 exclude = ('.git', '.svn')
 
+files = None
+
 def _get_files():
-    files = []
+
+    _files = []
 
     for root, dirnames, filenames in os.walk("/home/fran/Dropbox"):
 
@@ -19,19 +22,21 @@ def _get_files():
                 del dirnames[i]
                 continue
 
-            files.append(ItemUri(os.path.join(root, dn)))
+            _files.append(ItemUri(os.path.join(root, dn)))
 
         for fn in filenames:
             if fn.startswith('.') or fn in exclude:
                 continue
 
-            files.append(ItemUri(os.path.join(root, fn)))
+            _files.append(ItemUri(os.path.join(root, fn)))
 
-    return files
-
-
-files = utils.get_cached_data('files', _get_files, max_age=1000)
+    return _files
 
 def get_matches(query):
+
+    global files
+
+    if files is None:
+        files = utils.get_cached_data('files', _get_files, max_age=1000)
 
     return files
