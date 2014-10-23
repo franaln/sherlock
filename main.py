@@ -243,14 +243,6 @@ class Sherlock(Gtk.Window, GObject.GObject):
     #--------
     # Search
     #--------
-    def basic_search(self, query):
-
-        for name in self.base_plugins.keys():
-            matches = self.base_plugins[name].get_matches(query)
-
-            if matches:
-                self.items.extend(matches)
-
     def clear_search(self):
         if self.items:
             del self.items[:]
@@ -259,7 +251,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.file_navigation_mode = False
         self.hide_action_panel()
 
-    def on_query_changed(self, widget, query):
+    def search(self, query):
 
         self.clear_search()
 
@@ -296,7 +288,11 @@ class Sherlock(Gtk.Window, GObject.GObject):
         # Basic search
         else:
             self.file_navigation_mode = False
-            self.basic_search(query)
+            for name in self.base_plugins.keys():
+                matches = self.base_plugins[name].get_matches(query)
+
+                if matches:
+                    self.items.extend(matches)
 
         # fallback plugins
         if not self.items:
@@ -315,60 +311,6 @@ class Sherlock(Gtk.Window, GObject.GObject):
         else:
             self.clear_menu()
 
-
-    #--------------
-    # Key press cb
-    #--------------
-    def on_key_press(self, window, event):
-        key = Gdk.keyval_name(event.keyval)
-
-        if event.state & Gdk.ModifierType.CONTROL_MASK:
-            if key == 'BackSpace':
-                self.update_query('')
-            return
-
-        if key == 'Escape':
-            self.close()
-
-        elif key == 'Left':
-            if self.file_navigation_mode:
-                self.file_navigation_back()
-
-        elif key == 'Right':
-            if self.file_navigation_mode and self.selected >= 0:
-                self.file_navigation_cd()
-
-        elif key == 'Down':
-            if not self.menu_visible:
-                #if not self.query:
-                #    self.get_history()
-                if self.items:
-                    self.show_menu()
-            else:
-                self.select_down()
-
-        elif key == 'Up':
-            if not self.query:
-                self.show_previous_query()
-            else:
-                self.select_up()
-
-        elif key == 'BackSpace':
-            self.del_char()
-
-        elif 'Return' in key:
-            self.actionate()
-
-        elif 'Tab' in key:
-            if self.items:
-                self.toggle_action_panel()
-
-        elif 'Alt' in key or \
-             'Control' in key:
-            pass
-
-        else:
-            self.add_char(event.string)
 
     #---
     def show_previous_query(self):
@@ -422,6 +364,64 @@ class Sherlock(Gtk.Window, GObject.GObject):
             self.query_updated = False
             self.emit('query_changed', self.query)
         return True
+
+
+    #-----------
+    # Callbacks
+    #-----------
+    def on_query_changed(self, widget, query):
+        self.search(query)
+
+    def on_key_press(self, window, event):
+        key = Gdk.keyval_name(event.keyval)
+
+        if event.state & Gdk.ModifierType.CONTROL_MASK:
+            if key == 'BackSpace':
+                self.update_query('')
+            return
+
+        if key == 'Escape':
+            self.close()
+
+        elif key == 'Left':
+            if self.file_navigation_mode:
+                self.file_navigation_back()
+
+        elif key == 'Right':
+            if self.file_navigation_mode and self.selected >= 0:
+                self.file_navigation_cd()
+
+        elif key == 'Down':
+            if not self.menu_visible:
+                #if not self.query:
+                #    self.get_history()
+                if self.items:
+                    self.show_menu()
+            else:
+                self.select_down()
+
+        elif key == 'Up':
+            if not self.query:
+                self.show_previous_query()
+            else:
+                self.select_up()
+
+        elif key == 'BackSpace':
+            self.del_char()
+
+        elif 'Return' in key:
+            self.actionate()
+
+        elif 'Tab' in key:
+            if self.items:
+                self.toggle_action_panel()
+
+        elif 'Alt' in key or \
+             'Control' in key:
+            pass
+
+        else:
+            self.add_char(event.string)
 
 
     #-------------

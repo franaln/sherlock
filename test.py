@@ -15,7 +15,7 @@ s = Sherlock()
 for query in test_queries:
     print('---\nQuery: {}'.format(query))
 
-    s.on_query_changed(None, query)
+    s.search(query)
 
     if s.items:
         print('Matches:')
