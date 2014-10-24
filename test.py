@@ -4,7 +4,7 @@ from main import Sherlock
 
 test_queries = [
     'ini',  # --> no matches
-    'nau',  # --> (apps) nautilus
+    'fil',  # --> (apps) nautilus
     'sle',  # --> (system) sleep
     '2+2',  # --> (calc) 4
     'Susy', # --> (files) ~/Susy

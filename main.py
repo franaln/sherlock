@@ -226,16 +226,16 @@ class Sherlock(Gtk.Window, GObject.GObject):
             it = items_.ItemUri(abspath)
             items.append(it)
 
-        self.items = items
-
-        return query
+        return items, query
 
     def file_navigation_cd(self):
-        self.update_query(self.items[self.selected].arg)
+        new_query = self.items[self.selected].arg
+        self.update_query(new_query.replace(os.environ['HOME'],'~'))
 
     def file_navigation_back(self):
         idx = self.query[:-1].rfind('/')
-        self.update_query(self.query[:idx]+'/')
+        new_query = self.query[:idx]+'/'
+        self.update_query(new_quey.replace(os.environ['HOME'],'~'))
 
     def explore(self, arg):
         self.file_navigation(arg)
@@ -246,7 +246,6 @@ class Sherlock(Gtk.Window, GObject.GObject):
     def clear_search(self):
         if self.items:
             del self.items[:]
-
         self.selected = 0
         self.file_navigation_mode = False
         self.hide_action_panel()
@@ -263,7 +262,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         # File navigation
         if query.startswith('/') or query.startswith('~/'):
-            query = self.file_navigation(query)
+            matches, query = self.file_navigation(query)
 
         # Keyword plugin
         elif query.startswith('!'):
@@ -297,24 +296,27 @@ class Sherlock(Gtk.Window, GObject.GObject):
                     matches.extend(plugin_matches)
 
         # fallback plugins
-        if not self.items:
+        if not matches:
             for text in self.fallback_plugins.keys():
                 title = text.replace('query', '\'%s\'' % query)
-                it = items_.Item(title)
+                it = items_.Item(title, no_filter=True)
                 matches.append(it)
+
 
         # order matches by score
         if query:
-            matches = utils.filter(query, matches, key=lambda x: x.title, min_score=60.0, max_results=50)
+            self.items = utils.filter(query, matches, key=lambda x: x.title, min_score=60.0, max_results=50)
 
-            self.attic.sort(query, matches)
+            self.attic.sort(query, self.items)
 
             if len(query) > 1:
-                matches.extend(self.attic.get_similar(query))
+                self.items.extend(self.attic.get_similar(query))
+
+        else:
+            self.items = matches
 
         # show menu
-        if matches:
-            self.items = matches
+        if self.items:
             self.show_menu()
         else:
             self.clear_menu()
