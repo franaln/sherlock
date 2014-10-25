@@ -305,7 +305,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         # order matches by score
         if query:
-            self.items = utils.filter(query, matches, key=lambda x: x.title, min_score=60.0, max_results=50)
+            self.items = utils.filter(query, matches, min_score=60.0, max_results=50)
 
             self.attic.sort(query, self.items)
 

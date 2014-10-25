@@ -1,7 +1,7 @@
 # Calculator plugin
 
 import utils
-from items import Item
+from items import ItemText
 
 def get_matches(query):
 
@@ -13,8 +13,7 @@ def get_matches(query):
     result = utils.get_cmd_output(['calc', query])
 
     if result:
-        item = Item(title=result, subtitle='',
-                    category='text', no_filter=True)
+        item = ItemText(result, no_filter=True)
         return [item, ]
 
     return False

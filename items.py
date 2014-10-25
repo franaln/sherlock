@@ -2,13 +2,14 @@ import os
 
 class Item(object):
 
-    def __init__(self, title, subtitle='', category='text', arg=None, score=0.0, no_filter=False):
+    def __init__(self, title, subtitle='', key=None, category='text', arg=None, score=0.0, no_filter=False):
         self.title = title
         self.subtitle = subtitle
         self.category = category
         self.arg = arg
         self.score = score
         self.no_filter = no_filter
+        self.key = key
 
         if category == 'text' and arg is None:
             self.arg = self.title
@@ -27,27 +28,28 @@ class Item(object):
 
 
 class ItemText(Item):
-    def __init__(self, text, score):
-        Item.__init__(self, title=text, subtitle='', category='text', arg=None, score=score)
+    def __init__(self, text, no_filter=False):
+        Item.__init__(self, title=text, subtitle='', key=text, category='text', arg=None, no_filter=no_filter)
 
 class ItemUri(Item):
-    def __init__(self, path):
+    def __init__(self, path, no_filter=False):
         name = os.path.basename(path)
         path = path
+        key = name
 
         if os.path.isdir(path):
             name = '%s/' % name
             path = '%s/' % path
 
-        Item.__init__(self, title=name, subtitle=path, category='uri', arg=path)
+        Item.__init__(self, title=name, subtitle=path, key=key, category='uri', arg=path, no_filter=no_filter)
 
 class ItemApp(Item):
-    def __init__(self, text, score):
-        Item.__init__(self, title=text, subtitle='', category='text', arg=None, score=score)
+    def __init__(self, app_name, app_exe, app_desktop, no_filter=False):
+        Item.__init__(self, title=app_name, subtitle=app_exe, key=app_name+' '+app_exe, category='app', arg=app_desktop, no_filter=no_filter)
 
 class ItemCmd(Item):
-    def __init__(self, text, cmd):
-        Item.__init__(self, title=text, subtitle='', category='cmd', arg=cmd)
+    def __init__(self, text, cmd, no_filter):
+        Item.__init__(self, title=text, subtitle='', key=text, category='cmd', arg=cmd, no_filter=no_filter)
 
 
 actions = dict()

@@ -111,7 +111,8 @@ def distance(str1, str2):
 
     return d[len(str1)][len(str2)]
 
-def filter(query, items, key=lambda x: x, min_score=0, max_results=0):
+
+def filter(query, items, min_score=0, max_results=0):
     """ search filter. Returns list of items that match query.
     * query: query to test items against
     * items: iterable of items to test (list or tuple)
@@ -124,16 +125,16 @@ def filter(query, items, key=lambda x: x, min_score=0, max_results=0):
     queryset = set(query)
 
     # Build pattern: include all characters
-    pattern = []
-    for c in query:
-        pattern.append('.*?{0}'.format(re.escape(c)))
-    pattern = ''.join(pattern)
-    search = re.compile(pattern, re.IGNORECASE).search
+    #pattern = []
+    #for c in query:
+    #    pattern.append('.*?{0}'.format(re.escape(c)))
+    #pattern = ''.join(pattern)
+    #search = re.compile(pattern, re.IGNORECASE).search
 
     # Loop over items
     for i, item in enumerate(items):
         score = 0
-        value = key(item)
+        value = item.key
         valuelen = len(value)
 
         if item.no_filter:
@@ -146,14 +147,14 @@ def filter(query, items, key=lambda x: x, min_score=0, max_results=0):
 
         # item starts with query (case-insensitive)
         if value.lower().startswith(query):
-            score = 100.0 - (valuelen / querylen)
+            score = 101.0 - (valuelen / querylen)
 
         if not score:
             # query matches capitalised letters in item,
             # e.g. of = OmniFocus
             initials = ''.join([c for c in value if c in INITIALS])
             if initials.lower().startswith(query):
-                score = 95.0 - (len(initials) / querylen)
+                score = 98.0 - (len(initials) / querylen)
 
         if not score:
             # split the item into "atoms", i.e. words separated by
@@ -167,7 +168,7 @@ def filter(query, items, key=lambda x: x, min_score=0, max_results=0):
             # similar to substring, but scores more highly, as it's
             # a word within the item
             if query in atoms:
-                score = 98.0 - (valuelen / querylen)
+                score = 97.0 - (valuelen / querylen)
 
         if not score:
             # 'query' matches start (or all) of the initials of the
@@ -175,7 +176,7 @@ def filter(query, items, key=lambda x: x, min_score=0, max_results=0):
             # *and* 'how i met your mother' (the capitals rule only
             # matches the former)
             if initials.startswith(query):
-                score = 97.0 - (len(initials) / querylen)
+                score = 96.0 - (len(initials) / querylen)
 
             # 'query' is a substring of initials, e.g. 'doh' matches
             # 'The Dukes of Hazzard'
@@ -185,7 +186,7 @@ def filter(query, items, key=lambda x: x, min_score=0, max_results=0):
         if not score:
             # 'query' is a substring of item
             if query in value.lower():
-                score = 90.0 - (valuelen / querylen)
+                score = 94.0 - (valuelen / querylen)
 
         # if not score:
         #     # finally, assign a score based on how close together the
