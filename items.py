@@ -26,6 +26,9 @@ class Item(object):
             'arg': self.arg
         }
 
+    def __str__(self):
+        return '%s (%s)' % (self.title, self.score)
+
 
 class ItemText(Item):
     def __init__(self, text, no_filter=False):
@@ -48,7 +51,7 @@ class ItemApp(Item):
         Item.__init__(self, title=app_name, subtitle=app_exe, key=app_name+' '+app_exe, category='app', arg=app_desktop, no_filter=no_filter)
 
 class ItemCmd(Item):
-    def __init__(self, text, cmd, no_filter):
+    def __init__(self, text, cmd, no_filter=False):
         Item.__init__(self, title=text, subtitle='', key=text, category='cmd', arg=cmd, no_filter=no_filter)
 
 
