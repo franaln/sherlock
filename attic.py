@@ -36,6 +36,9 @@ class Attic:
 
     def add(self, query, item, action):
 
+        if item.category == 'text':
+            return
+
         timestamp = datetime.now()
         item_dict = item.to_dict()
 
@@ -50,7 +53,7 @@ class Attic:
             self.attic[query] = []
 
         for n, it in enumerate(self.attic[query]):
-            if it[0] == item_dict:
+            if it[0]['title'] == item_dict['title']:
                 self.attic[query][n][1] += 1
                 break
         else:
@@ -74,10 +77,13 @@ class Attic:
         for b in self.attic[query]:
             total += b[1]
 
-        for sitem, count in self.attic[query]:
-            for item in items:
-                if item == sitem:
-                    item.score *= sitem[1]/total
+        for item in items:
+            for sitem, count in self.attic[query]:
+                if item.title == sitem['title']:
+                    item.score *= count/total
+
+                else:
+                    item.score *= 1/total
 
     def get_similar(self, query):
 

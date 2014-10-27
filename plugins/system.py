@@ -1,19 +1,20 @@
 # System commands plugin
 
-from items import Item
+from items import ItemCmd
 import utils
 
-_cmds = (
-    Item('Lock',      '',  'cmd', 'slimlock'),
-    Item('Logout',    '',  'cmd', 'openbox --exit'),
-    #Item('Logout',    '', 'cmd', 'killall compiz'),
-    Item('Sleep',     '',  'cmd', 'systmectl suspend'),
-    Item('Power off', '',  'cmd', 'systemctl poweroff'),
-    Item('Reboot',    '',  'cmd', 'systemctl reboot'),
-    Item('Hibernate', '',  'cmd', 'systemctl hibernate'),
-)
+_cmds = [
+    ItemCmd('Sleep',     'systmectl suspend'),
+    ItemCmd('Power off', 'systemctl poweroff'),
+    ItemCmd('Reboot',    'systemctl reboot'),
+    ItemCmd('Hibernate', 'systemctl hibernate'),
+    ItemCmd('Lock',      'slimlock'),
+]
 
+if utils.is_running('openbox'):
+    _cmds.append(ItemCmd('Logout', 'openbox --exit'))
+elif utils.is_running('compiz'):
+    _cmds.append(ItemCmd('Logout','killall compiz'))
 
 def get_matches(query):
-
-    return utils.filter(query, _cmds, key=lambda x: x.title)
+    return _cmds

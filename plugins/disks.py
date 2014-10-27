@@ -17,7 +17,7 @@ def get_matches(query):
 
         disk = line.split() ##// [filesystem, size, used, avail, use%, mount]
 
-        title = '%s\t%s/%s\t%s' % (disk[0], disk[2], disk[1], disk[4])
+        title = '%s \t\t %s / %s \t\t %s' % (disk[0], disk[2], disk[1], disk[4])
         subtitle = 'Mounted as: %s' % disk[5]
 
         matches.append(Item(title, subtitle))

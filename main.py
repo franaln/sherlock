@@ -312,6 +312,8 @@ class Sherlock(Gtk.Window, GObject.GObject):
             if len(query) > 1:
                 self.items.extend(self.attic.get_similar(query))
 
+            self.items  = sorted(self.items, key=lambda x: x.score, reverse=True)
+
         else:
             self.items = matches
 
