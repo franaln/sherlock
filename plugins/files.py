@@ -12,7 +12,7 @@ def _get_files():
 
     _files = []
 
-    for root, dirnames, filenames in os.walk("/home/fran"):
+    for root, dirnames, filenames in os.walk("/home/fran/Dropbox"):
 
         if root in exclude or root.startswith('.') or '/.' in root:
             continue

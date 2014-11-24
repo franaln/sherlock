@@ -6,17 +6,16 @@ try:
 except:
     import pickle
 
-import config
 import utils
 from items import Item
 
-attic_path = os.path.join(config.cache_dir, 'attic')
 history_size = 100
 
 class Attic:
 
-    def __init__(self):
-        if os.path.isfile(attic_path):
+    def __init__(self, path):
+        self.path = path
+        if os.path.isfile(self.path):
             self.load()
         else:
             self.events = []
@@ -25,12 +24,12 @@ class Attic:
         self.pos = -1
 
     def load(self):
-        with open(attic_path, 'rb') as f:
+        with open(self.path, 'rb') as f:
             self.events = pickle.load(f)
             self.attic  = pickle.load(f)
 
     def save(self):
-        with open(attic_path, 'wb') as f:
+        with open(self.path, 'wb') as f:
             pickle.dump(self.events, f)
             pickle.dump(self.attic, f)
 

@@ -2,10 +2,8 @@
 
 import os
 import sys
-import math
 import time
 import importlib
-import multiprocessing
 from gi.repository import Gtk, Gdk, GObject, GLib
 
 import config
@@ -15,6 +13,8 @@ import actions
 import items as items_
 from attic import Attic
 
+cache_dir = os.path.expanduser(config.cache_dir)
+attic_path = os.path.join(cache_dir, 'attic')
 
 class Sherlock(Gtk.Window, GObject.GObject):
 
@@ -25,54 +25,57 @@ class Sherlock(Gtk.Window, GObject.GObject):
     def __init__(self):
 
         # config
-        self.width = 480
-        self.height = 70
+        self.width = 600
+        self.height = 100
         self.lines = 5
 
         # plugins
-        self.plugins_dir = config.plugins_dir
+        self.plugins_dir = os.path.expanduser(config.plugins_dir)
         self.base_plugins = dict()
         self.keyword_plugins = dict()
         self.fallback_plugins = dict()
 
         # data
         self.query = ''
-
         self.items = []
-        self.selected = 0
+        self.selected = -1
         self.actions = []
         self.action_selected = 0
-
+        self.query_selected = False
         self.menu_visible = False
         self.action_panel_visible = False
         self.file_navigation_mode = False
 
         # Attic
-        self.attic = Attic()
+        self.attic = Attic(attic_path)
 
         # window
         GObject.GObject.__init__(self)
         super().__init__(type=Gtk.WindowType.TOPLEVEL)
         self.set_app_paintable(True)
         self.set_decorated(False)
+        self.set_size_request(self.width, self.height + 300)
         self.set_position(Gtk.WindowPosition.CENTER)
         self.set_keep_above(True)
         self.set_title('Sherlock')
-        self.set_size_request(self.width, self.height)
+        self.show_all()
 
         self.connect('draw', self.draw)
         self.connect('key_press_event', self.on_key_press)
+        self.connect('query_changed', self.on_query_changed)
         self.connect('delete-event', self.close)
         self.connect('focus-out-event', self.close)
-        self.connect('query_changed', self.on_query_changed)
 
-        self.show_all()
-
-        self.load_plugins()
-
+        # search
         self.counter = 0
         self.query_updated = False
         GLib.timeout_add(250, self.check_query)
+
+        # plugins
+        self.load_plugins()
+
+        self.hide_menu()
+        self.show_all()
 
     #---------
     # Plugins
@@ -89,19 +92,19 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         sys.path.append(self.plugins_dir)
 
-        for name in config.base_plugins:
+        for name in config.basic_search:
             plugin = self.import_plugin(name)
 
             if plugin is not None:
                 self.base_plugins[name] = plugin
 
-        for kw, name in config.keyword_plugins.items():
+        for kw, name in config.plugins.items():
             if os.path.isfile(os.path.join(self.plugins_dir, '%s.py' % name)):
                 self.keyword_plugins[kw] = name
 
-        for text, name in config.fallback_plugins.items():
-            if os.path.isfile(os.path.join(self.plugins_dir, '%s.py' % name)):
-                self.fallback_plugins[text] = name
+        # for text, name in config.fallback_plugins.items():
+        #     if os.path.isfile(os.path.join(self.plugins_dir, '%s.py' % name)):
+        #         self.fallback_plugins[text] = name
 
 
     #-------------
@@ -111,7 +114,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
         cr = Gdk.cairo_create(widget.get_window())
 
         drawer.draw_background(cr)
-        drawer.draw_bar(cr, self.query)
+        drawer.draw_bar(cr, self.query, self.query_selected)
 
         if not self.menu_visible or not self.items:
             return
@@ -138,7 +141,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
     def show_menu(self):
         self.menu_visible = True
         self.queue_draw()
-        self.resize(self.width, self.height + 240)
+        self.resize(self.width, self.height + 300)
 
     def hide_menu(self):
         self.resize(self.width, self.height)
@@ -147,7 +150,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
     def clear_menu(self):
         self.items = []
-        self.selected = 0
+        self.selected = -1
         self.hide_menu()
 
 
@@ -156,7 +159,6 @@ class Sherlock(Gtk.Window, GObject.GObject):
     #--------------
     def show_action_panel(self):
         match = self.items[self.selected]
-
         match_actions = items_.actions[match.category]
 
         if len(match_actions) < 2:
@@ -246,7 +248,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
     def clear_search(self):
         if self.items:
             del self.items[:]
-        self.selected = 0
+        self.selected = -1
         self.file_navigation_mode = False
         self.hide_action_panel()
 
@@ -265,7 +267,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
             matches, query = self.file_navigation(query)
 
         # Keyword plugin
-        elif query.startswith('!'):
+        elif query.startswith('.'):
             self.file_navigation_mode = False
             query = query[1:]
             for keyword, name in self.keyword_plugins.items():
@@ -276,8 +278,6 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
                     if isinstance(name, str):
                         self.keyword_plugins[keyword] = self.import_plugin(name)
-                    else:
-                        pass
 
                     plugin_matches = self.keyword_plugins[keyword].get_matches(query)
 
@@ -294,6 +294,10 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
                 if plugin_matches:
                     matches.extend(plugin_matches)
+
+            if self.keyword_plugins:
+                for kw, name in self.keyword_plugins.items():
+                    matches.append(items_.ItemPlugin(name, kw))
 
         # fallback plugins
         if not matches:
@@ -312,7 +316,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
             if len(query) > 1:
                 self.items.extend(self.attic.get_similar(query))
 
-            self.items  = sorted(self.items, key=lambda x: x.score, reverse=True)
+            self.items = sorted(self.items, key=lambda x: x.score, reverse=True)
 
         else:
             self.items = matches
@@ -405,8 +409,9 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         elif key == 'Down':
             if not self.menu_visible:
-                #if not self.query:
-                #    self.get_history()
+                if not self.query:
+                    self.query_selected = True
+                    self.get_history()
                 if self.items:
                     self.show_menu()
             else:
@@ -414,6 +419,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         elif key == 'Up':
             if not self.query:
+                self.query_selected = True
                 self.show_previous_query()
             else:
                 self.select_up()

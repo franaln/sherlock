@@ -7,14 +7,34 @@ import config
 import items
 
 fontname      = config.fontname
-bkg_color     = config.bkg_color
+bkg_color     = config.background_color
 bar_color     = config.bar_color
-sep_color     = config.sep_color
-sel_color     = config.sel_color
-scroll_color  = config.scl_color
+sep_color     = config.separator_color
+sel_color     = config.selection_color
 text_color    = config.text_color
 subtext_color = config.subtext_color
 seltext_color = config.seltext_color
+
+
+width = 600
+height = 100
+
+item_h = 60
+item_m = item_h * 0.5
+
+bar_o = 6
+bar_w = width - 2 * bar_o
+bar_h = height - 2 * bar_o
+
+menu_w = width
+menu_h = item_h * 5
+
+right_x = 0.7 * width
+right_w = width - right_x
+
+left_w = right_x
+
+
 
 def draw_rect(cr, x, y, width, height, color):
     cr.set_source_rgb(*color)
@@ -55,7 +75,7 @@ def draw_background(cr):
     cr.set_operator(cairo.OPERATOR_SOURCE)
     cr.paint()
 
-def draw_bar(cr, query):
+def draw_bar(cr, query, selected=False):
     """
                     6px
         ---------------------------
@@ -64,34 +84,38 @@ def draw_bar(cr, query):
                     6px
     """
 
-    draw_rect(cr, 6, 6, 468, 58, bar_color)
+    draw_rect(cr, bar_o, bar_o, bar_w, bar_h, bar_color)
 
-    query_x = 16
-    query_y = 35
+    query_x = 10 + bar_o
+    query_y = bar_h * 0.5
 
     layout = PangoCairo.create_layout(cr)
 
-    size = 28
+    size = 38
     set_font(layout, size)
 
     layout.set_text(u'%s' % query, -1)
-    cr.set_source_rgb(*text_color)
+
     PangoCairo.update_layout(cr, layout)
 
     query_w, query_h = layout.get_pixel_size()
 
-    while query_w > 448:
+    while query_w > bar_w - 20:
         size = size - 1
         set_font(layout, size)
         query_w, query_h = layout.get_pixel_size()
 
+    if query and selected:
+        draw_rect(cr, query_x, query_y-query_h*0.5, query_w+5, query_h, sel_color)
+
     cr.move_to(query_x, query_y - 0.5*query_h)
+    cr.set_source_rgb(*text_color)
     PangoCairo.show_layout(cr, layout)
 
-    draw_rect(cr, query_w+18, 16, 2, 38, text_color)
+    #draw_rect(cr, query_w+18, 10+bar_o, 2, bar_h-4, text_color)
 
 
-def draw_item(cr, pos, item, selected):
+def draw_item(cr, pos, item, selected=False):
     """
     ---------------------------------
     | TEXT                  |       |
@@ -100,71 +124,82 @@ def draw_item(cr, pos, item, selected):
     """
 
     # pos -> (x, y)
-    item_height = 48
-    base_y = 70 + pos * item_height
+    base_y = height + pos * item_h
 
     if selected:
-        draw_rect(cr, 0, base_y, 480, item_height, sel_color)
-    else:
-        draw_separator(cr, 0, base_y + item_height - 1, 480)
+        draw_rect(cr, 0, base_y, width, item_h, sel_color)
+    elif pos < 4:
+        draw_separator(cr, 0, base_y + item_h - 1, width)
 
-    text_h = item_height * 0.5
+    text_h = item_m
+    title = item.title
 
     if item.subtitle:
         if selected:
-            draw_text(cr, 10, base_y+2, 400, text_h, item.title, seltext_color, 14)
+            draw_text(cr, 10, base_y+2, left_w, text_h, title, seltext_color, 18)
         else:
-            draw_text(cr, 10, base_y+2, 400, text_h, item.title, text_color, 14)
+            draw_text(cr, 10, base_y+2, left_w, text_h, title, text_color, 18)
 
-        y = base_y + item_height * 0.5
+        y = base_y + item_h * 0.5
         if selected:
-            draw_text(cr, 10, y, 400, text_h, item.subtitle, seltext_color, 8)
+            draw_text(cr, 10, y, left_w, text_h, item.subtitle, seltext_color, 8)
         else:
-            draw_text(cr, 10, y, 400, text_h, item.subtitle, subtext_color, 8)
+            draw_text(cr, 10, y, left_w, text_h, item.subtitle, subtext_color, 8)
+        #draw_text(cr, 10, base_y, 20, item_h, '-', text_color, 20)
+        #draw_rect(cr, 0.15*left_w, y, 0.7*left_w, 5, subtext_color)
+        #draw_rect(cr, 0.15*left_w, y, 0.3*left_w, 5, sel_color)
+        #draw_text(cr, width-40, base_y, 20, item_h, '+', text_color, 20)
 
     else:
         if selected:
-            draw_text(cr, 10, base_y, 400, item_height, item.title, seltext_color, 14)
+            draw_text(cr, 10, base_y, left_w, item_h, title, seltext_color, 18)
         else:
-            draw_text(cr, 10, base_y, 400, item_height, item.title, text_color, 14)
+            draw_text(cr, 10, base_y, left_w, item_h, title, text_color, 18)
+
+
+    # cr.set_source_rgb(0, 0, 0)
+    # cr.set_line_width(1.5)
+    # cr.move_to(15, base_y + item_m)
+    # cr.rel_line_to(10, 0)
+    # cr.move_to(7.6, base_y + item_m - 5)
+    # cr.rel_line_to(-4, -4)
+    # cr.set_line_join(cairo.LINE_JOIN_ROUND)
+    # cr.stroke()
+
+
 
     # Default action and more actions arrow
     if selected:
-
         action_name = items.actions[item.category][0][0]
-        draw_text(cr, 420, base_y, 60, item_height, action_name, seltext_color, 8)
+        draw_text(cr, left_w + right_w*0.5, base_y, right_w, item_h, action_name, seltext_color, 10)
 
         # arrow
         cr.set_source_rgb(1, 1, 1)
         cr.set_line_width(1.5)
-        cr.move_to(470, base_y + item_height/2 + 4)
+        cr.move_to(width-20, base_y + item_m + 4)
         cr.rel_line_to(4, -4)
         cr.rel_line_to(-4, -4)
         cr.set_line_join(cairo.LINE_JOIN_ROUND)
         cr.stroke()
 
-
-def draw_scrollbar(cr, perc):
-    draw_rect(cr, 478, 70+220*perc, 2, 20, scl_color)
-
-
 def draw_action_panel(cr, actions, selected):
 
-    draw_rect(cr, 336, 70, 144, 240, bkg_color)
+    draw_rect(cr, right_x, height, right_w, menu_h, bkg_color)
 
-    draw_separator(cr, 336, 70, 240, 'v')
+    draw_separator(cr, right_x, height, menu_h, 'v')
 
     for pos, action in enumerate(actions):
 
-        base_y =  70 + 30 * pos
+        base_y =  height + 30 * pos
 
-        draw_separator(cr, 336, base_y+29, 144)
+        draw_separator(cr, right_x, base_y+29, right_w)
 
-        text_color = config.text_color
         if selected == pos:
-            text_color = config.seltext_color
-            draw_rect(cr, 336, base_y, 144,
+            draw_rect(cr, right_x, base_y, right_w,
                       30, sel_color)
 
-        draw_text(cr, 346, base_y, 140, 30,
-                  action[0], text_color, 10)
+            draw_text(cr, right_x+10, base_y, right_w, 30,
+                      action[0], seltext_color, 10)
+        else:
+            draw_text(cr, right_x+10, base_y, right_w, 30,
+                      action[0], text_color, 10)

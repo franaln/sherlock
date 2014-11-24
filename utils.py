@@ -17,7 +17,7 @@ import config
 # Cache utils #
 #-------------#
 
-cachedir = config.cache_dir
+cachedir = os.path.expanduser(config.cache_dir)
 
 def get_cachefile(filename):
     """
@@ -205,7 +205,7 @@ def filter(query, items, min_score=0, max_results=0):
             # will be sorted in alphabetical not reverse alphabetical order
             #results[(100.0 / score, value.lower(), i)] = (item, round(score, 2))
             item.score = round(score, 2)
-            results[(100.0 / score, value.lower(), i)] = item
+            results[(100.0/score, value.lower(), i)] = item
 
     # sort on keys, then discard the keys
     keys = sorted(results.keys(), reverse=False)
