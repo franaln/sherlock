@@ -16,6 +16,7 @@ from attic import Attic
 cache_dir = os.path.expanduser(config.cache_dir)
 attic_path = os.path.join(cache_dir, 'attic')
 
+
 class Sherlock(Gtk.Window, GObject.GObject):
 
     __gsignals__ = {
@@ -54,7 +55,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
         super().__init__(type=Gtk.WindowType.TOPLEVEL)
         self.set_app_paintable(True)
         self.set_decorated(False)
-        self.set_size_request(self.width, self.height + 300)
+        self.set_size_request(self.width, self.height)  # + 300)
         self.set_position(Gtk.WindowPosition.CENTER)
         self.set_keep_above(True)
         self.set_title('Sherlock')
@@ -74,12 +75,11 @@ class Sherlock(Gtk.Window, GObject.GObject):
         # plugins
         self.load_plugins()
 
-        self.hide_menu()
         self.show_all()
 
-    #---------
-    # Plugins
-    #---------
+    # ---------
+    #  Plugins
+    # ---------
     def import_plugin(self, name):
         try:
             plugin = importlib.import_module(name)
@@ -106,10 +106,9 @@ class Sherlock(Gtk.Window, GObject.GObject):
         #     if os.path.isfile(os.path.join(self.plugins_dir, '%s.py' % name)):
         #         self.fallback_plugins[text] = name
 
-
-    #-------------
-    # Draw window
-    #-------------
+    # -------------
+    #  Draw window
+    # -------------
     def draw(self, widget, event):
         cr = Gdk.cairo_create(widget.get_window())
 
@@ -119,25 +118,23 @@ class Sherlock(Gtk.Window, GObject.GObject):
         if not self.menu_visible or not self.items:
             return
 
-        first_item = 0 if (self.selected < self.lines) else \
-                     (self.selected - self.lines + 1)
+        first_item = 0 if (self.selected < self.lines) else (self.selected - self.lines + 1)
 
         n_items = len(self.items)
         max_items = min(self.lines, n_items)
 
         for i in range(max_items):
-            drawer.draw_item(cr, i, self.items[first_item+i],
-                             (first_item+i == self.selected))
+            drawer.draw_item(cr, i, self.items[first_item + i],
+                             (first_item + i == self.selected))
 
         if self.action_panel_visible:
             drawer.draw_action_panel(cr, self.actions, self.action_selected)
 
         return False
 
-
-    #------
-    # Menu
-    #------
+    # ------
+    #  Menu
+    # ------
     def show_menu(self):
         self.menu_visible = True
         self.queue_draw()
@@ -153,10 +150,9 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.selected = -1
         self.hide_menu()
 
-
-    #--------------
-    # Action panel
-    #--------------
+    # --------------
+    #  Action panel
+    # --------------
     def show_action_panel(self):
         match = self.items[self.selected]
         match_actions = items_.actions[match.category]
@@ -199,10 +195,9 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         self.close()
 
-
-    #-----------------
-    # File navigation
-    #-----------------
+    # -----------------
+    #  File navigation
+    # -----------------
     def file_navigation(self, query):
         self.file_navigation_mode = True
 
@@ -218,7 +213,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         path_content = os.listdir(path)
 
-        items  = []
+        items = []
         for p in path_content:
             if p.startswith('.'):
                 continue
@@ -232,19 +227,19 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
     def file_navigation_cd(self):
         new_query = self.items[self.selected].arg
-        self.update_query(new_query.replace(os.environ['HOME'],'~'))
+        self.update_query(new_query.replace(os.environ['HOME'], '~'))
 
     def file_navigation_back(self):
         idx = self.query[:-1].rfind('/')
         new_query = self.query[:idx]+'/'
-        self.update_query(new_quey.replace(os.environ['HOME'],'~'))
+        self.update_query(new_quey.replace(os.environ['HOME'], '~'))
 
     def explore(self, arg):
         self.file_navigation(arg)
 
-    #--------
-    # Search
-    #--------
+    # --------
+    #  Search
+    # --------
     def clear_search(self):
         if self.items:
             del self.items[:]
@@ -306,7 +301,6 @@ class Sherlock(Gtk.Window, GObject.GObject):
                 it = items_.Item(title, no_filter=True)
                 matches.append(it)
 
-
         # order matches by score
         if query:
             self.items = utils.filter(query, matches, min_score=60.0, max_results=50)
@@ -327,8 +321,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
         else:
             self.clear_menu()
 
-
-    #---
+    # ---
     def show_previous_query(self):
         query = self.attic.get_query()
         if query is not None:
@@ -381,10 +374,9 @@ class Sherlock(Gtk.Window, GObject.GObject):
             self.emit('query_changed', self.query)
         return True
 
-
-    #-----------
-    # Callbacks
-    #-----------
+    # -----------
+    #  Callbacks
+    # -----------
     def on_query_changed(self, widget, query):
         self.search(query)
 
@@ -402,10 +394,6 @@ class Sherlock(Gtk.Window, GObject.GObject):
         elif key == 'Left':
             if self.file_navigation_mode:
                 self.file_navigation_back()
-
-        elif key == 'Right':
-            if self.file_navigation_mode and self.selected >= 0:
-                self.file_navigation_cd()
 
         elif key == 'Down':
             if not self.menu_visible:
@@ -427,8 +415,11 @@ class Sherlock(Gtk.Window, GObject.GObject):
         elif key == 'BackSpace':
             self.del_char()
 
-        elif 'Return' in key:
-            self.actionate()
+        elif 'Return' in key or key == 'Right':
+            if self.file_navigation_mode and self.selected >= 0:
+                self.file_navigation_cd()
+            else:
+                self.actionate()
 
         elif 'Tab' in key:
             if self.items:
@@ -441,10 +432,9 @@ class Sherlock(Gtk.Window, GObject.GObject):
         else:
             self.add_char(event.string)
 
-
-    #-------------
-    # Run & close
-    #-------------
+    # -------------
+    #  Run & close
+    # -------------
     def run(self):
         Gtk.main()
 
