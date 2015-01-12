@@ -67,6 +67,9 @@ class Attic:
             return None
         return self.events[self.pos][1]
 
+    # def get_items(self):
+
+
     def sort(self, query, items):
 
         if query not in self.attic:
@@ -93,7 +96,7 @@ class Attic:
             if q == query:
                 continue
 
-            d = utils.distance(query,q)
+            d = utils.distance(query, q)
 
             if d < 2:
                 items = self.attic[q]

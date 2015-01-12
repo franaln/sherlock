@@ -7,11 +7,11 @@
 fontname = 'Cantarell' #Sans'
 
 # Colours
-background_color = (0.92, 0.92, 0.92) #(0.25, 0.25, 0.25) #(0.92, 0.92, 0.92)  # #ebebeb
-bar_color        = (0.80, 0.80, 0.80) ##(0.40, 0.40, 0.40) #(0.80, 0.80, 0.80)  # #141414
-separator_color  = (0.80, 0.80, 0.80)  # #141414
-selection_color  = (0.30, 0.60, 0.93) #(0.26, 0.50, 0.93)  # #427fed
-text_color       = (0.10, 0.10, 0.10)  # #030303
+background_color = (0.92, 0.92, 0.92) # #ebebeb
+bar_color        = (0.80, 0.80, 0.80) # #cccccc
+separator_color  = (0.80, 0.80, 0.80) # #cccccc
+selection_color  = (0.30, 0.60, 0.93) # #427fed
+text_color       = (0.10, 0.10, 0.10) # #030303
 subtext_color    = (0.50, 0.50, 0.50)
 seltext_color    = (1.00, 1.00, 1.00)
 

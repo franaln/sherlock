@@ -70,6 +70,10 @@ class ItemPlugin(Item):
                       key=title, category='plugin',
                       arg=title)
 
+# class ItemToggle(Item):
+#     def __init
+
+
 
 actions = dict()
 

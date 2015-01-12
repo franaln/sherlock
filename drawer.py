@@ -122,12 +122,12 @@ def draw_bar(cr, query, selected=False):
 
 
 def draw_item(cr, pos, item, selected=False):
-    if pos == 1:
-        draw_item_slider(cr, pos, item, selected)
-    elif pos == 2:
-        draw_item_toggle(cr, pos, item, selected)
-    else:
-        draw_item_text(cr, pos, item, selected)
+    # if pos == 1:
+    #     draw_item_slider(cr, pos, item, selected)
+    # elif pos == 2:
+    #     draw_item_toggle(cr, pos, item, selected)
+    # else:
+    draw_item_text(cr, pos, item, selected)
 
 def draw_item_text(cr, pos, item, selected):
     """

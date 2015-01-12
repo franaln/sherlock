@@ -1,27 +1,24 @@
-# main app
+# Sherlock main
 
 import os
 import sys
-import time
+#import time
 import importlib
-from gi.repository import Gtk, Gdk, GObject, GLib
+from gi.repository import Gtk, Gdk
 
 import config
 import utils
 import drawer
 import actions
 import items as items_
+from bar import Bar
 from attic import Attic
 
 cache_dir = os.path.expanduser(config.cache_dir)
 attic_path = os.path.join(cache_dir, 'attic')
 
 
-class Sherlock(Gtk.Window, GObject.GObject):
-
-    __gsignals__ = {
-        'query_changed': (GObject.SIGNAL_RUN_FIRST, None, (str,))
-    }
+class Sherlock(Gtk.Window):
 
     def __init__(self):
 
@@ -36,13 +33,12 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.keyword_plugins = dict()
         self.fallback_plugins = dict()
 
-        # data
-        self.query = ''
+        # --
+        self.bar = Bar()
         self.items = []
         self.selected = -1
         self.actions = []
         self.action_selected = 0
-        self.query_selected = False
         self.menu_visible = False
         self.action_panel_visible = False
         self.file_navigation_mode = False
@@ -51,11 +47,10 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.attic = Attic(attic_path)
 
         # window
-        GObject.GObject.__init__(self)
         super().__init__(type=Gtk.WindowType.TOPLEVEL)
         self.set_app_paintable(True)
         self.set_decorated(False)
-        self.set_size_request(self.width, self.height)  # + 300)
+        self.set_size_request(self.width, self.height)
         self.set_position(Gtk.WindowPosition.CENTER)
         self.set_keep_above(True)
         self.set_title('Sherlock')
@@ -63,19 +58,12 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         self.connect('draw', self.draw)
         self.connect('key_press_event', self.on_key_press)
-        self.connect('query_changed', self.on_query_changed)
         self.connect('delete-event', self.close)
         self.connect('focus-out-event', self.close)
-
-        # search
-        self.counter = 0
-        self.query_updated = False
-        GLib.timeout_add(250, self.check_query)
+        self.bar.connect('query_changed', self.on_query_changed)
 
         # plugins
         self.load_plugins()
-
-        self.show_all()
 
     # ---------
     #  Plugins
@@ -113,7 +101,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
         cr = Gdk.cairo_create(widget.get_window())
 
         drawer.draw_background(cr)
-        drawer.draw_bar(cr, self.query, self.query_selected)
+        drawer.draw_bar(cr, self.bar.query, False) #self.query_selected)
 
         if not self.menu_visible or not self.items:
             return
@@ -180,7 +168,12 @@ class Sherlock(Gtk.Window, GObject.GObject):
             self.show_action_panel()
 
     def actionate(self):
-        match = self.items[self.selected]
+
+        item_selected = self.selected
+        if item_selected < 0:
+            item_selected = 0
+
+        match = self.items[item_selected]
         action_name = items_.actions[match.category][self.action_selected][1]
 
         self.attic.add(self.query, match, None)
@@ -350,30 +343,6 @@ class Sherlock(Gtk.Window, GObject.GObject):
             self.selected -= 1
         self.queue_draw()
 
-    def add_char(self, char):
-        self.counter = time.time()
-        self.query_updated = True
-        self.query = '%s%s' % (self.query, char)
-        self.queue_draw()
-
-    def del_char(self):
-        self.counter = time.time()
-        self.query_updated = True
-        self.query = self.query[:-1]
-        self.queue_draw()
-
-    def update_query(self, query):
-        self.counter = time.time()
-        self.query_updated = True
-        self.query = query
-        self.cursor = len(query)
-
-    def check_query(self):
-        if time.time() > (self.counter + 0.25) and self.query_updated:
-            self.query_updated = False
-            self.emit('query_changed', self.query)
-        return True
-
     # -----------
     #  Callbacks
     # -----------
@@ -386,6 +355,10 @@ class Sherlock(Gtk.Window, GObject.GObject):
         if event.state & Gdk.ModifierType.CONTROL_MASK:
             if key == 'BackSpace':
                 self.update_query('')
+            elif key == 'Up':
+                print(self.items[self.selected].arg)
+                self.update_query(self.items[self.selected].arg)
+
             return
 
         if key == 'Escape':
@@ -413,8 +386,9 @@ class Sherlock(Gtk.Window, GObject.GObject):
                 self.select_up()
 
         elif key == 'BackSpace':
-            self.del_char()
+            self.bar.delchar()
 
+        # Return/Right: execute default action on selected item
         elif 'Return' in key or key == 'Right':
             if self.file_navigation_mode and self.selected >= 0:
                 self.file_navigation_cd()
@@ -425,12 +399,13 @@ class Sherlock(Gtk.Window, GObject.GObject):
             if self.items:
                 self.toggle_action_panel()
 
-        elif 'Alt' in key or \
-             'Control' in key:
+        elif 'Alt' in key or 'Control' in key:
             pass
 
         else:
-            self.add_char(event.string)
+            self.bar.addchar(event.string)
+
+        self.queue_draw()
 
     # -------------
     #  Run & close
