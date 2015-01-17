@@ -2,7 +2,6 @@
 
 import os
 import sys
-#import time
 import importlib
 from gi.repository import Gtk, Gdk
 
@@ -17,7 +16,6 @@ from attic import Attic
 cache_dir = os.path.expanduser(config.cache_dir)
 attic_path = os.path.join(cache_dir, 'attic')
 
-
 class Sherlock(Gtk.Window):
 
     def __init__(self):
@@ -25,7 +23,6 @@ class Sherlock(Gtk.Window):
         # config
         self.width = 600
         self.height = 100
-        self.lines = 5
 
         # plugins
         self.plugins_dir = os.path.expanduser(config.plugins_dir)
@@ -33,14 +30,17 @@ class Sherlock(Gtk.Window):
         self.keyword_plugins = dict()
         self.fallback_plugins = dict()
 
-        # --
+        # bar
         self.bar = Bar()
+
+        # menu
         self.items = []
         self.selected = -1
         self.actions = []
         self.action_selected = 0
         self.menu_visible = False
         self.action_panel_visible = False
+
         self.file_navigation_mode = False
 
         # Attic
@@ -60,6 +60,7 @@ class Sherlock(Gtk.Window):
         self.connect('key_press_event', self.on_key_press)
         self.connect('delete-event', self.close)
         self.connect('focus-out-event', self.close)
+        self.bar.connect('updated', self.q_draw)
         self.bar.connect('query_changed', self.on_query_changed)
 
         # plugins
@@ -94,53 +95,22 @@ class Sherlock(Gtk.Window):
         #     if os.path.isfile(os.path.join(self.plugins_dir, '%s.py' % name)):
         #         self.fallback_plugins[text] = name
 
-    # -------------
-    #  Draw window
-    # -------------
-    def draw(self, widget, event):
-        cr = Gdk.cairo_create(widget.get_window())
-
-        drawer.draw_background(cr)
-        drawer.draw_bar(cr, self.bar.query, False) #self.query_selected)
-
-        if not self.menu_visible or not self.items:
-            return
-
-        first_item = 0 if (self.selected < self.lines) else (self.selected - self.lines + 1)
-
-        n_items = len(self.items)
-        max_items = min(self.lines, n_items)
-
-        for i in range(max_items):
-            drawer.draw_item(cr, i, self.items[first_item + i],
-                             (first_item + i == self.selected))
-
-        if self.action_panel_visible:
-            drawer.draw_action_panel(cr, self.actions, self.action_selected)
-
-        return False
-
     # ------
     #  Menu
     # ------
+    def clear_menu(self):
+        self.items = []
+        self.selected = -1
+        self.hide()
+
     def show_menu(self):
         self.menu_visible = True
-        self.queue_draw()
         self.resize(self.width, self.height + 300)
 
     def hide_menu(self):
         self.resize(self.width, self.height)
-        self.queue_draw()
         self.menu_visible = False
 
-    def clear_menu(self):
-        self.items = []
-        self.selected = -1
-        self.hide_menu()
-
-    # --------------
-    #  Action panel
-    # --------------
     def show_action_panel(self):
         match = self.items[self.selected]
         match_actions = items_.actions[match.category]
@@ -167,78 +137,112 @@ class Sherlock(Gtk.Window):
         else:
             self.show_action_panel()
 
-    def actionate(self):
 
-        item_selected = self.selected
-        if item_selected < 0:
-            item_selected = 0
 
-        match = self.items[item_selected]
-        action_name = items_.actions[match.category][self.action_selected][1]
+    # -------------
+    #  Draw window
+    # -------------
+    def q_draw(self, t):
+        self.queue_draw()
 
-        self.attic.add(self.query, match, None)
+    def draw(self, widget, event):
+        cr = Gdk.cairo_create(widget.get_window())
 
-        if action_name == 'explore':
-            self.update_query(match.arg)
+        drawer.draw_background(cr)
+
+        self.bar.draw(cr)
+
+        if not self.menu_visible or not self.items:
             return
 
-        action = getattr(actions, action_name)
+        first_item = 0 if (self.selected < 5) else (self.selected - 6)
 
-        action(match.arg)
+        n_items = len(self.items)
+        max_items = min(5, n_items)
 
-        self.close()
+        for i in range(max_items):
+            drawer.draw_item(cr, i, self.items[first_item + i],
+                      (first_item + i == self.selected))
+
+        if self.action_panel_visible:
+            drawer.draw_action_panel(cr, self.actions, self.action_selected)
+
+        return False
+
+
+    # def actionate(self):
+
+    #     item_selected = self.selected
+    #     if item_selected < 0:
+    #         item_selected = 0
+
+    #     match = self.items[item_selected]
+    #     action_name = items_.actions[match.category][self.action_selected][1]
+
+    #     self.attic.add(self.query, match, None)
+
+    #     if action_name == 'explore':
+    #         self.update_query(match.arg)
+    #         return
+
+    #     action = getattr(actions, action_name)
+
+    #     action(match.arg)
+
+    #     self.close()
 
     # -----------------
     #  File navigation
     # -----------------
-    def file_navigation(self, query):
-        self.file_navigation_mode = True
+    # def file_navigation(self, query):
+    #     self.file_navigation_mode = True
 
-        query = os.path.expanduser(query)
+    #     query = os.path.expanduser(query)
 
-        idx = query.rfind('/')
-        if idx >= 0:
-            path = query[:idx+1]
-            query = query[idx+1:]
-        else:
-            path = query
-            query = ''
+    #     idx = query.rfind('/')
+    #     if idx >= 0:
+    #         path = query[:idx+1]
+    #         query = query[idx+1:]
+    #     else:
+    #         path = query
+    #         query = ''
 
-        path_content = os.listdir(path)
+    #     path_content = os.listdir(path)
 
-        items = []
-        for p in path_content:
-            if p.startswith('.'):
-                continue
+    #     items = []
+    #     for p in path_content:
+    #         if p.startswith('.'):
+    #             continue
 
-            abspath = os.path.join(path, p)
+    #         abspath = os.path.join(path, p)
 
-            it = items_.ItemUri(abspath)
-            items.append(it)
+    #         it = items_.ItemUri(abspath)
+    #         items.append(it)
 
-        return items, query
+    #     return items, query
 
-    def file_navigation_cd(self):
-        new_query = self.items[self.selected].arg
-        self.update_query(new_query.replace(os.environ['HOME'], '~'))
+    # def file_navigation_cd(self):
+    #     new_query = self.items[self.selected].arg
+    #     self.update_query(new_query.replace(os.environ['HOME'], '~'))
 
-    def file_navigation_back(self):
-        idx = self.query[:-1].rfind('/')
-        new_query = self.query[:idx]+'/'
-        self.update_query(new_quey.replace(os.environ['HOME'], '~'))
+    # def file_navigation_back(self):
+    #     idx = self.query[:-1].rfind('/')
+    #     new_query = self.query[:idx]+'/'
+    #     self.update_query(new_quey.replace(os.environ['HOME'], '~'))
 
-    def explore(self, arg):
-        self.file_navigation(arg)
+    # def explore(self, arg):
+    #     self.file_navigation(arg)
 
     # --------
     #  Search
     # --------
     def clear_search(self):
-        if self.items:
-            del self.items[:]
-        self.selected = -1
-        self.file_navigation_mode = False
-        self.hide_action_panel()
+        pass
+        # if self.items:
+        #     del self.items[:]
+        # self.selected = -1
+        # self.file_navigation_mode = False
+        # self.hide_action_panel()
 
     def search(self, query):
 
@@ -318,7 +322,7 @@ class Sherlock(Gtk.Window):
     def show_previous_query(self):
         query = self.attic.get_query()
         if query is not None:
-            self.update_query(query)
+            self.bar.update(query)
 
     def select_down(self):
         if self.action_panel_visible:
@@ -346,20 +350,35 @@ class Sherlock(Gtk.Window):
     # -----------
     #  Callbacks
     # -----------
+    def on_bar_updated(self, widget):
+        pass
+
+    def on_menu_updated(self, widget):
+        pass
+
     def on_query_changed(self, widget, query):
+        self.queue_draw()
         self.search(query)
 
     def on_key_press(self, window, event):
         key = Gdk.keyval_name(event.keyval)
 
+        # if CTRL is pressed
         if event.state & Gdk.ModifierType.CONTROL_MASK:
             if key == 'BackSpace':
-                self.update_query('')
+                self.bar.clear()
+
+            elif key == 'Left':
+                self.bar.move_cursor('Left')
+            elif key == 'Right':
+                self.bar.move_cursor('Right')
+
             elif key == 'Up':
                 print(self.items[self.selected].arg)
                 self.update_query(self.items[self.selected].arg)
 
             return
+
 
         if key == 'Escape':
             self.close()
@@ -370,7 +389,7 @@ class Sherlock(Gtk.Window):
 
         elif key == 'Down':
             if not self.menu_visible:
-                if not self.query:
+                if self.bar.is_empty():
                     self.query_selected = True
                     self.get_history()
                 if self.items:
@@ -379,7 +398,7 @@ class Sherlock(Gtk.Window):
                 self.select_down()
 
         elif key == 'Up':
-            if not self.query:
+            if self.bar.is_empty():
                 self.query_selected = True
                 self.show_previous_query()
             else:
@@ -404,8 +423,6 @@ class Sherlock(Gtk.Window):
 
         else:
             self.bar.addchar(event.string)
-
-        self.queue_draw()
 
     # -------------
     #  Run & close

@@ -23,10 +23,6 @@ height = 100
 item_h = 60
 item_m = 0.5*item_h
 
-bar_o = 6
-bar_w = width - 2*bar_o
-bar_h = height - 2*bar_o
-
 menu_w = width
 menu_h = item_h * 5
 
@@ -38,22 +34,28 @@ toggle_w =0.5*right_w
 toggle_h =0.5*item_h
 toggle_m =0.5*toggle_w
 
+def draw_background(cr):
+    cr.set_source_rgb(*bkg_color)
+    cr.set_operator(cairo.OPERATOR_SOURCE)
+    cr.paint()
 
 def draw_rect(cr, x, y, width, height, color):
     cr.set_source_rgb(*color)
     cr.rectangle(x, y, width, height)
     cr.fill()
 
-def draw_separator(cr, x, y, size, orientation='h'):
+def draw_horizontal_separator(cr, x, y, size):
     cr.set_source_rgb(*sep_color)
     cr.set_line_width(0.8)
+    cr.move_to(x+5, y)
+    cr.line_to(x+size-5, y)
+    cr.stroke()
 
-    if orientation == 'h':
-        cr.move_to(x+5, y)
-        cr.line_to(x+size-5, y)
-    elif orientation == 'v':
-        cr.move_to(x, y+5)
-        cr.line_to(x, y+size-5)
+def draw_vertical_separator(cr, x, y, size):
+    cr.set_source_rgb(*sep_color)
+    cr.set_line_width(0.8)
+    cr.move_to(x, y+5)
+    cr.line_to(x, y+size-5)
     cr.stroke()
 
 def set_font(layout, size):
@@ -76,49 +78,26 @@ def draw_text(cr, x, y, w, h, text, color, size=12, center=False):
         cr.move_to(x, y + (h/2 - th/2))
     PangoCairo.show_layout(cr, layout)
 
-def draw_background(cr):
-    cr.set_source_rgb(*bkg_color)
-    cr.set_operator(cairo.OPERATOR_SOURCE)
-    cr.paint()
-
-def draw_bar(cr, query, selected=False):
-    """
-                    6px
-        ---------------------------
-    6px |10px query|              | 6px
-        ---------------------------
-                    6px
-    """
-
-    draw_rect(cr, bar_o, bar_o, bar_w, bar_h, bar_color)
-
-    query_x = 10 + bar_o
-    query_y = bar_h * 0.5
-
+def draw_variable_text(cr, x, y, w, h, text, color=text_color, size=12):
     layout = PangoCairo.create_layout(cr)
-
-    size = 38
     set_font(layout, size)
 
-    layout.set_text(u'%s' % query, -1)
+    layout.set_text(u'%s' % text, -1)
 
     PangoCairo.update_layout(cr, layout)
 
-    query_w, query_h = layout.get_pixel_size()
+    text_w, text_h = layout.get_pixel_size()
 
-    while query_w > bar_w - 20:
+    print
+
+    while text_w > w:
         size = size - 1
         set_font(layout, size)
-        query_w, query_h = layout.get_pixel_size()
+        text_w, text_h = layout.get_pixel_size()
 
-    if query and selected:
-        draw_rect(cr, query_x, query_y-query_h*0.5, query_w+5, query_h, sel_color)
-
-    cr.move_to(query_x, query_y - 0.5*query_h)
-    cr.set_source_rgb(*text_color)
+    cr.move_to(x, y - 0.5*text_h)
+    cr.set_source_rgb(*color)
     PangoCairo.show_layout(cr, layout)
-
-    #draw_rect(cr, query_w+18, 10+bar_o, 2, bar_h-4, text_color)
 
 
 def draw_item(cr, pos, item, selected=False):
@@ -130,138 +109,138 @@ def draw_item(cr, pos, item, selected=False):
     draw_item_text(cr, pos, item, selected)
 
 def draw_item_text(cr, pos, item, selected):
-    """
-    ---------------------------------
-    | TEXT                  |       |
-    | subtext               |       |
-    ---------------------------------
-    """
+        """
+        ---------------------------------
+        | TEXT                  |       |
+        | subtext               |       |
+        ---------------------------------
+        """
 
-    # pos -> (x, y)
-    base_y = height + pos * item_h
+        # pos -> (x, y)
+        base_y = height + pos * item_h
 
-    if selected:
-        draw_rect(cr, 0, base_y, width, item_h, sel_color)
-    elif pos < 4:
-        draw_separator(cr, 0, base_y + item_h - 1, width)
-
-    text_h = item_m
-    title = item.title
-
-    if item.subtitle:
         if selected:
-            draw_text(cr, 10, base_y+2, left_w, text_h, title, seltext_color, 18)
-        else:
-            draw_text(cr, 10, base_y+2, left_w, text_h, title, text_color, 18)
+            draw_rect(cr, 0, base_y, width, item_h, sel_color)
+        elif pos < 4:
+            draw_horizontal_separator(cr, 0, base_y + item_h - 1, width)
 
-        y = base_y + item_h * 0.5
+        text_h = item_m
+        title = item.title
+
+        if item.subtitle:
+            if selected:
+                draw_text(cr, 10, base_y+2, left_w, text_h, title, seltext_color, 18)
+            else:
+                draw_text(cr, 10, base_y+2, left_w, text_h, title, text_color, 18)
+
+            y = base_y + item_h * 0.5
+            if selected:
+                draw_text(cr, 10, y, left_w, text_h, item.subtitle, seltext_color, 8)
+            else:
+                draw_text(cr, 10, y, left_w, text_h, item.subtitle, subtext_color, 8)
+
+        else:
+            if selected:
+                draw_text(cr, 10, base_y, left_w, item_h, title, seltext_color, 18)
+            else:
+                draw_text(cr, 10, base_y, left_w, item_h, title, text_color, 18)
+
+        # Default action and more actions arrow
         if selected:
-            draw_text(cr, 10, y, left_w, text_h, item.subtitle, seltext_color, 8)
-        else:
-            draw_text(cr, 10, y, left_w, text_h, item.subtitle, subtext_color, 8)
+            action_name = items.actions[item.category][0][0]
+            draw_text(cr, left_w + right_w*0.5, base_y, right_w, item_h, action_name, seltext_color, 10)
 
-    else:
-        if selected:
-            draw_text(cr, 10, base_y, left_w, item_h, title, seltext_color, 18)
-        else:
-            draw_text(cr, 10, base_y, left_w, item_h, title, text_color, 18)
+            # arrow
+            cr.set_source_rgb(1, 1, 1)
+            cr.set_line_width(1.5)
+            cr.move_to(width-20, base_y + item_m + 4)
+            cr.rel_line_to(4, -4)
+            cr.rel_line_to(-4, -4)
+            cr.set_line_join(cairo.LINE_JOIN_ROUND)
+            cr.stroke()
 
-    # Default action and more actions arrow
-    if selected:
-        action_name = items.actions[item.category][0][0]
-        draw_text(cr, left_w + right_w*0.5, base_y, right_w, item_h, action_name, seltext_color, 10)
+#     def draw_item_slider(cr, pos, item, selected):
+#         """
+#         ---------------------------------
+#         | TEXT         - xxxxxx------ + |
+#         ---------------------------------
+#         """
 
-        # arrow
-        cr.set_source_rgb(1, 1, 1)
-        cr.set_line_width(1.5)
-        cr.move_to(width-20, base_y + item_m + 4)
-        cr.rel_line_to(4, -4)
-        cr.rel_line_to(-4, -4)
-        cr.set_line_join(cairo.LINE_JOIN_ROUND)
-        cr.stroke()
+#     # pos -> (x, y)
+#     base_y = height + pos * item_h
 
-def draw_item_slider(cr, pos, item, selected):
-    """
-    ---------------------------------
-    | TEXT         - xxxxxx------ + |
-    ---------------------------------
-    """
+#     if selected:
+#         draw_rect(cr, 0, base_y, width, item_h, sel_color)
+#     elif pos < 4:
+#         draw_separator(cr, 0, base_y + item_h - 1, width)
 
-    # pos -> (x, y)
-    base_y = height + pos * item_h
+#     text_h = item_m
+#     title = item.title
 
-    if selected:
-        draw_rect(cr, 0, base_y, width, item_h, sel_color)
-    elif pos < 4:
-        draw_separator(cr, 0, base_y + item_h - 1, width)
+#     if selected:
+#         draw_text(cr, 10, base_y, left_w, item_h, title, seltext_color, 18)
+#     else:
+#         draw_text(cr, 10, base_y, left_w, item_h, title, text_color, 18)
 
-    text_h = item_m
-    title = item.title
+#     slider_w = right_w * 0.8
+#     slider_h = 15
 
-    if selected:
-        draw_text(cr, 10, base_y, left_w, item_h, title, seltext_color, 18)
-    else:
-        draw_text(cr, 10, base_y, left_w, item_h, title, text_color, 18)
+#     slider_x = left_w + right_w * 0.5 - slider_w * 0.5
+#     slider_y = base_y + item_h * 0.5 - slider_h * 0.5
 
-    slider_w = right_w * 0.8
-    slider_h = 15
-
-    slider_x = left_w + right_w * 0.5 - slider_w * 0.5
-    slider_y = base_y + item_h * 0.5 - slider_h * 0.5
-
-    #draw_text(cr, slider_x-5, base_y, 5, item_h, '-', text_color, 10, True)
-    draw_rect(cr, slider_x, slider_y, slider_w, slider_h, subtext_color)
-    draw_rect(cr, slider_x, slider_y, slider_w*0.9, slider_h, sel_color)
-    #draw_text(cr, width-5, base_y, 5, item_h, '+', text_color, 10, True)
+#     #draw_text(cr, slider_x-5, base_y, 5, item_h, '-', text_color, 10, True)
+#     draw_rect(cr, slider_x, slider_y, slider_w, slider_h, subtext_color)
+#     draw_rect(cr, slider_x, slider_y, slider_w*0.9, slider_h, sel_color)
+#     #draw_text(cr, width-5, base_y, 5, item_h, '+', text_color, 10, True)
 
 
-def draw_item_toggle(cr, pos, item, selected):
-    """
-    ---------------------------------
-    | TEXT                 |NO|YES| |
-    ---------------------------------
-    """
+# def draw_item_toggle(cr, pos, item, selected):
+#     """
+#     ---------------------------------
+#     | TEXT                 |NO|YES| |
+#     ---------------------------------
+#     """
 
-    # pos -> (x, y)
-    base_y = height + pos * item_h
+#     # pos -> (x, y)
+#     base_y = height + pos * item_h
 
-    if selected:
-        draw_rect(cr, 0, base_y, width, item_h, sel_color)
-    elif pos < 4:
-        draw_separator(cr, 0, base_y + item_h - 1, width)
+#     if selected:
+#         draw_rect(cr, 0, base_y, width, item_h, sel_color)
+#     elif pos < 4:
+#         draw_separator(cr, 0, base_y + item_h - 1, width)
 
-    text_h = item_m
-    title = item.title
+#     text_h = item_m
+#     title = item.title
 
-    if selected:
-        draw_text(cr, 10, base_y, left_w, item_h, title, seltext_color, 18)
-    else:
-        draw_text(cr, 10, base_y, left_w, item_h, title, text_color, 18)
+#     if selected:
+#         draw_text(cr, 10, base_y, left_w, item_h, title, seltext_color, 18)
+#     else:
+#         draw_text(cr, 10, base_y, left_w, item_h, title, text_color, 18)
 
-    toggle_x = left_w + right_w * 0.5 - toggle_w * 0.5
-    toggle_y = base_y + item_h * 0.5 - toggle_h * 0.5
+#     toggle_x = left_w + right_w * 0.5 - toggle_w * 0.5
+#     toggle_y = base_y + item_h * 0.5 - toggle_h * 0.5
 
-    draw_rect(cr, toggle_x, toggle_y, toggle_w, toggle_h, subtext_color)
+#     draw_rect(cr, toggle_x, toggle_y, toggle_w, toggle_h, subtext_color)
 
-    toggle = True
-    if toggle:
-        draw_rect(cr, toggle_x + toggle_m, toggle_y, toggle_m, toggle_h, sel_color)
-        draw_text(cr, toggle_x+toggle_m, toggle_y, toggle_m, toggle_h, 'YES', text_color, 10, center=True)
-    else:
-        draw_rect(cr, toggle_x, toggle_y, toggle_m, toggle_h, sel_color)
-        draw_text(cr, toggle_x, toggle_y, toggle_m, toggle_h, 'NO', text_color, 10, center=True)
+#     toggle = True
+#     if toggle:
+#         draw_rect(cr, toggle_x + toggle_m, toggle_y, toggle_m, toggle_h, sel_color)
+#         draw_text(cr, toggle_x+toggle_m, toggle_y, toggle_m, toggle_h, 'YES', text_color, 10, center=True)
+#     else:
+#         draw_rect(cr, toggle_x, toggle_y, toggle_m, toggle_h, sel_color)
+#         draw_text(cr, toggle_x, toggle_y, toggle_m, toggle_h, 'NO', text_color, 10, center=True)
 
 def draw_action_panel(cr, actions, selected):
 
     draw_rect(cr, right_x, height, right_w, menu_h, bkg_color)
 
-    draw_separator(cr, right_x, height, menu_h, 'v')
+    draw_vertical_separator(cr, right_x, height, menu_h)
 
     for pos, action in enumerate(actions):
 
         base_y =  height + 30 * pos
 
-        draw_separator(cr, right_x, base_y+29, right_w)
+        draw_horizontal_separator(cr, right_x, base_y+29, right_w)
 
         if selected == pos:
             draw_rect(cr, right_x, base_y, right_w, 30, sel_color)
