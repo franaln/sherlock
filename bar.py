@@ -7,19 +7,6 @@ import config
 import drawer
 
 
-"""
-              6px
-    ---------------------------
-6px |10px query|              | 6px
-    ---------------------------
-              6px
-"""
-bar_o = 6
-bar_w = drawer.width - 2*bar_o
-bar_h = drawer.height - 2*bar_o
-
-bar_color = config.bar_color
-
 class Bar(GObject.GObject):
 
     __gsignals__ = {
@@ -60,11 +47,29 @@ class Bar(GObject.GObject):
             self.emit('query_changed', self.query)
         return True
 
+    def move_cursor_left(self):
+        self.cursor -= 1
+
+    def move_cursor_right(self):
+        self.cursor += 1
+
     def draw(self, cr):
 
-        drawer.draw_rect(cr, bar_o, bar_o, bar_w, bar_h, bar_color)
+        """
+                  6px
+        ---------------------------
+        6px |10px query|              | 6px
+        ---------------------------
+                  6px
+        """
+        bar_w = drawer.width - 12
+        bar_h = drawer.height - 12
 
-        query_x = 10 + bar_o
+        bar_color = config.bar_color
+
+        drawer.draw_rect(cr, 6, 6, bar_w, bar_h, bar_color)
+
+        query_x = 16
         query_y = bar_h * 0.5
 
         drawer.draw_variable_text(cr, query_x, query_y, bar_w-20, 0, self.query, size=38)

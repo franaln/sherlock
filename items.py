@@ -16,12 +16,13 @@ class Item(object):
 
     @classmethod
     def from_dict(cls, d):
-        return cls(d['title'], d['subtitle'], d['category'], d['arg'])
+        return cls(d['title'], d['subtitle'], d['key'], d['category'], d['arg'])
 
     def to_dict(self):
         return {
             'title': self.title,
             'subtitle': self.subtitle,
+            'key': self.key,
             'category': self.category,
             'arg': self.arg
         }

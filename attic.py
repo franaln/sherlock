@@ -21,7 +21,7 @@ class Attic:
             self.events = []
             self.attic = dict()
 
-        self.pos = -1
+        self.pos = len(self.events)
 
     def load(self):
         with open(self.path, 'rb') as f:
@@ -61,13 +61,22 @@ class Attic:
     def remove(self):
         pass
 
-    def get_query(self):
+    def get_next_query(self):
         self.pos += 1
         if self.pos >= len(self.events):
+            self.pos = len(self.events)
             return None
         return self.events[self.pos][1]
 
-    # def get_items(self):
+    def get_previous_query(self):
+        self.pos -= 1
+        if self.pos < 0:
+            self.pos = 0
+            return None
+        return self.events[self.pos][1]
+
+    def get_history(self):
+        return [ Item.from_dict(ev[2]) for ev in self.events ]
 
 
     def sort(self, query, items):
