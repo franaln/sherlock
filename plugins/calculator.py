@@ -6,7 +6,7 @@ from items import ItemText
 def get_matches(query):
 
     if not any(i in query for i in '+-*/%^)('):
-        return False
+        return []
 
     query = query.replace(' ', '').replace(',', '.')
 
@@ -14,6 +14,6 @@ def get_matches(query):
 
     if result:
         item = ItemText(result, no_filter=True)
-        return [item, ]
+        return [item,]
 
-    return False
+    return []

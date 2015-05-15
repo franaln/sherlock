@@ -28,7 +28,7 @@ class Item(object):
         }
 
     def __str__(self):
-        return '%s (%s)' % (self.title, self.score)
+        return '[Item: %s (%s)]' % (self.title, self.score)
 
 
 class ItemText(Item):
