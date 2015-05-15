@@ -1,4 +1,5 @@
 import os
+import logging
 from datetime import datetime
 
 try:
@@ -14,7 +15,11 @@ history_size = 100
 class Attic:
 
     def __init__(self, path):
+
+        self.logger = logging.getLogger(__name__)
+
         self.path = path
+
         if os.path.isfile(self.path):
             self.load()
         else:
@@ -23,12 +28,15 @@ class Attic:
 
         self.pos = len(self.events)
 
+
     def load(self):
+        self.logger.info('loading attic')
         with open(self.path, 'rb') as f:
             self.events = pickle.load(f)
             self.attic  = pickle.load(f)
 
     def save(self):
+        self.logger.info('saving attic')
         with open(self.path, 'wb') as f:
             pickle.dump(self.events, f)
             pickle.dump(self.attic, f)
@@ -37,6 +45,8 @@ class Attic:
 
         if item.category == 'text':
             return
+
+        self.logger.info('adding query=%s, item=%s, action=%s to the attic' % (query, item, action))
 
         timestamp = datetime.now()
         item_dict = item.to_dict()
@@ -77,7 +87,6 @@ class Attic:
 
     def get_history(self):
         return [ Item.from_dict(ev[2]) for ev in self.events ]
-
 
     def sort(self, query, items):
 

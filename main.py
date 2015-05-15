@@ -2,8 +2,13 @@
 
 import os
 import sys
+import json
+import logging
 import importlib
-from gi.repository import Gtk, Gdk
+import queue
+from threading import Thread, Event
+
+from gi.repository import Gtk, Gdk, GLib
 
 import config
 import utils
@@ -12,6 +17,7 @@ import actions
 import items as items_
 from bar import Bar
 from attic import Attic
+import match
 
 cache_dir = os.path.expanduser(config.cache_dir)
 attic_path = os.path.join(cache_dir, 'attic')
@@ -19,6 +25,11 @@ attic_path = os.path.join(cache_dir, 'attic')
 class Sherlock(Gtk.Window):
 
     def __init__(self):
+
+        # logger
+        formatter = '%(levelname)s (%(name)s) %(message)s'
+        logging.basicConfig(level=logging.INFO, format=formatter)
+        self.logger = logging.getLogger(__name__)
 
         # config
         self.width = 600
@@ -40,7 +51,6 @@ class Sherlock(Gtk.Window):
         self.action_selected = 0
         self.menu_visible = False
         self.action_panel_visible = False
-
         self.file_navigation_mode = False
 
         # Attic
@@ -57,6 +67,7 @@ class Sherlock(Gtk.Window):
         self.show_all()
 
         self.connect('draw', self.draw)
+
         self.connect('key_press_event', self.on_key_press)
         self.connect('delete-event', self.close)
         self.connect('focus-out-event', self.close)
@@ -66,14 +77,16 @@ class Sherlock(Gtk.Window):
         # plugins
         self.load_plugins()
 
+
     # ---------
     #  Plugins
     # ---------
     def import_plugin(self, name):
+        self.logger.info('loading pluging %s' % name)
         try:
             plugin = importlib.import_module(name)
         except ImportError:
-            print('error loading plugin %s. continue ...' % name)
+            self.logger.error('error loading plugin %s. continue ...' % name)
             return None
         return plugin
 
@@ -107,6 +120,7 @@ class Sherlock(Gtk.Window):
 
     def on_key_press(self, window, event):
         key = Gdk.keyval_name(event.keyval)
+        self.logger.debug('key pressed: %s', key)
 
         # CTRL is pressed
         if event.state & Gdk.ModifierType.CONTROL_MASK:
@@ -167,6 +181,7 @@ class Sherlock(Gtk.Window):
         Gtk.main()
 
     def close(self, *args):
+        self.logger.info('closing...')
         self.attic.save()
         Gtk.main_quit()
 
@@ -216,6 +231,7 @@ class Sherlock(Gtk.Window):
     #  Draw window
     # -------------
     def draw(self, widget, event):
+
         cr = Gdk.cairo_create(widget.get_window())
 
         drawer.draw_background(cr)
@@ -232,7 +248,7 @@ class Sherlock(Gtk.Window):
 
         for i in range(max_items):
             drawer.draw_item(cr, i, self.items[first_item + i],
-                      (first_item + i == self.selected))
+                             (first_item + i == self.selected))
 
         if self.action_panel_visible:
             drawer.draw_action_panel(cr, self.actions, self.action_selected)
@@ -257,11 +273,14 @@ class Sherlock(Gtk.Window):
             self.clear_menu()
             return
 
+        self.logger.info('searching %s' % query)
+
         matches = []
 
         # File navigation
         if query.startswith('/') or query.startswith('~/'):
-            matches, query = self.file_navigation(query)
+            self.logger.info('entering file navigation')
+            pass #matches, query = self.file_navigation(query)
 
         # Keyword plugin
         elif query.startswith('.'):
@@ -286,36 +305,42 @@ class Sherlock(Gtk.Window):
         # Basic search
         else:
             self.file_navigation_mode = False
+
             for name in self.base_plugins.keys():
-                plugin_matches = self.base_plugins[name].get_matches(query)
+                plugin = self.base_plugins[name]
+
+                plugin_matches = match.get_matches(plugin, query)
+
+                self.logger.info('get matches from %s plugin: %i' % (name, len(plugin_matches)))
 
                 if plugin_matches:
-                    matches.extend(plugin_matches)
+                    self.items.extend(plugin_matches)
 
             if self.keyword_plugins:
                 for kw, name in self.keyword_plugins.items():
-                    matches.append(items_.ItemPlugin(name, kw))
+                    if query in kw:
+                        self.items.append(items_.ItemPlugin(name, kw))
 
         # fallback plugins
-        if not matches:
+        if not self.items:
             for text in self.fallback_plugins.keys():
                 title = text.replace('query', '\'%s\'' % query)
                 it = items_.Item(title, no_filter=True)
-                matches.append(it)
+                self.items.append(it)
 
         # order matches by score
         if query:
-            self.items = utils.filter(query, matches, min_score=60.0, max_results=50)
+            #self.items.extend(utils.filter(query, matches, min_score=60.0, max_results=50))
 
-            self.attic.sort(query, self.items)
+            #self.attic.sort(query, self.items)
 
-            if len(query) > 1:
-                self.items.extend(self.attic.get_similar(query))
+            #if len(query) > 1:
+            #   self.items.extend(self.attic.get_similar(query))
 
             self.items = sorted(self.items, key=lambda x: x.score, reverse=True)
-
+            pass
         else:
-            self.items = matches
+            self.items.extend(matches)
 
         # show menu
         if self.items:
@@ -340,6 +365,7 @@ class Sherlock(Gtk.Window):
             return
 
         action = getattr(actions, action_name)
+        self.logger.info('executing %s %s' % (action_name, match.arg))
 
         action(match.arg)
 
@@ -372,7 +398,6 @@ class Sherlock(Gtk.Window):
                 return
             self.selected -= 1
         self.queue_draw()
-
 
     def previous_query(self):
         previous_query = self.attic.get_previous_query()
@@ -410,6 +435,7 @@ class Sherlock(Gtk.Window):
 
     #     items = []
     #     for p in path_content:
+
     #         if p.startswith('.'):
     #             continue
 
