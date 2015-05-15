@@ -88,8 +88,6 @@ def draw_variable_text(cr, x, y, w, h, text, color=text_color, size=12):
 
     text_w, text_h = layout.get_pixel_size()
 
-    print
-
     while text_w > w:
         size = size - 1
         set_font(layout, size)
@@ -126,7 +124,6 @@ def draw_item_text(cr, pos, item, selected):
 
         text_h = item_m
         title = item.title
-
         if item.subtitle:
             if selected:
                 draw_text(cr, 10, base_y+2, left_w, text_h, title, seltext_color, 18)
