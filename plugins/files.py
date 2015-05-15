@@ -1,7 +1,8 @@
 # Files plugin
 
 import os
-import utils
+
+import cache
 from items import ItemUri
 
 exclude = ('.git', '.svn')
@@ -12,7 +13,9 @@ def _get_files():
 
     _files = []
 
-    for root, dirnames, filenames in os.walk("/home/fran/Dropbox"):
+    home = os.path.expanduser('~')
+
+    for root, dirnames, filenames in os.walk(home+"/Dropbox"):
 
         if root in exclude or root.startswith('.') or '/.' in root:
             continue
@@ -37,6 +40,6 @@ def get_matches(query):
     global files
 
     if files is None:
-        files = utils.get_cached_data('files', _get_files, max_age=1000)
+        files = cache.get_cached_data('files', _get_files, max_age=1000)
 
     return files

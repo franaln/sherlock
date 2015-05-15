@@ -3,10 +3,9 @@
 # FIX: i want to eliminate th gtk dependecies.
 from gi.repository import Gio
 
-import os
-
+import cache
 from items import ItemApp
-import utils
+
 
 _cached_applications = None
 
@@ -28,6 +27,6 @@ def get_matches(query):
     global _cached_applications
 
     if _cached_applications is None:
-        _cached_applications = utils.get_cached_data('apps', _get_apps, max_age=600)
+        _cached_applications = cache.get_cached_data('apps', _get_apps, max_age=600)
 
     return _cached_applications
