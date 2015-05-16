@@ -5,8 +5,6 @@ import sys
 import json
 import logging
 import importlib
-import queue
-from threading import Thread, Event
 
 from gi.repository import Gtk, Gdk, GLib
 
@@ -30,6 +28,8 @@ class Sherlock(Gtk.Window):
         formatter = '%(levelname)s (%(name)s) %(message)s'
         logging.basicConfig(level=logging.INFO, format=formatter)
         self.logger = logging.getLogger(__name__)
+
+        self.logger.info('starting sherlock...')
 
         # config
         self.width = 600
@@ -280,7 +280,7 @@ class Sherlock(Gtk.Window):
         # File navigation
         if query.startswith('/') or query.startswith('~/'):
             self.logger.info('entering file navigation')
-            pass #matches, query = self.file_navigation(query)
+            matches, query = self.file_navigation_start(query)
 
         # Keyword plugin
         elif query.startswith('.'):
@@ -338,7 +338,10 @@ class Sherlock(Gtk.Window):
             #   self.items.extend(self.attic.get_similar(query))
 
             self.items = sorted(self.items, key=lambda x: x.score, reverse=True)
-            pass
+
+            # if ItemUri and same score sorted by modified date
+
+
         else:
             self.items.extend(matches)
 
@@ -348,7 +351,9 @@ class Sherlock(Gtk.Window):
         else:
             self.clear_menu()
 
-    # ---
+    # --------
+    #  Action
+    # --------
     def actionate(self):
 
         item_selected = self.selected
@@ -371,6 +376,10 @@ class Sherlock(Gtk.Window):
 
         self.close()
 
+
+    # -----------
+    #  Navigation
+    # -----------
     def show_previous_query(self):
         query = self.attic.get_query()
         if query is not None:
@@ -418,42 +427,42 @@ class Sherlock(Gtk.Window):
     # -----------------
     #  File navigation
     # -----------------
-    # def file_navigation(self, query):
-    #     self.file_navigation_mode = True
+    def file_navigation_start(self, query):
+        self.file_navigation_mode = True
 
-    #     query = os.path.expanduser(query)
+        query = os.path.expanduser(query)
 
-    #     idx = query.rfind('/')
-    #     if idx >= 0:
-    #         path = query[:idx+1]
-    #         query = query[idx+1:]
-    #     else:
-    #         path = query
-    #         query = ''
+        idx = query.rfind('/')
+        if idx >= 0:
+            path = query[:idx+1]
+            query = query[idx+1:]
+        else:
+            path = query
+            query = ''
 
-    #     path_content = os.listdir(path)
+        path_content = os.listdir(path)
 
-    #     items = []
-    #     for p in path_content:
+        items = []
+        for p in path_content:
 
-    #         if p.startswith('.'):
-    #             continue
+            if p.startswith('.'):
+                continue
 
-    #         abspath = os.path.join(path, p)
+            abspath = os.path.join(path, p)
 
-    #         it = items_.ItemUri(abspath)
-    #         items.append(it)
+            it = items_.ItemUri(abspath)
+            items.append(it)
 
-    #     return items, query
+        return items, query
 
-    # def file_navigation_cd(self):
-    #     new_query = self.items[self.selected].arg
-    #     self.update_query(new_query.replace(os.environ['HOME'], '~'))
+    def file_navigation_cd(self):
+        new_query = self.items[self.selected].arg
+        self.bar.update(new_query.replace(os.environ['HOME'], '~'))
 
-    # def file_navigation_back(self):
-    #     idx = self.query[:-1].rfind('/')
-    #     new_query = self.query[:idx]+'/'
-    #     self.update_query(new_quey.replace(os.environ['HOME'], '~'))
+    def file_navigation_back(self):
+        idx = self.query[:-1].rfind('/')
+        new_query = self.query[:idx]+'/'
+        self.bar.update(new_quey.replace(os.environ['HOME'], '~'))
 
     # def explore(self, arg):
     #     self.file_navigation(arg)
