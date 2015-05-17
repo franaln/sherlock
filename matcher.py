@@ -1,5 +1,11 @@
 import re
 import string
+import logging
+
+import threading
+import queue
+
+from gi.repository import GObject
 
 # Anchor characters in a name
 INITIALS = string.ascii_uppercase + string.digits
@@ -131,3 +137,42 @@ def get_matches(plugin, query, min_score=0, max_results=0):
 
     # return list of ordered items
     return results
+
+
+class PluginWorker:
+
+    def __init__(self):
+
+        self.logger = logging.getLogger(__name__)
+        self.logger.info('starting plugin worker')
+
+        self.task_id = 0
+        self.queue = queue.Queue(maxsize=100)
+
+        for _ in range(4):
+            t = threading.Thread(target=self.work)
+            t.daemon = True
+            t.start()
+
+    def work(self):
+
+        for id_, done, plugin, query in iter(self.queue.get, None):
+            result = []
+
+            #with _lock:
+            #    self.logger.info('received task:', id_, plugin, query)
+            try:
+                plugin_matches = get_matches(plugin, query)
+                result.extend(plugin_matches)
+            except IOError:
+                pass
+
+            # signal task completion; run done() in the main thread
+            GObject.idle_add(done, id_, result)
+
+    def add_update(self, callback, plugin, query):
+        # executed in the main thread
+        self.task_id += 1
+        #with _lock:
+        #    self.logger.info('sending task ', self.task_id, plugin, query)
+        self.queue.put((self.task_id, callback, plugin, query))
