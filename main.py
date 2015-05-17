@@ -5,6 +5,7 @@ import sys
 import json
 import logging
 import importlib
+import threading
 from gi.repository import Gtk, Gdk, GLib, GObject
 
 import config
