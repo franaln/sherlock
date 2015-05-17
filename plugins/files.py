@@ -1,8 +1,9 @@
 # Files plugin
 
 import os
-
+import utils
 import cache
+import config
 from items import ItemUri
 
 exclude = ('.git', '.svn')
@@ -15,23 +16,25 @@ def _get_files():
 
     home = os.path.expanduser('~')
 
-    for root, dirnames, filenames in os.walk(home+"/Dropbox"):
+    for dirname in config.files_include:
 
-        if root in exclude or root.startswith('.') or '/.' in root:
-            continue
+        for root, dirnames, filenames in os.walk(os.path.expanduser(dirname)):
 
-        for i, dn in enumerate(dirnames):
-            if dn.startswith('.') or dn in exclude:
-                del dirnames[i]
+            if root in exclude or root.startswith('.') or '/.' in root:
                 continue
 
-            _files.append(ItemUri(os.path.join(root, dn)))
+            for i, dn in enumerate(dirnames):
+                if dn.startswith('.') or dn in exclude:
+                    del dirnames[i]
+                    continue
 
-        for fn in filenames:
-            if fn.startswith('.') or fn in exclude:
-                continue
+                _files.append(ItemUri(os.path.join(root, dn)))
 
-            _files.append(ItemUri(os.path.join(root, fn)))
+            for fn in filenames:
+                if fn.startswith('.') or fn in exclude:
+                    continue
+
+                _files.append(ItemUri(os.path.join(root, fn)))
 
     return _files
 
@@ -41,5 +44,7 @@ def get_matches(query):
 
     if files is None:
         files = cache.get_cached_data('files', _get_files, max_age=1000)
+    #cmd = ['locate', '-i', '-n', '1000', '-q', '-e', '-r', query]
+    #files = [ ItemUri(i) for i in utils.get_cmd_output(cmd).split('\n')]
 
     return files
