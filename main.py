@@ -15,7 +15,7 @@ import actions
 import items as items_
 from bar import Bar
 from attic import Attic
-import matcher
+import search
 
 cache_dir = os.path.expanduser(config.cache_dir)
 attic_path = os.path.join(cache_dir, 'attic')
@@ -78,7 +78,7 @@ class Sherlock(Gtk.Window):
 
         # plugins
         self.load_plugins()
-        self.worker = matcher.PluginWorker()
+        self.worker = search.PluginWorker()
 
 
     # ---------
