@@ -180,13 +180,26 @@ class Sherlock(Gtk.Window):
     def search_plugin(self, plugin, query):
         self.worker.add_update(self.done_plugin, plugin, query)
 
-    def done_plugin(self, task_id, result):
+    def done_plugin(self, task_id, query, result):
+
         with _lock:
-            #self.logger.info('done updating: %i %i' % (task_id, len(result)))
 
-            self.items.extend(result)
+            if result:
+                self.items.extend(result)
 
-            self.items = sorted(self.items, key=lambda x: x.score, reverse=True)
+                #self.items = sorted(self.items, key=lambda x: x.score, reverse=True)
+
+                if query:
+                    self.attic.sort(query, self.items)
+
+                    #if len(query) > 1:
+                    #self.items.extend(self.attic.get_similar(query))
+
+                self.items = sorted(self.items, key=lambda x: x.score, reverse=True)
+
+                #     # if ItemUri and same score sorted by modified date
+
+
 
         if self.items:
             self.show_menu()

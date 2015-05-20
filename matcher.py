@@ -117,6 +117,11 @@ def get_matches(plugin, query, min_score=0, max_results=0):
         #         score = 85.0 / ((1 + match.start()) *
         #                          (match.end() - match.start() + 1))
 
+        # if item is uri asign extra score using modified date
+
+
+
+
         if min_score and score < min_score:
             continue
 
@@ -159,20 +164,16 @@ class PluginWorker:
         for id_, done, plugin, query in iter(self.queue.get, None):
             result = []
 
-            #with _lock:
-            #    self.logger.info('received task:', id_, plugin, query)
             try:
-                plugin_matches = get_matches(plugin, query)
+                plugin_matches = get_matches(plugin, query, min_score=60.0, max_results=50)
                 result.extend(plugin_matches)
             except IOError:
                 pass
 
             # signal task completion; run done() in the main thread
-            GObject.idle_add(done, id_, result)
+            GObject.idle_add(done, id_, query, result)
 
     def add_update(self, callback, plugin, query):
         # executed in the main thread
         self.task_id += 1
-        #with _lock:
-        #    self.logger.info('sending task ', self.task_id, plugin, query)
         self.queue.put((self.task_id, callback, plugin, query))
