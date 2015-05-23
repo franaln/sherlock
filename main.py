@@ -28,7 +28,7 @@ class Sherlock(Gtk.Window):
 
         # logger
         formatter = '%(levelname)s (%(name)s) %(message)s'
-        logging.basicConfig(level=logging.INFO, format=formatter)
+        logging.basicConfig(level=logging.ERROR, format=formatter)
         self.logger = logging.getLogger(__name__)
 
         self.logger.info('starting sherlock...')
@@ -342,14 +342,7 @@ class Sherlock(Gtk.Window):
 
             for name in self.base_plugins.keys():
                 plugin = self.base_plugins[name]
-
-                #plugin_matches = matcher.get_matches(plugin, query)
                 self.search_plugin(plugin, query)
-
-                #self.logger.info('get matches from %s plugin: %i' % (name, len(plugin_matches)))
-
-                # if plugin_matches:
-                #     self.items.extend(plugin_matches)
 
             if self.keyword_plugins:
                 for kw, name in self.keyword_plugins.items():
@@ -364,21 +357,8 @@ class Sherlock(Gtk.Window):
                 self.items.append(it)
 
         # order matches by score
-        # if query:
-        #     #self.items.extend(utils.filter(query, matches, min_score=60.0, max_results=50))
-
-        #     #self.attic.sort(query, self.items)
-
-        #     #if len(query) > 1:
-        #     #   self.items.extend(self.attic.get_similar(query))
-
-        #     self.items = sorted(self.items, key=lambda x: x.score, reverse=True)
-
-        #     # if ItemUri and same score sorted by modified date
-
-
-        # else:
-        #     self.items.extend(matches)
+        if matches:
+            self.items.extend(matches)
 
         # show menu
         if self.items:
@@ -499,5 +479,5 @@ class Sherlock(Gtk.Window):
         new_query = self.query[:idx]+'/'
         self.bar.update(new_quey.replace(os.environ['HOME'], '~'))
 
-    # def explore(self, arg):
-    #     self.file_navigation(arg)
+    def explore(self, arg):
+        self.file_navigation(arg)

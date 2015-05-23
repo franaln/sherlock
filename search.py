@@ -1,36 +1,20 @@
+import os
 import re
+import time
 import string
 import logging
-
 import threading
 import queue
 
 from gi.repository import GObject
+
+import items
 
 # Anchor characters in a name
 INITIALS = string.ascii_uppercase + string.digits
 
 # Split on non-letters, numbers
 split_on_delimiters = re.compile('[^a-zA-Z0-9]').split
-
-# def distance(str1, str2):
-#     """ return the Levenshtein distance
-#     between two strings """
-
-#     d = dict()
-#     for i in range(len(str1)+1):
-#         d[i] = dict()
-#         d[i][0] = i
-
-#     for i in range(len(str2)+1):
-#         d[0][i] = i
-
-#     for i in range(1, len(str1)+1):
-#         for j in range(1, len(str2)+1):
-#             d[i][j] = min(d[i][j-1]+1, d[i-1][j]+1,
-#                           d[i-1][j-1]+(not str1[i-1] == str2[j-1]))
-
-#     return d[len(str1)][len(str2)]
 
 def get_matches(plugin, query, min_score=0, max_results=0):
 
@@ -117,8 +101,6 @@ def get_matches(plugin, query, min_score=0, max_results=0):
         #         score = 85.0 / ((1 + match.start()) *
         #                          (match.end() - match.start() + 1))
 
-        # if item is uri asign extra score using modified date
-
 
 
 
@@ -131,7 +113,10 @@ def get_matches(plugin, query, min_score=0, max_results=0):
             # will be sorted in alphabetical not reverse alphabetical order
             #results[(100.0 / score, value.lower(), i)] = (item, round(score, 2))
             item.score = round(score, 2)
-            results[(100.0/score, value.lower(), i)] = item
+            if isinstance(item, items.ItemUri):
+                results[(100.0/score, time.time() - os.path.getmtime(item.subtitle), value.lower(), i)] = item
+            else:
+                results[(100.0/score, value.lower(), i)] = item
 
     # sort on keys, then discard the keys
     keys = sorted(results.keys(), reverse=False)

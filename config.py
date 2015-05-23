@@ -25,11 +25,11 @@ basic_search = [
     'files',
 ]
 
-files_dirs = [
+files_include = [
     '~/Dropbox',
+    '~/Downloads',
     '~/cosas',
 ]
-
 
 #---------
 # Plugins
