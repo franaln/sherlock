@@ -38,6 +38,7 @@ plugins = {
     'df': 'disks',
     'scr': 'screen',
     'temp': 'temperature',
+    'top': 'top',
 }
 
 # Fallback plugins
