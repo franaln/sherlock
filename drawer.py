@@ -62,6 +62,15 @@ def set_font(layout, size):
     font = Pango.FontDescription('%s %s' % (fontname, size))
     layout.set_font_description(font)
 
+def calc_text_width(cr, text, size):
+
+    layout = PangoCairo.create_layout(cr)
+    set_font(layout, size)
+    layout.set_text(u'%s' % text, -1)
+    PangoCairo.update_layout(cr, layout)
+    tw, th = layout.get_pixel_size()
+    return tw
+
 def draw_text(cr, x, y, w, h, text, color, size=12, center=False):
     layout = PangoCairo.create_layout(cr)
     set_font(layout, size)
@@ -123,7 +132,27 @@ def draw_item_text(cr, pos, item, selected):
             draw_horizontal_separator(cr, 0, base_y + item_h - 1, width)
 
         text_h = item_m
-        title = item.title
+        title = item.title ## + ' (' + str(item.score) + ')'
+
+        if isinstance(title, list):
+
+            title_list = title
+
+            # divide text width in ncols columns
+            ncols = len(title_list)
+            col_w = int(left_w / ncols)
+
+            space_w = calc_text_width(cr, ' ', 18)
+
+            title = ''
+            for i, l in enumerate(title_list):
+                title += l
+
+                space_px = int(col_w - calc_text_width(cr, l, 18))
+                nspaces = int(space_px / space_w)
+
+                title += ' '*nspaces
+
         if item.subtitle:
             if selected:
                 draw_text(cr, 10, base_y+2, left_w, text_h, title, seltext_color, 18)
