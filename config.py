@@ -8,7 +8,7 @@ fontname = 'Cantarell' #Sans'
 
 # Colours
 background_color = (0.92, 0.92, 0.92) # #ebebeb
-bar_color        = (0.92, 0.92, 0.92) # #cccccc
+bar_color        = (0.70, 0.70, 0.70) # #cccccc
 separator_color  = (0.80, 0.80, 0.80) # #cccccc
 selection_color  = (0.30, 0.60, 0.93) # #427fed
 text_color       = (0.10, 0.10, 0.10) # #030303

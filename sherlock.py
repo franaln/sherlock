@@ -6,7 +6,12 @@ import sys
 from main import Sherlock
 
 def main():
-    m = Sherlock()
+
+    debug = False
+    if len(sys.argv) > 1 and sys.argv[1] == '--debug':
+        debug = True
+
+    m = Sherlock(debug)
     m.run()
     return True
 

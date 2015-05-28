@@ -6,7 +6,7 @@ import json
 import logging
 import importlib
 import threading
-from gi.repository import Gtk, Gdk, GLib, GObject
+from gi.repository import Gtk, Gdk, GLib, GObject, GdkPixbuf
 
 import config
 import utils
@@ -24,11 +24,14 @@ _lock = threading.Lock()
 
 class Sherlock(Gtk.Window):
 
-    def __init__(self):
+    def __init__(self, debug=False):
 
         # logger
         formatter = '%(levelname)s (%(name)s) %(message)s'
-        logging.basicConfig(level=logging.ERROR, format=formatter)
+        if debug:
+            logging.basicConfig(level=logging.DEBUG, format=formatter)
+        else:
+            logging.basicConfig(level=logging.INFO, format=formatter)
         self.logger = logging.getLogger(__name__)
 
         self.logger.info('starting sherlock...')
@@ -76,9 +79,11 @@ class Sherlock(Gtk.Window):
         self.bar.connect('updated', self.on_bar_updated)
         self.bar.connect('query_changed', self.on_query_changed)
 
+        self.preview = None
+
         # plugins
         self.load_plugins()
-        self.worker = search.PluginWorker()
+        self.worker = search.SearchWorker()
 
 
     # ---------
@@ -139,7 +144,11 @@ class Sherlock(Gtk.Window):
             return
 
         if key == 'Escape':
-            self.close()
+            if self.preview is not None:
+                self.preview.close()
+                self.preview = None
+            else:
+                self.close()
 
         elif key == 'Left':
             if self.file_navigation_mode:
@@ -170,6 +179,17 @@ class Sherlock(Gtk.Window):
         elif 'Tab' in key:
             if self.items:
                 self.toggle_action_panel()
+
+        elif 'space' in key:
+
+            item_selected = self.selected
+            if item_selected < 0:
+                item_selected = 0
+
+            match = self.items[item_selected]
+
+            if isinstance(match, items_.ItemUri):
+                self.show_preview(self.items[self.selected].arg)
 
         elif 'Alt' in key or 'Control' in key:
             pass
@@ -337,7 +357,7 @@ class Sherlock(Gtk.Window):
                     break
 
         # Basic search
-        else:
+        if not matches:
             self.file_navigation_mode = False
 
             for name in self.base_plugins.keys():
@@ -481,3 +501,24 @@ class Sherlock(Gtk.Window):
 
     def explore(self, arg):
         self.file_navigation(arg)
+
+    # -----------------
+    #  File Preview
+    # -----------------
+    def show_preview(self, path):
+        self.preview = Gtk.Window(type=Gtk.WindowType.POPUP)
+        self.preview.set_position(Gtk.WindowPosition.CENTER)
+        self.preview.connect_after('destroy', self.preview.close)
+
+        box = Gtk.Box()
+        box.set_spacing(5)
+        box.set_orientation(Gtk.Orientation.VERTICAL)
+        self.preview.add(box)
+
+        pb = GdkPixbuf.Pixbuf.new_from_file(path)
+
+        self.image = Gtk.Image().new_from_pixbuf(pb)
+
+        box.pack_start(self.image, False, False, 0)
+
+        self.preview.show_all()

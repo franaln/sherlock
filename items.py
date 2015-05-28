@@ -55,6 +55,9 @@ class ItemApp(Item):
                       key=app_name+' '+app_exe, category='app',
                       arg=app_desktop, no_filter=no_filter)
 
+    def __cmp__(self, other):
+        return (self.app_exe == other.app_exe)
+
 class ItemCmd(Item):
     def __init__(self, text, cmd, no_filter=False):
         Item.__init__(self, title=text, subtitle='', key=text, category='cmd',

@@ -134,7 +134,7 @@ def draw_item_text(cr, pos, item, selected):
         text_h = item_m
         title = item.title ## + ' (' + str(item.score) + ')'
 
-        if isinstance(title, list):
+        if isinstance(title, list) or isinstance(title, tuple):
 
             title_list = title
 

@@ -58,8 +58,9 @@ def get_matches(plugin, query, min_score=0, max_results=0):
             # query matches capitalised letters in item,
             # e.g. of = OmniFocus
             initials = ''.join([c for c in value if c in INITIALS])
+            leninitials = len(initials)
             if initials.lower().startswith(query):
-                score = 98.0 - (len(initials) / querylen)
+                score = 98.0 - (leninitials / querylen)
 
         if not score:
             # split the item into "atoms", i.e. words separated by
@@ -81,28 +82,17 @@ def get_matches(plugin, query, min_score=0, max_results=0):
             # *and* 'how i met your mother' (the capitals rule only
             # matches the former)
             if initials.startswith(query):
-                score = 96.0 - (len(initials) / querylen)
+                score = 96.0 - (leninitials / querylen)
 
             # 'query' is a substring of initials, e.g. 'doh' matches
             # 'The Dukes of Hazzard'
             elif query in initials:
-                score = 95.0 - (len(initials) / querylen)
+                score = 95.0 - (leninitials / querylen)
 
         if not score:
             # 'query' is a substring of item
             if query in value.lower():
                 score = 94.0 - (valuelen / querylen)
-
-        # if not score:
-        #     # finally, assign a score based on how close together the
-        #     # characters in query are in item.
-        #     match = search(value)
-        #     if match:
-        #         score = 85.0 / ((1 + match.start()) *
-        #                          (match.end() - match.start() + 1))
-
-
-
 
         if min_score and score < min_score:
             continue
@@ -129,12 +119,12 @@ def get_matches(plugin, query, min_score=0, max_results=0):
     return results
 
 
-class PluginWorker:
+class SearchWorker:
 
     def __init__(self):
 
         self.logger = logging.getLogger(__name__)
-        self.logger.info('starting plugin worker')
+        self.logger.info('starting search worker')
 
         self.task_id = 0
         self.queue = queue.Queue(maxsize=100)
