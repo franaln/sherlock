@@ -43,10 +43,10 @@ plugins = {
 
 # Fallback plugins
 # (Use it when there are no other matches)
-# fallback_plugins = {
-#     #'Search /home for query': '',
-#     #'Search google for query': 'calculator',
-# }
+fallback_plugins = {
+    #'Search /home for query': '',
+    #'Search google for query': 'calculator',
+}
 
 
 #-------------

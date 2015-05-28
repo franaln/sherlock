@@ -79,6 +79,7 @@ class Sherlock(Gtk.Window):
         self.bar.connect('updated', self.on_bar_updated)
         self.bar.connect('query_changed', self.on_query_changed)
 
+        # preview
         self.preview = None
 
         # plugins
@@ -112,9 +113,9 @@ class Sherlock(Gtk.Window):
             if os.path.isfile(os.path.join(self.plugins_dir, '%s.py' % name)):
                 self.keyword_plugins[kw] = name
 
-        # for text, name in config.fallback_plugins.items():
-        #     if os.path.isfile(os.path.join(self.plugins_dir, '%s.py' % name)):
-        #         self.fallback_plugins[text] = name
+        for text, name in config.fallback_plugins.items():
+            if os.path.isfile(os.path.join(self.plugins_dir, '%s.py' % name)):
+                self.fallback_plugins[text] = name
 
     # -----------
     #  Callbacks
@@ -189,7 +190,7 @@ class Sherlock(Gtk.Window):
             match = self.items[item_selected]
 
             if isinstance(match, items_.ItemUri):
-                self.show_preview(self.items[self.selected].arg)
+                self.create_preview(self.items[self.selected].arg)
 
         elif 'Alt' in key or 'Control' in key:
             pass
@@ -505,20 +506,34 @@ class Sherlock(Gtk.Window):
     # -----------------
     #  File Preview
     # -----------------
-    def show_preview(self, path):
-        self.preview = Gtk.Window(type=Gtk.WindowType.POPUP)
-        self.preview.set_position(Gtk.WindowPosition.CENTER)
-        self.preview.connect_after('destroy', self.preview.close)
+    def create_preview(self, path):
 
-        box = Gtk.Box()
-        box.set_spacing(5)
+        self.preview = Gtk.Window(type=Gtk.WindowType.POPUP)
+
+        xpos = Gdk.Screen.width()/2+self.width/2 +50
+        ypos = Gdk.Screen.height()/2
+
+        w = Gdk.Screen.width()/2 - self.width/2 - 100
+        h = Gdk.Screen.height()/2
+
+        self.preview.move(xpos, ypos)
+        self.preview.set_size_request(w, h)
+
+        #self.preview.connect_after('destroy', self.preview.close)
+
+        box = Gtk.Box(spacing=5)
         box.set_orientation(Gtk.Orientation.VERTICAL)
         self.preview.add(box)
 
         pb = GdkPixbuf.Pixbuf.new_from_file(path)
-
         self.image = Gtk.Image().new_from_pixbuf(pb)
 
         box.pack_start(self.image, False, False, 0)
 
         self.preview.show_all()
+
+    def toggle_preview(self):
+        pass
+
+    def update_preview(self, path):
+        pass

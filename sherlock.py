@@ -8,7 +8,7 @@ from main import Sherlock
 def main():
 
     debug = False
-    if len(sys.argv) > 1 and sys.argv[1] == '--debug':
+    if '--debug' in sys.argv:
         debug = True
 
     m = Sherlock(debug)
