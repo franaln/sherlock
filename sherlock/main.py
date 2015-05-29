@@ -6,6 +6,7 @@ import json
 import logging
 import importlib
 import threading
+import cairo
 from gi.repository import Gtk, Gdk, GLib, GObject, GdkPixbuf, Poppler
 
 from sherlock import config
@@ -13,7 +14,6 @@ from sherlock import utils
 from sherlock import drawer
 from sherlock import actions
 from sherlock import search
-#from sherlock import plugins
 from sherlock import items as items_
 from sherlock.bar import Bar
 from sherlock.attic import Attic
@@ -530,29 +530,25 @@ class Sherlock(Gtk.Window):
         path = self.items[item_selected].arg
 
         pb = None
+
+        # if path is an image
         try:
             pb = GdkPixbuf.Pixbuf.new_from_file(path)
         except:
             pass
 
+        # if path is a pdf
         if pb is None and path.endswith('.pdf'):
             try:
                 doc = Poppler.Document.new_from_file('file://'+path)
 
                 page = doc.get_page(0)
 
-                # win = Gtk.Window(type=Gtk.WindowType.POPUP)
-                # win.show_all()
-
-                # cr = Gdk.cairo_create(win.get_window())
-                import cairo
-
                 width, height = page.get_size()
 
                 surface = cairo.ImageSurface(cairo.FORMAT_ARGB32,
                                              int(width), int(height))
                 ctx = cairo.Context(surface)
-                # ctx.scale(2, 2)
 
                 page.render(ctx)
 
@@ -560,15 +556,9 @@ class Sherlock(Gtk.Window):
                 ctx.set_source_rgb(1, 1, 1)
                 ctx.paint()
 
-                # surface.write_to_png(output_filename % i)
-
-
-                pb = Gdk.pixbuf_get_from_surface(surface, ##cr.get_target(),
-                                                 0, 0, width, height)
-
-                #win.close()
+                pb = Gdk.pixbuf_get_from_surface(surface, 0, 0, width, height)
             except:
-                raise #pass
+                pass
 
         if pb is None:
             self.preview.hide()
