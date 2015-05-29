@@ -8,6 +8,6 @@ setup(
     author='Francisco Alonso',
     author_email='franaln@gmail.com',
     license='',
-    packages=['sherlock'],
+    packages=['sherlock', 'sherlock.plugins'],
     scripts=['sherlock.py',],
 )
