@@ -20,17 +20,6 @@ def _get_apps():
         )
         apps.append(item)
 
-    paths = os.environ['PATH'].split(':')
-    for path in paths:
-        for app in os.listdir(path):
-            item = ItemApp(
-                app,
-                app,
-                app,
-            )
-            if not item in apps:
-                apps.append(item)
-
     return apps
 
 
