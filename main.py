@@ -145,11 +145,7 @@ class Sherlock(Gtk.Window):
             return
 
         if key == 'Escape':
-            if self.preview is not None:
-                self.preview.close()
-                self.preview = None
-            else:
-                self.close()
+            self.close()
 
         elif key == 'Left':
             if self.file_navigation_mode:
@@ -182,15 +178,7 @@ class Sherlock(Gtk.Window):
                 self.toggle_action_panel()
 
         elif 'space' in key:
-
-            item_selected = self.selected
-            if item_selected < 0:
-                item_selected = 0
-
-            match = self.items[item_selected]
-
-            if isinstance(match, items_.ItemUri):
-                self.create_preview(self.items[self.selected].arg)
+            self.toggle_preview()
 
         elif 'Alt' in key or 'Control' in key:
             pass
@@ -222,7 +210,7 @@ class Sherlock(Gtk.Window):
 
 
 
-        if self.items:
+        if self.bar.query and self.items:
             self.show_menu()
         else:
             self.clear_menu()
@@ -401,8 +389,8 @@ class Sherlock(Gtk.Window):
 
         self.attic.add(self.bar.query, match, None)
 
-        if action_name == 'explore':
-            self.update_query(match.arg)
+        if action_name == 'explore' or os.path.isdir(match.arg):
+            self.explore(match.arg)
             return
 
         action = getattr(actions, action_name)
@@ -430,6 +418,10 @@ class Sherlock(Gtk.Window):
             if self.selected == len(self.items) - 1:
                 return
             self.selected += 1
+
+        if self.preview is not None and self.preview.get_visible():
+            self.update_preview()
+
         self.queue_draw()
 
     def select_up(self):
@@ -442,6 +434,10 @@ class Sherlock(Gtk.Window):
                 self.hide_menu()
                 return
             self.selected -= 1
+
+            if self.preview is not None and self.preview.get_visible():
+                self.update_preview()
+
         self.queue_draw()
 
     def previous_query(self):
@@ -501,39 +497,61 @@ class Sherlock(Gtk.Window):
         self.bar.update(new_quey.replace(os.environ['HOME'], '~'))
 
     def explore(self, arg):
-        self.file_navigation(arg)
+        self.bar.update(arg)
 
     # -----------------
     #  File Preview
     # -----------------
-    def create_preview(self, path):
+    def toggle_preview(self):
+        if self.preview is None:
+            self.create_preview()
+        elif self.preview is not None and self.preview.get_visible():
+            self.preview.hide()
+        else:
+            self.update_preview()
 
+    def create_preview(self):
         self.preview = Gtk.Window(type=Gtk.WindowType.POPUP)
 
-        xpos = Gdk.Screen.width()/2+self.width/2 +50
-        ypos = Gdk.Screen.height()/2
+        self.box = Gtk.Box()
+        self.box.set_orientation(Gtk.Orientation.VERTICAL)
+        self.preview.add(self.box)
 
-        w = Gdk.Screen.width()/2 - self.width/2 - 100
-        h = Gdk.Screen.height()/2
+        self.image = Gtk.Image()
+        self.box.pack_start(self.image, False, False, 0)
+
+        self.update_preview()
+
+    def update_preview(self):
+
+        item_selected = self.selected if self.selected >= 0 else 0
+        path = self.items[item_selected].arg
+
+        try:
+            pb = GdkPixbuf.Pixbuf.new_from_file(path)
+        except:
+            self.preview.hide()
+            return
+
+        self.logger.info('showing preview for %s' % path)
+
+        screen_w = Gdk.Screen.width()
+        screen_h = Gdk.Screen.height()
+
+        w, h = pb.get_width(), pb.get_height()
+
+        ratio = w/h
+
+        if h > screen_h/2:
+            pb = pb.scale_simple(ratio*screen_h/2, screen_h/2, GdkPixbuf.InterpType.NEAREST)
+        elif w > screen_w/2:
+            pb = pb.scale_simple(screen_w/2, screen_w/(2*ratio), GdkPixbuf.InterpType.NEAREST)
+
+        w, h = pb.get_width(), pb.get_height()
+        self.image.set_from_pixbuf(pb)
+
+        xpos = screen_w/2 - w/2
+        ypos = screen_h/2 - self.height/2 - h
 
         self.preview.move(xpos, ypos)
-        self.preview.set_size_request(w, h)
-
-        #self.preview.connect_after('destroy', self.preview.close)
-
-        box = Gtk.Box(spacing=5)
-        box.set_orientation(Gtk.Orientation.VERTICAL)
-        self.preview.add(box)
-
-        pb = GdkPixbuf.Pixbuf.new_from_file(path)
-        self.image = Gtk.Image().new_from_pixbuf(pb)
-
-        box.pack_start(self.image, False, False, 0)
-
         self.preview.show_all()
-
-    def toggle_preview(self):
-        pass
-
-    def update_preview(self, path):
-        pass

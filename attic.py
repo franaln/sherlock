@@ -61,8 +61,8 @@ class Attic:
 
     def add(self, query, item, action):
 
-        if item.category == 'text':
-            return
+        # if item.category == 'text':
+        #     return
 
         self.logger.info('adding query=%s, item=%s, action=%s to the attic' % (query, item, action))
 
