@@ -1,1 +1,1 @@
-import plugins
+form . import plugins
