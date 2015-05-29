@@ -144,6 +144,9 @@ class Sherlock(Gtk.Window):
             elif key == 'Down':
                 self.next_query()
 
+            elif 'space' in key:
+                self.toggle_preview()
+
             return
 
         if key == 'Escape':
@@ -178,9 +181,6 @@ class Sherlock(Gtk.Window):
         elif 'Tab' in key:
             if self.items:
                 self.toggle_action_panel()
-
-        elif 'space' in key:
-            self.toggle_preview()
 
         elif 'Alt' in key or 'Control' in key:
             pass
@@ -370,6 +370,10 @@ class Sherlock(Gtk.Window):
         # order matches by score
         if matches:
             self.items.extend(matches)
+        else:
+            it = items_.ItemCmd("run '%s' in a shell" % query, query)
+
+            self.items.append(it)
 
         # show menu
         if self.items:
