@@ -7,8 +7,8 @@ try:
 except:
     import pickle
 
-import utils
-from items import Item
+from sherlock import utils
+from sherlock.items import Item
 
 history_size = 100
 

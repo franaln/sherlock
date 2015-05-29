@@ -1,10 +1,11 @@
 # Applications plugin
 
-# FIX: i want to eliminate th gtk dependecies.
-from gi.repository import Gio
+import os
 
-import cache
-from items import ItemApp
+from gi.repository import Gio # FIX: i want to eliminate th gtk dependecies.
+
+from sherlock import cache
+from sherlock.items import ItemApp
 
 
 _cached_applications = None
@@ -18,6 +19,17 @@ def _get_apps():
             app.get_filename(),
         )
         apps.append(item)
+
+    paths = os.environ['PATH'].split(':')
+    for path in paths:
+        for app in os.listdir(path):
+            item = ItemApp(
+                app,
+                app,
+                app,
+            )
+            if not item in apps:
+                apps.append(item)
 
     return apps
 

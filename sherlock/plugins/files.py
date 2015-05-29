@@ -1,10 +1,10 @@
 # Files plugin
 
 import os
-import utils
-import cache
-import config
-from items import ItemUri
+from sherlock import utils
+from sherlock import cache
+from sherlock import config
+from sherlock.items import ItemUri
 
 exclude = ('.git', '.svn')
 

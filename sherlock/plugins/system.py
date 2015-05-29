@@ -1,7 +1,7 @@
 # System commands plugin
 
-from items import ItemCmd
-import utils
+from sherlock.items import ItemCmd
+from sherlock import utils
 
 _cmds = [
     ItemCmd('Sleep',     'systmectl suspend'),

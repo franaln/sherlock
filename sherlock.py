@@ -3,7 +3,7 @@
 
 import sys
 
-from main import Sherlock
+from sherlock.main import Sherlock
 
 def main():
 

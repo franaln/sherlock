@@ -3,8 +3,8 @@
 import time
 from gi.repository import GObject, GLib
 
-import config
-import drawer
+from sherlock import config
+from sherlock import drawer
 
 
 class Bar(GObject.GObject):

@@ -3,8 +3,8 @@
 import cairo
 from gi.repository import Pango, PangoCairo
 
-import config
-import items
+from sherlock import config
+from sherlock import items
 
 # Font/Colors
 fontname      = config.fontname

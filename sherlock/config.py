@@ -52,5 +52,5 @@ fallback_plugins = {
 #-------------
 # Directories
 #-------------
-plugins_dir = '~/dev/sherlock/plugins/'
+plugins_dir = '~/dev/sherlock/sherlock/plugins/'
 cache_dir   = '~/.cache/sherlock/'

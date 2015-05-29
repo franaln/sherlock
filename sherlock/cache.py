@@ -6,7 +6,7 @@ try:
 except:
     import pickle
 
-import config
+from sherlock import config
 
 #-------------#
 # Cache utils #

@@ -8,14 +8,16 @@ import importlib
 import threading
 from gi.repository import Gtk, Gdk, GLib, GObject, GdkPixbuf
 
-import config
-import utils
-import drawer
-import actions
-import items as items_
-from bar import Bar
-from attic import Attic
-import search
+from sherlock import config
+from sherlock import utils
+from sherlock import drawer
+from sherlock import actions
+from sherlock import search
+#from sherlock import plugins
+from sherlock import items as items_
+from sherlock.bar import Bar
+from sherlock.attic import Attic
+
 
 cache_dir = os.path.expanduser(config.cache_dir)
 attic_path = os.path.join(cache_dir, 'attic')
@@ -91,12 +93,12 @@ class Sherlock(Gtk.Window):
     #  Plugins
     # ---------
     def import_plugin(self, name):
-        self.logger.info('loading pluging %s' % name)
-        try:
-            plugin = importlib.import_module(name)
-        except ImportError:
-            self.logger.error('error loading plugin %s. continue ...' % name)
-            return None
+        #        try:
+        plugin = importlib.import_module(name)
+        self.logger.info('pluging %s loaded.' % name)
+        # except ImportError:
+        #     self.logger.error('error loading plugin %s.' % name)
+        #     return None
         return plugin
 
     def load_plugins(self):

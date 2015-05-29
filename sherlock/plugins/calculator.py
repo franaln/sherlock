@@ -1,7 +1,7 @@
 # Calculator plugin
 
-import utils
-from items import ItemText
+from sherlock import utils
+from sherlock.items import ItemText
 
 def get_matches(query):
 

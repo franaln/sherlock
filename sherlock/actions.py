@@ -21,7 +21,7 @@ An action must be a function with match as argument
 import subprocess
 from gi.repository import Gtk, Gio, Gdk, Notify, Pango
 
-import utils
+from sherlock import utils
 
 def do_search_google():
     pass

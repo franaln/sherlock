@@ -1,7 +1,7 @@
 # Disks plugin
 
-from items import Item
-import utils
+from sherlock.items import Item
+from sherlock import utils
 
 def get_matches(query):
 

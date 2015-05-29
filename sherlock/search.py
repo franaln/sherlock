@@ -8,7 +8,7 @@ import queue
 
 from gi.repository import GObject
 
-import items
+from sherlock import items
 
 # Anchor characters in a name
 INITIALS = string.ascii_uppercase + string.digits
