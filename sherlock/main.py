@@ -6,7 +6,7 @@ import json
 import logging
 import importlib
 import threading
-from gi.repository import Gtk, Gdk, GLib, GObject, GdkPixbuf
+from gi.repository import Gtk, Gdk, GLib, GObject, GdkPixbuf, Poppler
 
 from sherlock import config
 from sherlock import utils
@@ -529,9 +529,48 @@ class Sherlock(Gtk.Window):
         item_selected = self.selected if self.selected >= 0 else 0
         path = self.items[item_selected].arg
 
+        pb = None
         try:
             pb = GdkPixbuf.Pixbuf.new_from_file(path)
         except:
+            pass
+
+        if pb is None and path.endswith('.pdf'):
+            try:
+                doc = Poppler.Document.new_from_file('file://'+path)
+
+                page = doc.get_page(0)
+
+                # win = Gtk.Window(type=Gtk.WindowType.POPUP)
+                # win.show_all()
+
+                # cr = Gdk.cairo_create(win.get_window())
+                import cairo
+
+                width, height = page.get_size()
+
+                surface = cairo.ImageSurface(cairo.FORMAT_ARGB32,
+                                             int(width), int(height))
+                ctx = cairo.Context(surface)
+                # ctx.scale(2, 2)
+
+                page.render(ctx)
+
+                ctx.set_operator(cairo.OPERATOR_DEST_OVER)
+                ctx.set_source_rgb(1, 1, 1)
+                ctx.paint()
+
+                # surface.write_to_png(output_filename % i)
+
+
+                pb = Gdk.pixbuf_get_from_surface(surface, ##cr.get_target(),
+                                                 0, 0, width, height)
+
+                #win.close()
+            except:
+                raise #pass
+
+        if pb is None:
             self.preview.hide()
             return
 
@@ -545,12 +584,14 @@ class Sherlock(Gtk.Window):
         ratio = w/h
 
         if h > screen_h/2:
-            pb = pb.scale_simple(ratio*screen_h/2, screen_h/2, GdkPixbuf.InterpType.NEAREST)
+            pb = pb.scale_simple(ratio*screen_h/2, screen_h/2, GdkPixbuf.InterpType.BILINEAR)
         elif w > screen_w/2:
-            pb = pb.scale_simple(screen_w/2, screen_w/(2*ratio), GdkPixbuf.InterpType.NEAREST)
+            pb = pb.scale_simple(screen_w/2, screen_w/(2*ratio), GdkPixbuf.InterpType.BILINEAR)
 
         w, h = pb.get_width(), pb.get_height()
         self.image.set_from_pixbuf(pb)
+
+        self.preview.resize(w, h)
 
         xpos = screen_w/2 - w/2
         ypos = screen_h/2 - self.height/2 - h
