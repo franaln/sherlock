@@ -202,7 +202,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         # Return/Right: execute default action on selected item
         elif 'Return' in key or key == 'Right':
-            if self.file_navigation_mode() and self.selected >= 0:
+            if self.file_navigation_mode() and self.selected_item().is_dir():
                 self.file_navigation_cd()
             else:
                 self.actionate()
@@ -295,6 +295,10 @@ class Sherlock(Gtk.Window, GObject.GObject):
             self.hide_action_panel()
         else:
             self.show_action_panel()
+
+
+    def selected_item(self):
+        return self.items[self.selected]
 
     # -------------
     #  Draw window
@@ -497,7 +501,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
                 continue
 
             # filter by query
-            if query and query not in p.lower():
+            if query and query.lower() not in p.lower():
                 continue
 
             abspath = os.path.join(path, p)

@@ -49,6 +49,13 @@ class ItemUri(Item):
         Item.__init__(self, title=name, subtitle=path, key=key, category='uri',
                       arg=path, no_filter=no_filter)
 
+    def is_dir(self):
+        return os.path.isdir(self.arg)
+
+    def is_file(self):
+        return os.path.isfile(self.arg)
+
+
 class ItemApp(Item):
     def __init__(self, app_name, app_exe, app_desktop, no_filter=False):
         Item.__init__(self, title=app_name, subtitle=app_exe,
