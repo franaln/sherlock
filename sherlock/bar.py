@@ -29,17 +29,27 @@ class Bar(GObject.GObject):
         self.counter = time.time()
         self.updated = True
         self.query = text
-        self.cursor = len(text)
+        #self.cursor = len(text)
         self.emit('update')
 
     def addchar(self, char):
-        self.update('%s%s' % (self.query, char))
+        newquery = '%s%s%s' % (self.query[:self.cursor], char, self.query[self.cursor:])
+        self.update(newquery)
+        self.cursor += 1
 
-    def delchar(self):
-        self.update(self.query[:-1])
+    def delchar(self, delete=False):
+        if delete:
+            newquery = '%s%s' % (self.query[:self.cursor], self.query[self.cursor+1:])
+        else:
+            newquery = '%s%s' % (self.query[:self.cursor-1], self.query[self.cursor:])
+            self.cursor -= 1
+        self.update(newquery)
 
     def clear(self):
         self.update('')
+
+    def is_empty(self):
+        return bool(not self.query)
 
     def check(self):
         if time.time() > (self.counter + 0.25) and self.updated:
@@ -49,9 +59,11 @@ class Bar(GObject.GObject):
 
     def move_cursor_left(self):
         self.cursor -= 1
+        self.emit('update')
 
     def move_cursor_right(self):
         self.cursor += 1
+        self.emit('update')
 
     def draw(self, cr):
 
@@ -74,8 +86,8 @@ class Bar(GObject.GObject):
 
         drawer.draw_variable_text(cr, query_x, query_y, bar_w-20, 0, self.query, size=38)
 
-        # if query and selected:
-        #     drawer.draw_rect(cr, query_x, query_y-query_h*0.5, query_w+5, query_h, sel_color)
+        cursor_x = query_x + drawer.calc_text_width(cr, self.query[:self.cursor], size=38)
 
-    def is_empty(self):
-        return bool(not self.query)
+        drawer.draw_rect(cr, cursor_x, 18, 2, 60)
+        #if self.query: ## and self.selected:
+        #drawer.draw_rect(cr, query_x, query_y-bar_h*0.5, bar_w-15, bar_h, config.selection_color)

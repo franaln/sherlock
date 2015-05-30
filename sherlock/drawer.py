@@ -30,16 +30,16 @@ right_x = 0.7 * width
 right_w = width - right_x
 left_w = right_x
 
-toggle_w =0.5*right_w
-toggle_h =0.5*item_h
-toggle_m =0.5*toggle_w
+toggle_w = 0.5*right_w
+toggle_h = 0.5*item_h
+toggle_m = 0.5*toggle_w
 
 def draw_background(cr):
     cr.set_source_rgb(*bkg_color)
     cr.set_operator(cairo.OPERATOR_SOURCE)
     cr.paint()
 
-def draw_rect(cr, x, y, width, height, color):
+def draw_rect(cr, x, y, width, height, color=text_color):
     cr.set_source_rgb(*color)
     cr.rectangle(x, y, width, height)
     cr.fill()

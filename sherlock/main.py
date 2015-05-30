@@ -169,6 +169,9 @@ class Sherlock(Gtk.Window, GObject.GObject):
                 self.toggle_preview()
             elif key == 'y':
                 self.bar.update(utils.get_selection())
+            elif key == 'Backspace':
+                print('bu')
+                self.bar.clear()
 
             return
 
@@ -194,6 +197,9 @@ class Sherlock(Gtk.Window, GObject.GObject):
         elif key == 'BackSpace':
             self.bar.delchar()
 
+        elif key == 'Delete':
+            self.bar.delchar(True)
+
         # Return/Right: execute default action on selected item
         elif 'Return' in key or key == 'Right':
             if self.file_navigation_mode() and self.selected >= 0:
@@ -209,7 +215,8 @@ class Sherlock(Gtk.Window, GObject.GObject):
             pass
 
         else:
-            self.bar.addchar(event.string)
+            if event.string:
+                self.bar.addchar(event.string)
 
     def search_plugin(self, plugin, query):
         self.worker.add_update(self.plugin_done, plugin, query)
