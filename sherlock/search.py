@@ -24,16 +24,12 @@ def get_matches(plugin, query, min_score=0, max_results=0):
 
     results = dict()
 
+    if not query:
+        return []
+
     query = query.lower()
     querylen = len(query)
     queryset = set(query)
-
-    # Build pattern: include all characters
-    #pattern = []
-    #for c in query:
-    #    pattern.append('.*?{0}'.format(re.escape(c)))
-    #pattern = ''.join(pattern)
-    #search = re.compile(pattern, re.IGNORECASE).search
 
     # Loop over items
     for i, item in enumerate(plugin.get_matches(query)):
@@ -51,7 +47,7 @@ def get_matches(plugin, query, min_score=0, max_results=0):
                 continue
 
         # item starts with query (case-insensitive)
-        if value.lower().startswith(query):
+        if value.lower().startswith(query) or value.lower().endswith(query):
             score = 101.0 - (valuelen / querylen)
 
         if not score:

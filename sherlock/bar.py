@@ -10,8 +10,8 @@ from sherlock import drawer
 class Bar(GObject.GObject):
 
     __gsignals__ = {
-        'updated': (GObject.SIGNAL_RUN_FIRST, None, ()),
-        'query_changed': (GObject.SIGNAL_RUN_FIRST, None, (str,)),
+        'update': (GObject.SIGNAL_RUN_FIRST, None, ()),
+        'query-change': (GObject.SIGNAL_RUN_FIRST, None, (str,)),
     }
 
     def __init__(self):
@@ -30,7 +30,7 @@ class Bar(GObject.GObject):
         self.updated = True
         self.query = text
         self.cursor = len(text)
-        self.emit('updated')
+        self.emit('update')
 
     def addchar(self, char):
         self.update('%s%s' % (self.query, char))
@@ -44,7 +44,7 @@ class Bar(GObject.GObject):
     def check(self):
         if time.time() > (self.counter + 0.25) and self.updated:
             self.updated = False
-            self.emit('query_changed', self.query)
+            self.emit('query-change', self.query)
         return True
 
     def move_cursor_left(self):

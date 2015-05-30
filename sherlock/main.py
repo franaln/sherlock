@@ -24,7 +24,11 @@ attic_path = os.path.join(cache_dir, 'attic')
 
 _lock = threading.Lock()
 
-class Sherlock(Gtk.Window):
+class Sherlock(Gtk.Window, GObject.GObject):
+
+    __gsignals__ = {
+        'menu-update': (GObject.SIGNAL_RUN_FIRST, None, ()),
+    }
 
     def __init__(self, debug=False):
 
@@ -78,8 +82,9 @@ class Sherlock(Gtk.Window):
         self.connect('key_press_event', self.on_key_press)
         self.connect('delete-event', self.close)
         self.connect('focus-out-event', self.close)
-        self.bar.connect('updated', self.on_bar_updated)
-        self.bar.connect('query_changed', self.on_query_changed)
+        self.bar.connect('update', self.on_bar_update)
+        self.bar.connect('query-change', self.on_query_change)
+        self.connect('menu-update', self.on_menu_update)
 
         # preview
         self.preview = None
@@ -93,12 +98,12 @@ class Sherlock(Gtk.Window):
     #  Plugins
     # ---------
     def import_plugin(self, name):
-        #        try:
-        plugin = importlib.import_module(name)
-        self.logger.info('pluging %s loaded.' % name)
-        # except ImportError:
-        #     self.logger.error('error loading plugin %s.' % name)
-        #     return None
+        try:
+            plugin = importlib.import_module(name)
+            self.logger.info('pluging %s loaded.' % name)
+        except ImportError:
+            self.logger.error('error loading plugin %s.' % name)
+            return None
         return plugin
 
     def load_plugins(self):
@@ -122,12 +127,29 @@ class Sherlock(Gtk.Window):
     # -----------
     #  Callbacks
     # -----------
-    def on_bar_updated(self, widget):
+    def on_bar_update(self, widget):
         self.queue_draw()
 
-    def on_query_changed(self, widget, query):
+    def on_menu_update(self, widget):
+        if self.bar.query and self.items:
+            self.show_menu()
+        else:
+            self.clear_menu()
+
+    def on_query_change(self, widget, query):
         self.queue_draw()
-        self.search(query)
+
+        self.clear_menu()
+
+        # File navigation
+        if query.startswith('/') or query.startswith('~/'):
+            self.logger.info('file navigation: %s' % query)
+            self.file_navigation_mode = True
+            self.file_navigation(query)
+
+        # Search
+        else:
+            self.search(query)
 
     def on_key_press(self, window, event):
         key = Gdk.keyval_name(event.keyval)
@@ -189,9 +211,9 @@ class Sherlock(Gtk.Window):
             self.bar.addchar(event.string)
 
     def search_plugin(self, plugin, query):
-        self.worker.add_update(self.done_plugin, plugin, query)
+        self.worker.add_update(self.plugin_done, plugin, query)
 
-    def done_plugin(self, task_id, query, result):
+    def plugin_done(self, task_id, query, result):
 
         with _lock:
 
@@ -208,14 +230,7 @@ class Sherlock(Gtk.Window):
 
                 self.items = sorted(self.items, key=lambda x: x.score, reverse=True)
 
-                #     # if ItemUri and same score sorted by modified date
-
-
-
-        if self.bar.query and self.items:
-            self.show_menu()
-        else:
-            self.clear_menu()
+        self.emit('menu-update')
 
     # -------------
     #  Run & close
@@ -232,8 +247,11 @@ class Sherlock(Gtk.Window):
     #  Menu
     # ------
     def clear_menu(self):
-        self.items = []
+        if self.items:
+            del self.items[:]
         self.selected = 0
+        self.file_navigation_mode = False
+        self.hide_action_panel()
         self.hide_menu()
 
     def show_menu(self):
@@ -303,16 +321,7 @@ class Sherlock(Gtk.Window):
     # --------
     #  Search
     # --------
-    def clear_search(self):
-        if self.items:
-            del self.items[:]
-        self.selected = -1
-        self.file_navigation_mode = False
-        self.hide_action_panel()
-
     def search(self, query):
-
-        self.clear_search()
 
         if not query:
             self.clear_menu()
@@ -322,13 +331,8 @@ class Sherlock(Gtk.Window):
 
         matches = []
 
-        # File navigation
-        if query.startswith('/') or query.startswith('~/'):
-            self.logger.info('entering file navigation')
-            matches, query = self.file_navigation_start(query)
-
         # Keyword plugin
-        elif query.startswith('.'):
+        if query.startswith('.'):
             self.file_navigation_mode = False
             query = query[1:]
             for keyword, name in self.keyword_plugins.items():
@@ -364,7 +368,7 @@ class Sherlock(Gtk.Window):
         if not self.items:
             for text in self.fallback_plugins.keys():
                 title = text.replace('query', '\'%s\'' % query)
-                it = items_.Item(title, no_filter=True)
+                it = items_.ItemText(title, no_filter=True)
                 self.items.append(it)
 
         # order matches by score
@@ -375,11 +379,7 @@ class Sherlock(Gtk.Window):
 
             self.items.append(it)
 
-        # show menu
-        if self.items:
-            self.show_menu()
-        else:
-            self.clear_menu()
+        self.emit('menu-update')
 
     # --------
     #  Action
@@ -465,8 +465,7 @@ class Sherlock(Gtk.Window):
     # -----------------
     #  File navigation
     # -----------------
-    def file_navigation_start(self, query):
-        self.file_navigation_mode = True
+    def file_navigation(self, query):
 
         query = os.path.expanduser(query)
 
@@ -483,24 +482,32 @@ class Sherlock(Gtk.Window):
         items = []
         for p in path_content:
 
+            # exclude hidden files
             if p.startswith('.'):
+                continue
+
+            # filter by query
+            if query and query not in p.lower():
                 continue
 
             abspath = os.path.join(path, p)
 
-            it = items_.ItemUri(abspath)
-            items.append(it)
+            items.append(items_.ItemUri(abspath))
 
-        return items, query
+        # sort items by
+        self.items = sorted(items, key=lambda it: it.arg)
+
+        self.emit('menu-update')
 
     def file_navigation_cd(self):
         new_query = self.items[self.selected].arg
         self.bar.update(new_query.replace(os.environ['HOME'], '~'))
 
     def file_navigation_back(self):
-        idx = self.query[:-1].rfind('/')
-        new_query = self.query[:idx]+'/'
-        self.bar.update(new_quey.replace(os.environ['HOME'], '~'))
+        query = os.path.expanduser(self.bar.query[:-1])
+        idx = query.rfind('/')
+        new_query = query[:idx]+'/'
+        self.bar.update(new_query.replace(os.environ['HOME'], '~'))
 
     def explore(self, arg):
         self.bar.update(arg)
@@ -574,21 +581,23 @@ class Sherlock(Gtk.Window):
         screen_h = Gdk.Screen.height()
 
         w, h = pb.get_width(), pb.get_height()
-
         ratio = w/h
 
-        if h > screen_h/2:
-            pb = pb.scale_simple(ratio*screen_h/2, screen_h/2, GdkPixbuf.InterpType.BILINEAR)
-        elif w > screen_w/2:
-            pb = pb.scale_simple(screen_w/2, screen_w/(2*ratio), GdkPixbuf.InterpType.BILINEAR)
+        max_w = screen_w
+        max_h = screen_h/2 - self.height/2
 
-        w, h = pb.get_width(), pb.get_height()
+        if h > max_h:
+            pb = pb.scale_simple(ratio*max_h, max_h, GdkPixbuf.InterpType.BILINEAR)
+        elif w > max_w:
+            pb = pb.scale_simple(max_w, max_w/ratio, GdkPixbuf.InterpType.BILINEAR)
+
         self.image.set_from_pixbuf(pb)
 
+        w, h = pb.get_width(), pb.get_height()
         self.preview.resize(w, h)
 
         xpos = screen_w/2 - w/2
         ypos = screen_h/2 - self.height/2 - h
-
         self.preview.move(xpos, ypos)
+
         self.preview.show_all()
