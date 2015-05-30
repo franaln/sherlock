@@ -18,11 +18,10 @@ from sherlock import items as items_
 from sherlock.bar import Bar
 from sherlock.attic import Attic
 
-
 cache_dir = os.path.expanduser(config.cache_dir)
 attic_path = os.path.join(cache_dir, 'attic')
 
-_lock = threading.Lock()
+lock = threading.Lock()
 
 class Sherlock(Gtk.Window, GObject.GObject):
 
@@ -215,8 +214,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
     def plugin_done(self, task_id, query, result):
 
-        with _lock:
-
+        with lock:
             if result:
                 self.items.extend(result)
 
