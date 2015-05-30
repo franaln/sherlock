@@ -139,6 +139,9 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         self.clear_menu()
 
+        if self.preview is not None:
+            self.preview.hide()
+
         # File navigation
         if self.file_navigation_mode(query):
             self.logger.info('file navigation: %s' % query)
@@ -162,9 +165,10 @@ class Sherlock(Gtk.Window, GObject.GObject):
                 self.previous_query()
             elif key == 'Down':
                 self.next_query()
-
             elif 'space' in key:
                 self.toggle_preview()
+            elif key == 'y':
+                self.bar.update(utils.get_selection())
 
             return
 
@@ -328,8 +332,8 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         # Keyword plugin
         if query.startswith('.'):
-            self.file_navigation_mode = False
-            query = query[1:]
+            query = query[1:].strip()
+
             for keyword, name in self.keyword_plugins.items():
 
                 if query.startswith(keyword):
@@ -348,7 +352,6 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         # Basic search
         if not matches:
-            self.file_navigation_mode = False
 
             for name in self.base_plugins.keys():
                 plugin = self.base_plugins[name]
@@ -420,8 +423,8 @@ class Sherlock(Gtk.Window, GObject.GObject):
                 return
             self.selected += 1
 
-        if self.preview is not None and self.preview.get_visible():
-            self.update_preview()
+            if self.preview is not None and self.preview.get_visible():
+                self.update_preview()
 
         self.queue_draw()
 
@@ -597,7 +600,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.preview.resize(w, h)
 
         xpos = screen_w/2 - w/2
-        ypos = screen_h/2 - h - self.height/2 + 20
+        ypos = screen_h/2 - h - self.height/2
         self.preview.move(xpos, ypos)
 
         self.preview.show_all()
