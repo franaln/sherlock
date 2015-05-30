@@ -61,7 +61,6 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.action_selected = 0
         self.menu_visible = False
         self.action_panel_visible = False
-        self.file_navigation_mode = False
 
         # Attic
         self.attic = Attic(attic_path)
@@ -141,9 +140,8 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.clear_menu()
 
         # File navigation
-        if query.startswith('/') or query.startswith('~/'):
+        if self.file_navigation_mode(query):
             self.logger.info('file navigation: %s' % query)
-            self.file_navigation_mode = True
             self.file_navigation(query)
 
         # Search
@@ -174,7 +172,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
             self.close()
 
         elif key == 'Left':
-            if self.file_navigation_mode:
+            if self.file_navigation_mode():
                 self.file_navigation_back()
 
         elif key == 'Down':
@@ -194,7 +192,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         # Return/Right: execute default action on selected item
         elif 'Return' in key or key == 'Right':
-            if self.file_navigation_mode and self.selected >= 0:
+            if self.file_navigation_mode() and self.selected >= 0:
                 self.file_navigation_cd()
             else:
                 self.actionate()
@@ -248,7 +246,6 @@ class Sherlock(Gtk.Window, GObject.GObject):
         if self.items:
             del self.items[:]
         self.selected = 0
-        self.file_navigation_mode = False
         self.hide_action_panel()
         self.hide_menu()
 
@@ -463,6 +460,11 @@ class Sherlock(Gtk.Window, GObject.GObject):
     # -----------------
     #  File navigation
     # -----------------
+    def file_navigation_mode(self, query=None):
+        if query is None:
+            query = self.bar.query
+        return (query.startswith('/') or query.startswith('~/'))
+
     def file_navigation(self, query):
 
         query = os.path.expanduser(query)
@@ -595,7 +597,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.preview.resize(w, h)
 
         xpos = screen_w/2 - w/2
-        ypos = screen_h/2 - self.height/2 - h
+        ypos = screen_h/2 - h - self.height/2 + 20
         self.preview.move(xpos, ypos)
 
         self.preview.show_all()
