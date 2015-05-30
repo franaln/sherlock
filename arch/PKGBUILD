@@ -1,0 +1,25 @@
+_pkgname=sherlock
+pkgname=sherlock-git
+pkgver=19ce7f
+pkgrel=1
+pkgdesc=""
+arch=('any')
+url="https://github.com/franaln/sherlock"
+license=('GPL')
+depends=('python' 'gtk3')
+makedepends=('git')
+optdepends=('calc: for calculator plugin')
+provides=(sherlock)
+conflicts=(sherlock)
+source=("git://github.com/franaln/sherlock.git")
+md5sums=('SKIP')
+
+pkgver() {
+    cd "${srcdir}/${_pkgname}"
+    git describe --always | sed -e 's|-|.|g' -e '1s|^.||'
+}
+
+package() {
+    cd "${srcdir}/${_pkgname}"
+    python setup.py -q install --root="$pkgdir" --optimize=1
+}
