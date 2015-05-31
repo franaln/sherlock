@@ -219,9 +219,9 @@ class Sherlock(Gtk.Window, GObject.GObject):
                 self.bar.addchar(event.string)
 
     def search_plugin(self, plugin, query):
-        self.worker.add_update(self.plugin_done, plugin, query)
+        self.worker.add_job(self.on_plugin_done, plugin, query)
 
-    def plugin_done(self, task_id, query, result):
+    def on_plugin_done(self, task_id, query, result):
 
         with lock:
             if result:
@@ -271,7 +271,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.queue_draw()
 
     def show_action_panel(self):
-        match = self.items[self.selected]
+        match = self.selected_item()
         match_actions = items_.actions[match.category]
 
         if len(match_actions) < 2:
@@ -296,9 +296,10 @@ class Sherlock(Gtk.Window, GObject.GObject):
         else:
             self.show_action_panel()
 
-
     def selected_item(self):
-        return self.items[self.selected]
+        if not self.items:
+            return None
+        return self.items[self.selected] if self.selected >=0 else self.items[0]
 
     # -------------
     #  Draw window
@@ -395,14 +396,8 @@ class Sherlock(Gtk.Window, GObject.GObject):
     # --------
     def actionate(self):
 
-        item_selected = self.selected
-        if item_selected < 0:
-            item_selected = 0
-
-        match = self.items[item_selected]
+        match = self.selected_item()
         action_name = items_.actions[match.category][self.action_selected][1]
-
-        self.attic.add(self.bar.query, match, None)
 
         if action_name == 'explore' or os.path.isdir(match.arg):
             self.explore(match.arg)
@@ -410,6 +405,8 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         action = getattr(actions, action_name)
         self.logger.info('executing %s %s' % (action_name, match.arg))
+
+        self.attic.add(self.bar.query, match, None)
 
         action(match.arg)
 
@@ -524,7 +521,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.bar.addchar(new_query.replace(os.environ['HOME'], '~'), True)
 
     def explore(self, arg):
-        self.bar.addchar(arg, True)
+        self.bar.addchar(arg.replace(os.environ['HOME'], '~'), True)
 
     # -----------------
     #  File Preview
@@ -551,11 +548,9 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
     def update_preview(self):
 
-        item_selected = self.selected if self.selected >= 0 else 0
-        path = self.items[item_selected].arg
+        path = self.selected_item().arg
 
         pb = None
-
         # if path is an image
         try:
             pb = GdkPixbuf.Pixbuf.new_from_file(path)

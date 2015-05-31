@@ -134,7 +134,6 @@ class SearchWorker:
 
         for id_, done, plugin, query in iter(self.queue.get, None):
             result = []
-
             try:
                 plugin_matches = get_matches(plugin, query, min_score=60.0, max_results=50)
                 result.extend(plugin_matches)
@@ -144,7 +143,7 @@ class SearchWorker:
             # signal task completion; run done() in the main thread
             GObject.idle_add(done, id_, query, result)
 
-    def add_update(self, callback, plugin, query):
+    def add_job(self, callback, plugin, query):
         # executed in the main thread
         self.task_id += 1
         self.queue.put((self.task_id, callback, plugin, query))
