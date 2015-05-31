@@ -168,7 +168,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
             elif 'space' in key:
                 self.toggle_preview()
             elif key == 'y':
-                self.bar.update(utils.get_selection())
+                self.bar.addchar(utils.get_selection())
             elif key == 'Backspace':
                 print('bu')
                 self.bar.clear()
@@ -422,7 +422,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
     def show_previous_query(self):
         query = self.attic.get_query()
         if query is not None:
-            self.bar.update(query)
+            self.bar.addchar(query)
 
     def select_down(self):
         if self.action_panel_visible:
@@ -459,13 +459,13 @@ class Sherlock(Gtk.Window, GObject.GObject):
         previous_query = self.attic.get_previous_query()
 
         if previous_query is not None:
-            self.bar.update(previous_query)
+            self.bar.addchar(previous_query)
 
     def next_query(self):
         next_query = self.attic.get_next_query()
 
         if next_query is not None:
-            self.bar.update(next_query)
+            self.bar.addchar(next_query)
 
     def show_history(self):
         self.items = self.attic.get_history()
@@ -515,16 +515,16 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
     def file_navigation_cd(self):
         new_query = self.items[self.selected].arg
-        self.bar.update(new_query.replace(os.environ['HOME'], '~'))
+        self.bar.addchar(new_query.replace(os.environ['HOME'], '~'), True)
 
     def file_navigation_back(self):
         query = os.path.expanduser(self.bar.query[:-1])
         idx = query.rfind('/')
         new_query = query[:idx]+'/'
-        self.bar.update(new_query.replace(os.environ['HOME'], '~'))
+        self.bar.addchar(new_query.replace(os.environ['HOME'], '~'), True)
 
     def explore(self, arg):
-        self.bar.update(arg)
+        self.bar.addchar(arg, True)
 
     # -----------------
     #  File Preview

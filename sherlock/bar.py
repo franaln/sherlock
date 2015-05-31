@@ -25,17 +25,18 @@ class Bar(GObject.GObject):
 
         GLib.timeout_add(250, self.check)
 
-    def update(self, text):
+    def _update(self, text):
         self.counter = time.time()
         self.updated = True
         self.query = text
-        #self.cursor = len(text)
         self.emit('update')
 
-    def addchar(self, char):
+    def addchar(self, char, clear=False):
+        if clear:
+            self.clear()
         newquery = '%s%s%s' % (self.query[:self.cursor], char, self.query[self.cursor:])
-        self.update(newquery)
-        self.cursor += 1
+        self._update(newquery)
+        self.cursor += len(char)
 
     def delchar(self, delete=False):
         if delete:
@@ -43,10 +44,10 @@ class Bar(GObject.GObject):
         else:
             newquery = '%s%s' % (self.query[:self.cursor-1], self.query[self.cursor:])
             self.cursor -= 1
-        self.update(newquery)
+        self._update(newquery)
 
     def clear(self):
-        self.update('')
+        self._update('')
 
     def is_empty(self):
         return bool(not self.query)
@@ -89,5 +90,3 @@ class Bar(GObject.GObject):
         cursor_x = query_x + drawer.calc_text_width(cr, self.query[:self.cursor], size=38)
 
         drawer.draw_rect(cr, cursor_x, 18, 2, 60)
-        #if self.query: ## and self.selected:
-        #drawer.draw_rect(cr, query_x, query_y-bar_h*0.5, bar_w-15, bar_h, config.selection_color)

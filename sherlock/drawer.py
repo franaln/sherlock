@@ -116,74 +116,78 @@ def draw_item(cr, pos, item, selected=False):
     draw_item_text(cr, pos, item, selected)
 
 def draw_item_text(cr, pos, item, selected):
-        """
-        ---------------------------------
-        | TEXT                  |       |
-        | subtext               |       |
-        ---------------------------------
-        """
 
-        # pos -> (x, y)
-        base_y = height + pos * item_h
+    """
+    ---------------------------------
+    | TEXT                  |       |
+    | subtext               |       |
+    ---------------------------------
+    """
 
+    # pos -> (x, y)
+    base_y = height + pos * item_h
+
+    if selected:
+        draw_rect(cr, 0, base_y, width, item_h, sel_color)
+    elif pos < 4:
+        draw_horizontal_separator(cr, 0, base_y + item_h - 1, width)
+
+    text_h = item_m
+    title = item.title ## + ' (' + str(item.score) + ')'
+
+    if isinstance(title, list) or isinstance(title, tuple):
+
+        title_list = title
+
+        # divide text width in ncols columns
+        ncols = len(title_list)
+        col_w = int(left_w / ncols)
+
+        space_w = calc_text_width(cr, ' ', 18)
+
+        title = ''
+        for i, l in enumerate(title_list):
+            title += l
+
+            space_px = int(col_w - calc_text_width(cr, l, 18))
+            nspaces = int(space_px / space_w)
+
+            title += ' '*nspaces
+
+    if item.subtitle:
         if selected:
-            draw_rect(cr, 0, base_y, width, item_h, sel_color)
-        elif pos < 4:
-            draw_horizontal_separator(cr, 0, base_y + item_h - 1, width)
-
-        text_h = item_m
-        title = item.title ## + ' (' + str(item.score) + ')'
-
-        if isinstance(title, list) or isinstance(title, tuple):
-
-            title_list = title
-
-            # divide text width in ncols columns
-            ncols = len(title_list)
-            col_w = int(left_w / ncols)
-
-            space_w = calc_text_width(cr, ' ', 18)
-
-            title = ''
-            for i, l in enumerate(title_list):
-                title += l
-
-                space_px = int(col_w - calc_text_width(cr, l, 18))
-                nspaces = int(space_px / space_w)
-
-                title += ' '*nspaces
-
-        if item.subtitle:
-            if selected:
-                draw_text(cr, 10, base_y+2, left_w, text_h, title, seltext_color, 18)
-            else:
-                draw_text(cr, 10, base_y+2, left_w, text_h, title, text_color, 18)
-
-            y = base_y + item_h * 0.5
-            if selected:
-                draw_text(cr, 10, y, left_w, text_h, item.subtitle, seltext_color, 8)
-            else:
-                draw_text(cr, 10, y, left_w, text_h, item.subtitle, subtext_color, 8)
-
+            draw_text(cr, 10, base_y+2, left_w, text_h, title, seltext_color, 18)
         else:
-            if selected:
-                draw_text(cr, 10, base_y, left_w, item_h, title, seltext_color, 18)
-            else:
-                draw_text(cr, 10, base_y, left_w, item_h, title, text_color, 18)
+            draw_text(cr, 10, base_y+2, left_w, text_h, title, text_color, 18)
 
-        # Default action and more actions arrow
+        y = base_y + item_h * 0.5
         if selected:
+            draw_text(cr, 10, y, left_w, text_h, item.subtitle, seltext_color, 8)
+        else:
+            draw_text(cr, 10, y, left_w, text_h, item.subtitle, subtext_color, 8)
+
+    else:
+        if selected:
+            draw_text(cr, 10, base_y, left_w, item_h, title, seltext_color, 18)
+        else:
+            draw_text(cr, 10, base_y, left_w, item_h, title, text_color, 18)
+
+    # Default action and more actions arrow
+    if selected:
+        try:
             action_name = items.actions[item.category][0][0]
             draw_text(cr, left_w + right_w*0.5, base_y, right_w, item_h, action_name, seltext_color, 10)
+        except:
+            pass
 
-            # arrow
-            cr.set_source_rgb(1, 1, 1)
-            cr.set_line_width(1.5)
-            cr.move_to(width-20, base_y + item_m + 4)
-            cr.rel_line_to(4, -4)
-            cr.rel_line_to(-4, -4)
-            cr.set_line_join(cairo.LINE_JOIN_ROUND)
-            cr.stroke()
+        # arrow
+        cr.set_source_rgb(1, 1, 1)
+        cr.set_line_width(1.5)
+        cr.move_to(width-20, base_y + item_m + 4)
+        cr.rel_line_to(4, -4)
+        cr.rel_line_to(-4, -4)
+        cr.set_line_join(cairo.LINE_JOIN_ROUND)
+        cr.stroke()
 
 #     def draw_item_slider(cr, pos, item, selected):
 #         """
