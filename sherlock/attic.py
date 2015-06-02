@@ -47,22 +47,30 @@ class Attic:
 
         self.pos = len(self.events)
 
+        self.changed = False
+
     def load(self):
         self.logger.info('loading attic')
         with open(self.path, 'rb') as f:
-            self.events = pickle.load(f)
-            self.attic  = pickle.load(f)
+            try:
+                self.events = pickle.load(f)
+                self.attic  = pickle.load(f)
+            except:
+                # backup file for now
+                utils.copy_file(self.path, self.path+'.backup')
+                self.events = []
+                self.attic = dict()
+
 
     def save(self):
+        if not self.changed:
+            return
         self.logger.info('saving attic')
         with open(self.path, 'wb') as f:
             pickle.dump(self.events, f)
             pickle.dump(self.attic, f)
 
     def add(self, query, item, action):
-
-        # if item.category == 'text':
-        #     return
 
         self.logger.info('adding query=%s, item=%s, action=%s to the attic' % (query, item, action))
 
@@ -86,7 +94,11 @@ class Attic:
         else:
             self.attic[query].append([item_dict, 1])
 
+        self.changed = True
+
+
     def remove(self):
+        self.changed = True
         pass
 
     def get_next_query(self):
