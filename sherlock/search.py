@@ -22,7 +22,7 @@ def get_matches(plugin, query, min_score=0, max_results=0):
     Returns list of items that match query.
     """
 
-    results = dict()
+    results = [] #dict()
 
     if not query:
         return []
@@ -99,14 +99,23 @@ def get_matches(plugin, query, min_score=0, max_results=0):
             # will be sorted in alphabetical not reverse alphabetical order
             #results[(100.0 / score, value.lower(), i)] = (item, round(score, 2))
             item.score = round(score, 2)
+            # if isinstance(item, items.ItemUri):
+            #     results[(100.0/score, time.time() - os.path.getmtime(item.subtitle), value.lower(), i)] = item
+            # else:
+            #     results[(100.0/score, value.lower(), i)] = item
+
             if isinstance(item, items.ItemUri):
-                results[(100.0/score, time.time() - os.path.getmtime(item.subtitle), value.lower(), i)] = item
-            else:
-                results[(100.0/score, value.lower(), i)] = item
+                import datetime
+                time_penalty = datetime.datetime.fromtimestamp(time.time()) - datetime.datetime.fromtimestamp(os.path.getmtime(item.subtitle))
+                item.score -= time_penalty.days if time_penalty.days < 100 else 100
+
+            if item.score > min_score:
+                results.append(item)
+
 
     # sort on keys, then discard the keys
-    keys = sorted(results.keys(), reverse=False)
-    results = [results.get(k) for k in keys]
+    #keys = sorted(results.keys(), reverse=False)
+    #results = [results.get(k) for k in keys]
 
     if max_results and len(results) > max_results:
         results = results[:max_results]

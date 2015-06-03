@@ -5,7 +5,7 @@ import re
 import string
 import time
 import subprocess
-
+import shutil
 
 #-------------#
 # Other utils #
@@ -38,6 +38,14 @@ def is_running(name):
         return True
 
     return False
+
+def copy_file(src, dest):
+    try:
+        shutil.copy(src, dest)
+    except shutil.Error as e:
+        print('Error: %s' % e)
+    except IOError as e:
+        print('Error: %s' % e.strerror)
 
 # def xselSetClipboard(text):
 #     p = Popen(['xsel', '-i'], stdin=PIPE)

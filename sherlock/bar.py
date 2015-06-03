@@ -17,6 +17,7 @@ class Bar(GObject.GObject):
     def __init__(self):
         self.cursor = 0
         self.query = ''
+        self.selected = False
 
         self.counter = 0
         self.updated = False
@@ -58,6 +59,9 @@ class Bar(GObject.GObject):
             self.emit('query-change', self.query)
         return True
 
+    def select(self):
+        self.selected = True
+
     def move_cursor_left(self):
         self.cursor -= 1
         self.emit('update')
@@ -84,6 +88,9 @@ class Bar(GObject.GObject):
 
         query_x = 16
         query_y = bar_h * 0.5
+
+        if self.selected:
+            drawer.draw_rect(cr, query_x, 18, drawer.calc_text_width(cr, self.query, size=38), 60, config.selection_color)
 
         drawer.draw_variable_text(cr, query_x, query_y, bar_w-20, 0, self.query, size=38)
 

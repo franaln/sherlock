@@ -192,7 +192,11 @@ class Sherlock(Gtk.Window, GObject.GObject):
                 self.select_down()
 
         elif key == 'Up':
-            self.select_up()
+            if not self.menu_visible and self.bar.is_empty():
+                self.bar.select()
+                self.previous_query()
+            else:
+                self.select_up()
 
         elif key == 'BackSpace':
             self.bar.delchar()
@@ -225,19 +229,22 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         with lock:
             if result:
-                self.items.extend(result)
 
-                #self.items = sorted(self.items, key=lambda x: x.score, reverse=True)
+                self.items.extend(result)
 
                 if query:
                     self.attic.sort(query, self.items)
 
-                    #if len(query) > 1:
-                    #self.items.extend(self.attic.get_similar(query))
-
                 self.items = sorted(self.items, key=lambda x: x.score, reverse=True)
 
-        self.emit('menu-update')
+                self.items = [i for i in self.items if i.score > 60.]
+
+                #self.items = sorted(self.items, key=lambda x: x.score, reverse=True)
+
+                #if len(query) > 1:
+                #self.items.extend(self.attic.get_similar(query))
+
+                self.emit('menu-update')
 
     # -------------
     #  Run & close
@@ -454,7 +461,6 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
     def previous_query(self):
         previous_query = self.attic.get_previous_query()
-
         if previous_query is not None:
             self.bar.addchar(previous_query)
 
@@ -566,11 +572,11 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
                 width, height = page.get_size()
 
-                surface = cairo.ImageSurface(cairo.FORMAT_ARGB32,
-                                             int(width), int(height))
+                surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, int(width), int(height))
                 ctx = cairo.Context(surface)
-
+                ctx.save()
                 page.render(ctx)
+                ctx.restore()
 
                 ctx.set_operator(cairo.OPERATOR_DEST_OVER)
                 ctx.set_source_rgb(1, 1, 1)
@@ -578,7 +584,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
                 pb = Gdk.pixbuf_get_from_surface(surface, 0, 0, width, height)
             except:
-                pass
+                raise #pass
 
         if pb is None:
             self.preview.hide()

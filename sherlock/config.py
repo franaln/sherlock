@@ -23,12 +23,15 @@ basic_search = [
     'system',
     'calculator',
     'files',
+ #   'path',
 ]
 
 files_include = [
     '~/Dropbox',
     '~/Downloads',
     '~/cosas',
+    '~/tmp',
+    '~/fotos',
 ]
 
 #---------
