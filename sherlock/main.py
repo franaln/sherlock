@@ -165,6 +165,10 @@ class Sherlock(Gtk.Window, GObject.GObject):
                 self.previous_query()
             elif key == 'Down':
                 self.next_query()
+            elif key == 'a':
+                self.bar.move_cursor_begin()
+            elif key == 'e':
+                self.bar.move_cursor_end()
             elif 'space' in key:
                 self.toggle_preview()
             elif key == 'y':

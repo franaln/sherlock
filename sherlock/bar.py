@@ -62,6 +62,14 @@ class Bar(GObject.GObject):
     def select(self):
         self.selected = True
 
+    def move_cursor_begin(self):
+        self.cursor = 0
+        self.emit('update')
+
+    def move_cursor_end(self):
+        self.cursor = len(self.query)
+        self.emit('update')
+
     def move_cursor_left(self):
         self.cursor -= 1
         self.emit('update')
