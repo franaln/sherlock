@@ -168,7 +168,7 @@ def draw_item_text(cr, pos, item, selected):
 
     # else:
     if selected:
-        draw_text(cr, 10, base_y, left_w, item_h, title, seltext_color, 18)
+        draw_text(cr, 10, base_y, left_w, item_h, title, text_color, 18)
     else:
         draw_text(cr, 10, base_y, left_w, item_h, title, text_color, 18)
 
