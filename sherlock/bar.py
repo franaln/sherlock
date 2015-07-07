@@ -6,7 +6,6 @@ from gi.repository import GObject, GLib
 from sherlock import config
 from sherlock import drawer
 
-
 class Bar(GObject.GObject):
 
     __gsignals__ = {
@@ -45,6 +44,7 @@ class Bar(GObject.GObject):
         else:
             newquery = '%s%s' % (self.query[:self.cursor-1], self.query[self.cursor:])
             self.cursor -= 1
+        print(newquery)
         self._update(newquery)
 
     def clear(self):

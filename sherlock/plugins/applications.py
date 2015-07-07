@@ -17,6 +17,14 @@ def _get_apps():
             app.get_name(),
             app.get_executable(),
             app.get_filename(),
+            app.get_name(),
+        )
+        apps.append(item)
+        item = ItemApp(
+            app.get_name(),
+            app.get_executable(),
+            app.get_filename(),
+            app.get_executable(),
         )
         apps.append(item)
 

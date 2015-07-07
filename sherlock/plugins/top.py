@@ -1,6 +1,7 @@
 import os
 import operator
-import utils
+
+import sherlock.utils as utils
 
 from sherlock.items import Item
 

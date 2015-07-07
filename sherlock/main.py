@@ -101,6 +101,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
             self.logger.info('pluging %s loaded.' % name)
         except ImportError:
             self.logger.error('error loading plugin %s.' % name)
+            raise
             return None
         return plugin
 
@@ -396,7 +397,12 @@ class Sherlock(Gtk.Window, GObject.GObject):
         if matches:
             self.items.extend(matches)
         else:
-            it = items_.ItemCmd("run '%s' in a shell" % query, query)
+            if query.startswith("'"):
+                query = query[1:]
+                it = items_.ItemCmd("run '%s' in a shell" % query, query)
+                it.score = 110
+            else:
+                it = items_.ItemCmd("run '%s' in a shell" % query, query)
 
             self.items.append(it)
 
@@ -408,6 +414,9 @@ class Sherlock(Gtk.Window, GObject.GObject):
     def actionate(self):
 
         match = self.selected_item()
+        if match is None:
+            return
+
         action_name = items_.actions[match.category][self.action_selected][1]
 
         if action_name == 'explore' or os.path.isdir(match.arg):

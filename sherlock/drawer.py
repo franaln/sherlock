@@ -128,12 +128,12 @@ def draw_item_text(cr, pos, item, selected):
     base_y = height + pos * item_h
 
     if selected:
-        draw_rect(cr, 0, base_y, width, item_h, sel_color)
+        draw_rect(cr, 5, base_y, width - 10, item_h, sel_color)
     elif pos < 4:
         draw_horizontal_separator(cr, 0, base_y + item_h - 1, width)
 
     text_h = item_m
-    title = item.title ## + ' (' + str(item.score) + ')'
+    title = item.title #+ ' (' + str(item.score) + ')'
 
     if isinstance(title, list) or isinstance(title, tuple):
 
@@ -154,23 +154,23 @@ def draw_item_text(cr, pos, item, selected):
 
             title += ' '*nspaces
 
-    if item.subtitle:
-        if selected:
-            draw_text(cr, 10, base_y+2, left_w, text_h, title, seltext_color, 18)
-        else:
-            draw_text(cr, 10, base_y+2, left_w, text_h, title, text_color, 18)
+    # if item.subtitle:
+    #     if selected:
+    #         draw_text(cr, 10, base_y+2, left_w, text_h, title, seltext_color, 18)
+    #     else:
+    #         draw_text(cr, 10, base_y+2, left_w, text_h, title, text_color, 18)
 
-        y = base_y + item_h * 0.5
-        if selected:
-            draw_text(cr, 10, y, left_w, text_h, item.subtitle, seltext_color, 8)
-        else:
-            draw_text(cr, 10, y, left_w, text_h, item.subtitle, subtext_color, 8)
+    #     y = base_y + item_h * 0.5
+    #     if selected:
+    #         draw_text(cr, 10, y, left_w, text_h, item.subtitle, seltext_color, 8)
+    #     else:
+    #         draw_text(cr, 10, y, left_w, text_h, item.subtitle, subtext_color, 8)
 
+    # else:
+    if selected:
+        draw_text(cr, 10, base_y, left_w, item_h, title, seltext_color, 18)
     else:
-        if selected:
-            draw_text(cr, 10, base_y, left_w, item_h, title, seltext_color, 18)
-        else:
-            draw_text(cr, 10, base_y, left_w, item_h, title, text_color, 18)
+        draw_text(cr, 10, base_y, left_w, item_h, title, text_color, 18)
 
     # Default action and more actions arrow
     if selected:

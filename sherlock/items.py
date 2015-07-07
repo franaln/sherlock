@@ -57,10 +57,10 @@ class ItemUri(Item):
 
 
 class ItemApp(Item):
-    def __init__(self, app_name, app_exe, app_desktop, no_filter=False):
-        Item.__init__(self, title=app_name, subtitle=app_exe,
-                      key=app_name+' '+app_exe, category='app',
-                      arg=app_desktop, no_filter=no_filter)
+    def __init__(self, name, exe, desktop, key, no_filter=False):
+        Item.__init__(self, title=name, subtitle=exe,
+                      key=key, category='app',
+                      arg=desktop, no_filter=no_filter)
 
     def __cmp__(self, other):
         return (self.app_exe == other.app_exe)
