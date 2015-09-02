@@ -95,6 +95,7 @@ actions['app'] = [
 
 actions['uri'] = [
     ('Open', 'open_uri'),
+    ('Console', 'open_console_uri'),
     ('Open folder', 'open_folder'),
     ('Explore', 'explore'),
 ]

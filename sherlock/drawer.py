@@ -58,14 +58,10 @@ def draw_vertical_separator(cr, x, y, size):
     cr.line_to(x, y+size-5)
     cr.stroke()
 
-def set_font(layout, size):
+def calc_text_width(cr, text, size):
+    layout = PangoCairo.create_layout(cr)
     font = Pango.FontDescription('%s %s' % (fontname, size))
     layout.set_font_description(font)
-
-def calc_text_width(cr, text, size):
-
-    layout = PangoCairo.create_layout(cr)
-    set_font(layout, size)
     layout.set_text(u'%s' % text, -1)
     PangoCairo.update_layout(cr, layout)
     tw, th = layout.get_pixel_size()
@@ -73,7 +69,8 @@ def calc_text_width(cr, text, size):
 
 def draw_text(cr, x, y, w, h, text, color, size=12, center=False):
     layout = PangoCairo.create_layout(cr)
-    set_font(layout, size)
+    font = Pango.FontDescription('%s %s' % (fontname, size))
+    layout.set_font_description(font)
     layout.set_text(u'%s' % text, -1)
     layout.set_ellipsize(Pango.EllipsizeMode.END)
     layout.set_width(Pango.SCALE * w)
@@ -82,28 +79,32 @@ def draw_text(cr, x, y, w, h, text, color, size=12, center=False):
     tw, th = layout.get_pixel_size()
     cr.set_source_rgb(*color)
     if center:
-        cr.move_to(x + (w/2 - tw/2), y + (h/2 - th/2))
+        cr.move_to(x + (w*0.5 - tw*0.5), y + (h*0.5 - th*0.5))
     else:
-        cr.move_to(x, y + (h/2 - th/2))
+        cr.move_to(x, y + (h*0.5 - th*0.5))
     PangoCairo.show_layout(cr, layout)
 
 def draw_variable_text(cr, x, y, w, h, text, color=text_color, size=12):
     layout = PangoCairo.create_layout(cr)
-    set_font(layout, size)
+
+    font = Pango.FontDescription('%s %s' % (fontname, size))
+    layout.set_font_description(font)
+    cr.set_source_rgb(*color)
 
     layout.set_text(u'%s' % text, -1)
 
     PangoCairo.update_layout(cr, layout)
 
-    text_w, text_h = layout.get_pixel_size()
+    tw, th = layout.get_pixel_size()
 
-    while text_w > w:
+    while tw > w:
         size = size - 1
-        set_font(layout, size)
-        text_w, text_h = layout.get_pixel_size()
+        font = Pango.FontDescription('%s %s' % (fontname, size))
+        layout.set_font_description(font)
+        PangoCairo.update_layout(cr, layout)
+        tw, th = layout.get_pixel_size()
 
-    cr.move_to(x, y - 0.5*text_h)
-    cr.set_source_rgb(*color)
+    cr.move_to(x, y + (h*0.5 - th*0.5))
     PangoCairo.show_layout(cr, layout)
 
 

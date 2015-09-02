@@ -233,7 +233,9 @@ class Sherlock(Gtk.Window, GObject.GObject):
     def on_plugin_done(self, task_id, query, result):
 
         with lock:
-            if result:
+             self.logger.debug(result)
+
+             if result:
 
                 self.items.extend(result)
 

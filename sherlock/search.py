@@ -104,14 +104,15 @@ def get_matches(plugin, query, min_score=0, max_results=0):
             # else:
             #     results[(100.0/score, value.lower(), i)] = item
 
-            if isinstance(item, items.ItemUri):
-                import datetime
-                time_penalty = datetime.datetime.fromtimestamp(time.time()) - datetime.datetime.fromtimestamp(os.path.getmtime(item.subtitle))
-                item.score -= time_penalty.days if time_penalty.days < 100 else 100
+            # if isinstance(item, items.ItemUri):
+            #     import datetime
+            #     time_penalty = datetime.datetime.fromtimestamp(time.time()) - datetime.datetime.fromtimestamp(os.path.getmtime(item.subtitle))
+            #     item.score -= time_penalty.days if time_penalty.days < 100 else 100
 
             if item.score > min_score:
                 results.append(item)
 
+            #print(item.title, item.score)
 
     # sort on keys, then discard the keys
     #keys = sorted(results.keys(), reverse=False)

@@ -47,11 +47,14 @@ def run_app_in_terminal(arg):
     # run_cmd(['/bin/bash', arg
 
 def open_uri(arg):
-    run_cmd('setsid rifle '+arg)
+    run_cmd('setsid rifle "'+arg+'"')
+
 
 def open_folder(arg):
     run_cmd('setsid nautilus '+arg.split('/')[0])
 
+def open_console_uri(arg):
+    run_cmd('setsid urxvt -e "cd %s"' % arg)
 
 # Outputs
 def copy_to_clipboard(arg):
