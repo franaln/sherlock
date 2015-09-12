@@ -27,6 +27,19 @@ def do_search_google():
     pass
 
 
+def escape(text):
+
+    cs = ['(', ')', '[', ']', '\'']
+
+    newtext = text
+    for c in cs:
+        if c in newtext:
+            newtext = newtext.replace(c, '\\%s' % c)
+
+    return newtext
+
+
+
 # Common actions
 def run_cmd(arg):
     utils.run_cmd(arg)
@@ -44,10 +57,12 @@ def run_app_in_terminal(arg):
     display = Gdk.Display.get_default()
     app.launch(None, display.get_app_launch_context())
 
-    # run_cmd(['/bin/bash', arg
 
 def open_uri(arg):
-    run_cmd('setsid rifle "'+arg+'"')
+
+    earg = escape(arg)
+
+    run_cmd('setsid open '+earg)#+'"')
 
 
 def open_folder(arg):

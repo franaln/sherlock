@@ -174,8 +174,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
                 self.toggle_preview()
             elif key == 'y':
                 self.bar.addchar(utils.get_selection())
-            elif key == 'Backspace':
-                print('bu')
+            elif key == 'BackSpace':
                 self.bar.clear()
 
             return
