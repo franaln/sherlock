@@ -7,6 +7,12 @@ import logging
 import importlib
 import threading
 import cairo
+
+import gi
+gi.require_version('Gtk', '3.0')
+gi.require_version('Poppler', '0.18')
+gi.require_version('PangoCairo', '1.0')
+gi.require_version('Notify', '0.7')
 from gi.repository import Gtk, Gdk, GLib, GObject, GdkPixbuf, Poppler
 
 from sherlock import config
@@ -232,7 +238,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
     def on_plugin_done(self, task_id, query, result):
 
         with lock:
-             self.logger.debug(result)
+             self.logger.debug('%d results from %s' % (len(result), task_id))
 
              if result:
 

@@ -155,23 +155,23 @@ def draw_item_text(cr, pos, item, selected):
 
             title += ' '*nspaces
 
-    # if item.subtitle:
-    #     if selected:
-    #         draw_text(cr, 10, base_y+2, left_w, text_h, title, seltext_color, 18)
-    #     else:
-    #         draw_text(cr, 10, base_y+2, left_w, text_h, title, text_color, 18)
+    if item.subtitle:
+        if selected:
+            draw_text(cr, 10, base_y+2, left_w, text_h, title, seltext_color, 18)
+        else:
+            draw_text(cr, 10, base_y+2, left_w, text_h, title, text_color, 18)
 
-    #     y = base_y + item_h * 0.5
-    #     if selected:
-    #         draw_text(cr, 10, y, left_w, text_h, item.subtitle, seltext_color, 8)
-    #     else:
-    #         draw_text(cr, 10, y, left_w, text_h, item.subtitle, subtext_color, 8)
+        y = base_y + item_h * 0.5
+        if selected:
+            draw_text(cr, 10, y, left_w, text_h, item.subtitle, seltext_color, 8)
+        else:
+            draw_text(cr, 10, y, left_w, text_h, item.subtitle, subtext_color, 8)
 
-    # else:
-    if selected:
-        draw_text(cr, 10, base_y, left_w, item_h, title, text_color, 18)
     else:
-        draw_text(cr, 10, base_y, left_w, item_h, title, text_color, 18)
+        if selected:
+            draw_text(cr, 10, base_y, left_w, item_h, title, text_color, 18)
+        else:
+            draw_text(cr, 10, base_y, left_w, item_h, title, text_color, 18)
 
     # Default action and more actions arrow
     if selected:
