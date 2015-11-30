@@ -37,6 +37,8 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
     def __init__(self, debug=False):
 
+        self.debug = debug
+
         # logger
         formatter = '%(levelname)s (%(name)s) %(message)s'
         if debug:
@@ -385,8 +387,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
         if not matches:
 
             for name in self.base_plugins.keys():
-                plugin = self.base_plugins[name]
-                self.search_plugin(plugin, query)
+                self.search_plugin(self.base_plugins[name], query)
 
             if self.keyword_plugins:
                 for kw, name in self.keyword_plugins.items():

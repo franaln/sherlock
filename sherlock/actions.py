@@ -61,7 +61,6 @@ def run_app_in_terminal(arg):
 def open_uri(arg):
 
     earg = escape(arg)
-
     run_cmd('setsid open '+earg)#+'"')
 
 
