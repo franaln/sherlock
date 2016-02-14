@@ -558,6 +558,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
             self.create_preview()
         elif self.preview is not None and self.preview.get_visible():
             self.preview.hide()
+            self.move(0.5*Gdk.Screen.width()-0.5*self.width, 0.5*Gdk.Screen.height()-0.5*self.height)
         else:
             self.update_preview()
 
@@ -613,27 +614,33 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         self.logger.info('showing preview for %s' % path)
 
+
         screen_w = Gdk.Screen.width()
         screen_h = Gdk.Screen.height()
 
         w, h = pb.get_width(), pb.get_height()
-        ratio = w/h
 
-        max_w = screen_w
-        max_h = screen_h/2 - self.height/2
+        max_w = 0.66*screen_w
+        max_h = screen_h
 
-        if h > max_h:
-            pb = pb.scale_simple(ratio*max_h, max_h, GdkPixbuf.InterpType.BILINEAR)
-        elif w > max_w:
-            pb = pb.scale_simple(max_w, max_w/ratio, GdkPixbuf.InterpType.BILINEAR)
+        ratio = min(max_w/float(w), max_h/float(h))
+
+        if w > max_w or h > max_h:
+
+            new_w = w  * ratio
+            new_h = h * ratio
+
+            pb = pb.scale_simple(new_w, new_h, GdkPixbuf.InterpType.BILINEAR)
 
         self.image.set_from_pixbuf(pb)
 
         w, h = pb.get_width(), pb.get_height()
         self.preview.resize(w, h)
 
-        xpos = screen_w/2 - w/2
-        ypos = screen_h/2 - h - self.height/2
+        xpos = 0.66*screen_w - 0.5*w
+        ypos = 0.5*screen_h - 0.5*h
         self.preview.move(xpos, ypos)
+
+        self.move(20, 0.5*screen_h-0.5*self.height)
 
         self.preview.show_all()

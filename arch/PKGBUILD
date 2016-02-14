@@ -1,6 +1,6 @@
 _pkgname=sherlock
 pkgname=sherlock-git
-pkgver=19ce7f
+pkgver=050166
 pkgrel=1
 pkgdesc=""
 arch=('any')

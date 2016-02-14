@@ -18,6 +18,7 @@ An action must be a function with match as argument
   * QR code
 """
 
+import os
 import subprocess
 from gi.repository import Gtk, Gio, Gdk, Notify, Pango
 
@@ -59,7 +60,6 @@ def run_app_in_terminal(arg):
 
 
 def open_uri(arg):
-
     earg = escape(arg)
     run_cmd('setsid open '+earg)#+'"')
 
@@ -68,7 +68,7 @@ def open_folder(arg):
     run_cmd('setsid nautilus '+arg.split('/')[0])
 
 def open_console_uri(arg):
-    run_cmd('setsid urxvt -e "cd %s"' % arg)
+    run_cmd('setsid urxvt -e "cd %s"' % os.path.dirname(arg))
 
 # Outputs
 def copy_to_clipboard(arg):

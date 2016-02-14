@@ -102,6 +102,6 @@ class Bar(GObject.GObject):
 
         drawer.draw_variable_text(cr, query_x, query_y, bar_w-20, 0, self.query, size=38)
 
-        #cursor_x = query_x + drawer.calc_text_width(cr, self.query[:self.cursor], size=38)
+        cursor_x = query_x + drawer.calc_text_width(cr, self.query[:self.cursor], size=38)
 
-        # drawer.draw_rect(cr, cursor_x, 18, 2, 60)
+        drawer.draw_rect(cr, cursor_x, 18, 2, 60)
