@@ -34,6 +34,7 @@ class Bar(GObject.GObject):
     def addchar(self, char, clear=False):
         if clear:
             self.clear()
+            self.cursor = 0
         newquery = '%s%s%s' % (self.query[:self.cursor], char, self.query[self.cursor:])
         self._update(newquery)
         self.cursor += len(char)
@@ -44,7 +45,6 @@ class Bar(GObject.GObject):
         else:
             newquery = '%s%s' % (self.query[:self.cursor-1], self.query[self.cursor:])
             self.cursor -= 1
-        print(newquery)
         self._update(newquery)
 
     def clear(self):

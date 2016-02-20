@@ -246,8 +246,8 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
                 self.items.extend(result)
 
-                if query:
-                    self.attic.sort(query, self.items)
+                # if query:
+                #     self.attic.sort(query, self.items)
 
                 self.items = sorted(self.items, key=lambda x: x.score, reverse=True)
 

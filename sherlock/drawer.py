@@ -116,6 +116,7 @@ def draw_item(cr, pos, item, selected=False):
     # else:
     draw_item_text(cr, pos, item, selected)
 
+
 def draw_item_text(cr, pos, item, selected):
 
     """
@@ -260,6 +261,7 @@ def draw_item_text(cr, pos, item, selected):
 #     else:
 #         draw_rect(cr, toggle_x, toggle_y, toggle_m, toggle_h, sel_color)
 #         draw_text(cr, toggle_x, toggle_y, toggle_m, toggle_h, 'NO', text_color, 10, center=True)
+
 
 def draw_action_panel(cr, actions, selected):
 

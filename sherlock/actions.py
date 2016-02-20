@@ -60,8 +60,8 @@ def run_app_in_terminal(arg):
 
 
 def open_uri(arg):
-    earg = escape(arg)
-    run_cmd('setsid open '+earg)#+'"')
+    uri = r'file://' + escape(arg).replace(' ', r'%20')
+    run_cmd('open '+uri)
 
 
 def open_folder(arg):
