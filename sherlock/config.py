@@ -30,7 +30,7 @@ files_include = [
     '~/Dropbox',
     '~/Downloads',
     '~/cosas',
-    '~/tmp',
+    # '~/tmp',
     '~/fotos',
 ]
 
@@ -39,10 +39,15 @@ files_include = [
 #---------
 plugins = {
     'df': 'disks',
-    'scr': 'screen',
     'temp': 'temperature',
     'top': 'top',
 }
+
+# always check when starts
+automatic_plugins = [
+    'screen',
+
+]
 
 # Fallback plugins
 # (Use it when there are no other matches)

@@ -99,6 +99,15 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.load_plugins()
         self.worker = search.SearchWorker()
 
+        # check automatic items
+        # * hdmi is connected
+        # * pendrive is connected
+        for name in config.automatic_plugins:
+            plugin = self.import_plugin(name)
+            matches = plugin.get_matches('')
+            if matches:
+                self.items.extend(matches)
+                self.emit('menu-update')
 
     # ---------
     #  Plugins
@@ -127,6 +136,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
             if os.path.isfile(os.path.join(self.plugins_dir, '%s.py' % name)):
                 self.keyword_plugins[kw] = name
 
+
         for text, name in config.fallback_plugins.items():
             if os.path.isfile(os.path.join(self.plugins_dir, '%s.py' % name)):
                 self.fallback_plugins[text] = name
@@ -138,7 +148,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.queue_draw()
 
     def on_menu_update(self, widget):
-        if self.bar.query and self.items:
+        if self.items:
             self.show_menu()
         else:
             self.clear_menu()

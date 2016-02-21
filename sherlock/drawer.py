@@ -109,11 +109,6 @@ def draw_variable_text(cr, x, y, w, h, text, color=text_color, size=12):
 
 
 def draw_item(cr, pos, item, selected=False):
-    # if pos == 1:
-    #     draw_item_slider(cr, pos, item, selected)
-    # elif pos == 2:
-    #     draw_item_toggle(cr, pos, item, selected)
-    # else:
     draw_item_text(cr, pos, item, selected)
 
 
@@ -130,7 +125,7 @@ def draw_item_text(cr, pos, item, selected):
     base_y = height + pos * item_h
 
     if selected:
-        draw_rect(cr, 5, base_y, width - 10, item_h, sel_color)
+        draw_rect(cr, 0, base_y, width, item_h, sel_color)
     elif pos < 4:
         draw_horizontal_separator(cr, 0, base_y + item_h - 1, width)
 
