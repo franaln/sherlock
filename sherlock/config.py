@@ -46,7 +46,7 @@ plugins = {
 # always check when starts
 automatic_plugins = [
     'screen',
-
+    'mounter',
 ]
 
 # Fallback plugins
