@@ -33,11 +33,7 @@ def get_cmd_output(cmd_list):
 def is_running(name):
     processes = str(subprocess.check_output(('ps', '-u', os.environ['USER'], '-o', 'comm',
                                              '--no-headers')), encoding='utf8').rstrip('\n').split('\n')
-
-    if name in processes:
-        return True
-
-    return False
+    return (name in processes)
 
 def copy_file(src, dest):
     try:

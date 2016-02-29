@@ -1,10 +1,10 @@
 # Applications plugin
 
 import os
-
 from gi.repository import Gio # FIX: i want to eliminate th gtk dependecies.
 
 from sherlock import cache
+from sherlock import utils
 from sherlock.items import ItemApp
 
 
@@ -17,16 +17,21 @@ def _get_apps():
             app.get_name(),
             app.get_executable(),
             app.get_filename(),
-            app.get_name(),
+            [app.get_name(), app.get_executable()]
         )
         apps.append(item)
-        item = ItemApp(
-            app.get_name(),
-            app.get_executable(),
-            app.get_filename(),
-            app.get_executable(),
-        )
-        apps.append(item)
+
+    for path in os.getenv('PATH').split(':'):
+        output = utils.get_cmd_output(['stest', '-flx', path])
+
+        for exe in output.split('\n'):
+            item = ItemApp(
+                exe,
+                exe,
+                exe,
+                [exe,]
+            )
+            apps.append(item)
 
     return apps
 

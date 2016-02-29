@@ -100,8 +100,6 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.worker = search.SearchWorker()
 
         # check automatic items
-        # * hdmi is connected
-        # * pendrive is connected
         for name in config.automatic_plugins:
             plugin = self.import_plugin(name)
             matches = plugin.get_matches('')
@@ -252,23 +250,23 @@ class Sherlock(Gtk.Window, GObject.GObject):
         with lock:
              self.logger.debug('%d results from %s' % (len(result), task_id))
 
-             if result:
+             if query and result:
 
-                self.items.extend(result)
+                 self.attic.sort(query, result)
 
-                # if query:
-                #     self.attic.sort(query, self.items)
 
-                self.items = sorted(self.items, key=lambda x: x.score, reverse=True)
+                 self.items.extend(result)
 
-                self.items = [i for i in self.items if i.score > 60.]
+                 self.items = sorted(self.items, key=lambda x: x.score, reverse=True)
 
-                #self.items = sorted(self.items, key=lambda x: x.score, reverse=True)
+                 # self.items = [i for i in self.items if i.score > 60.]
 
-                #if len(query) > 1:
-                #self.items.extend(self.attic.get_similar(query))
+                 #self.items = sorted(self.items, key=lambda x: x.score, reverse=True)
 
-                self.emit('menu-update')
+                 #if len(query) > 1:
+                 #self.items.extend(self.attic.get_similar(query))
+
+                 self.emit('menu-update')
 
     # -------------
     #  Run & close
@@ -353,7 +351,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         for i in range(max_items):
             drawer.draw_item(cr, i, self.items[first_item + i],
-                             (first_item + i == self.selected))
+                             (first_item + i == self.selected), self.debug)
 
         if self.action_panel_visible:
             drawer.draw_action_panel(cr, self.actions, self.action_selected)
@@ -399,10 +397,10 @@ class Sherlock(Gtk.Window, GObject.GObject):
             for name in self.base_plugins.keys():
                 self.search_plugin(self.base_plugins[name], query)
 
-            if self.keyword_plugins:
-                for kw, name in self.keyword_plugins.items():
-                    if query in kw:
-                        self.items.append(items_.ItemPlugin(name, kw))
+            # if self.keyword_plugins:
+            #     for kw, name in self.keyword_plugins.items():
+            #         if query in kw:
+            #             self.items.append(items_.ItemPlugin(name, kw))
 
         # fallback plugins
         if not self.items:

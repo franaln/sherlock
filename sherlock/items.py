@@ -2,27 +2,29 @@ import os
 
 class Item(object):
 
-    def __init__(self, title, subtitle='', key=None, category='text', arg=None, score=0.0, no_filter=False):
+    def __init__(self, title, subtitle='', keys=[], category='text', arg=None, score=0.0, no_filter=False):
         self.title = title
         self.subtitle = subtitle
         self.category = category
         self.arg = arg
         self.score = score
         self.no_filter = no_filter
-        self.key = key
+        # self.key = key
+
+        self.keys = keys
 
         if category == 'text' and arg is None:
             self.arg = self.title
 
     @classmethod
     def from_dict(cls, d):
-        return cls(d['title'], d['subtitle'], d['key'], d['category'], d['arg'])
+        return cls(d['title'], d['subtitle'], d['keys'], d['category'], d['arg'])
 
     def to_dict(self):
         return {
             'title': self.title,
             'subtitle': self.subtitle,
-            'key': self.key,
+            'keys': self.keys,
             'category': self.category,
             'arg': self.arg
         }
@@ -33,7 +35,7 @@ class Item(object):
 
 class ItemText(Item):
     def __init__(self, text, no_filter=False):
-        Item.__init__(self, title=text, subtitle='', key=text, category='text',
+        Item.__init__(self, title=text, subtitle='', keys=[text,], category='text',
                       arg=None, no_filter=no_filter)
 
 class ItemUri(Item):
@@ -46,7 +48,7 @@ class ItemUri(Item):
             name = '%s/' % name
             path = '%s/' % path
 
-        Item.__init__(self, title=name, subtitle=path, key=key, category='uri',
+        Item.__init__(self, title=name, subtitle=path, keys=[key,], category='uri',
                       arg=path, no_filter=no_filter)
 
     def is_dir(self):
@@ -57,28 +59,28 @@ class ItemUri(Item):
 
 
 class ItemApp(Item):
-    def __init__(self, name, exe, desktop, key, no_filter=False):
+    def __init__(self, name, exe, desktop, keys):
         Item.__init__(self, title=name, subtitle=exe,
-                      key=key, category='app',
-                      arg=desktop, no_filter=no_filter)
+                      keys=keys, category='app',
+                      arg=desktop)
 
     def __cmp__(self, other):
         return (self.app_exe == other.app_exe)
 
 class ItemCmd(Item):
     def __init__(self, text, cmd, no_filter=False):
-        Item.__init__(self, title=text, subtitle='', key=text, category='cmd',
+        Item.__init__(self, title=text, subtitle='', keys=[text,], category='cmd',
                       arg=cmd, no_filter=no_filter)
 
 class ItemAction(Item):
     def __init__(self, title, fn, no_filter=False):
-        Item.__init__(self, title=title, subtitle='', key=title, category='action',
+        Item.__init__(self, title=title, subtitle='', keys=[title,], category='action',
                       arg=fn, no_filter=no_filter)
 
 class ItemPlugin(Item):
     def __init__(self, title, kw):
         Item.__init__(self, title=title, subtitle='keyword: %s' % kw,
-                      key=title, category='plugin',
+                      keys=[title,], category='plugin',
                       arg=title)
 
 # class ItemToggle(Item):
@@ -102,6 +104,7 @@ actions['uri'] = [
 
 actions['cmd'] = [
     ('Run', 'run_cmd'),
+    ('Copy to console', 'copy_to_console')
 ]
 
 actions['text'] = [
@@ -109,24 +112,3 @@ actions['text'] = [
     ('Large type', 'show_large_type'),
     ('Show QR code', 'show_qrcode'),
 ]
-
-# actions['app'] = [
-#     ItemAction('Run', actions.run_app),
-#     ItemAction('Run in terminal', actions.run_app_in_terminal),
-# ]
-
-# actions['uri'] = [
-#     ItemAction('Open', actions.open_uri),
-#     ItemAction('Open folder', actions.open_folder),
-#     #ItemAction('Explore', explore),
-# ]
-
-# actions['cmd'] = [
-#     ('Run', actions.run_cmd),
-# ]
-
-# actions['text'] = [
-#     ('Copy', actions.copy_to_clipboard),
-#     ('Large type', actions.show_large_type),
-#     ('Show QR code', actions.show_qrcode),
-# ]
