@@ -1,6 +1,6 @@
 _pkgname=sherlock
 pkgname=sherlock-git
-pkgver=050166
+pkgver=20160229
 pkgrel=1
 pkgdesc=""
 arch=('any')
@@ -15,8 +15,7 @@ source=("git://github.com/franaln/sherlock.git")
 md5sums=('SKIP')
 
 pkgver() {
-    cd "${srcdir}/${_pkgname}"
-    git describe --always | sed -e 's|-|.|g' -e '1s|^.||'
+    date +%Y%m%d
 }
 
 package() {

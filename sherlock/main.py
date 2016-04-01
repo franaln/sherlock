@@ -394,13 +394,14 @@ class Sherlock(Gtk.Window, GObject.GObject):
         # Basic search
         if not matches:
 
-            for name in self.base_plugins.keys():
-                self.search_plugin(self.base_plugins[name], query)
+            if query == '.' and self.keyword_plugins:
+                for kw, name in self.keyword_plugins.items():
+                    self.items.append(items_.ItemPlugin(name, kw))
 
-            # if self.keyword_plugins:
-            #     for kw, name in self.keyword_plugins.items():
-            #         if query in kw:
-            #             self.items.append(items_.ItemPlugin(name, kw))
+            else:
+                for name in self.base_plugins.keys():
+                    self.search_plugin(self.base_plugins[name], query)
+
 
         # fallback plugins
         if not self.items:

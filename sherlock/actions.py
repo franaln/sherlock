@@ -70,6 +70,10 @@ def open_folder(arg):
 def open_console_uri(arg):
     run_cmd('setsid urxvt -e "cd %s"' % os.path.dirname(arg))
 
+def copy_cmd_to_console(arg):
+    run_cmd('setsid urxvt -e "cd %s"' % os.path.dirname(arg))
+
+
 # Outputs
 def copy_to_clipboard(arg):
     # "primary":
@@ -185,7 +189,7 @@ def show_large_type(arg):
     #                 screen = ctx.environment.get_screen()
     #                 window.set_screen(screen)
     #         else:
-    #screen = Gdk.screen_get_default()
+    screen = Gdk.screen_get_default()
 
     maxwid = screen.get_width() - 50
     maxhei = screen.get_height() - 100
