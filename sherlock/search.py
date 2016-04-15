@@ -34,9 +34,6 @@ def get_matches(plugin, query, min_score=0, max_results=0):
     # Loop over items
     for i, item in enumerate(plugin.get_matches(query)):
 
-        # best_score = 0
-        #value = item.key
-
         if item.no_filter or not item.keys:
             item.score = 100.0
 
@@ -44,10 +41,6 @@ def get_matches(plugin, query, min_score=0, max_results=0):
 
             score = 0
             valuelen = len(value)
-
-            # if item.no_filter:
-            #     score = 100.0
-            # else:
 
             # pre-filter any items that do not contain all characters of 'query'
             # to save on running several more expensive tests

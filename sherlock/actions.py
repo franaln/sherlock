@@ -43,12 +43,28 @@ def escape(text):
 
 # Common actions
 def run_cmd(arg):
-    utils.run_cmd(arg)
+
+    if '&&' in arg:
+        cmds = arg.split('&&')
+    elif ';' in arg:
+        cmds = arg.split(';')
+    else:
+        cmds = [arg,]
+
+    st = 0
+    for cmd in cmds:
+        if st == 0:
+            st = utils.run_cmd(cmd)
+        else:
+            break
+
 
 def run_app(arg):
-    display = Gdk.Display.get_default()
-    app = Gio.DesktopAppInfo().new_from_filename(arg)
-    app.launch(None, display.get_app_launch_context())
+    # display = Gdk.Display.get_default()
+    # app = Gio.DesktopAppInfo().new_from_filename(arg)
+    # app.launch(None, display.get_app_launch_context())
+    utils.run_cmd('setsid setsid ' + arg)
+
 
 def run_app_in_terminal(arg):
     original = Gio.DesktopAppInfo().new_from_filename(arg)

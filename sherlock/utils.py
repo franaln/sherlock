@@ -17,10 +17,13 @@ def get_selection():
 
     return cb.decode('utf8').strip()
 
+
 def run_cmd(cmd):
     if isinstance(cmd, str):
         cmd = cmd.split()
-    subprocess.call(cmd)
+
+    return subprocess.call(cmd)
+
 
 def get_cmd_output(cmd_list):
     try:
@@ -30,10 +33,12 @@ def get_cmd_output(cmd_list):
 
     return output.decode('utf8').strip()
 
+
 def is_running(name):
     processes = str(subprocess.check_output(('ps', '-u', os.environ['USER'], '-o', 'comm',
                                              '--no-headers')), encoding='utf8').rstrip('\n').split('\n')
     return (name in processes)
+
 
 def copy_file(src, dest):
     try:
@@ -51,9 +56,3 @@ def copy_file(src, dest):
 #     except TypeError:
 #         # works on Python 2 (bytes() only takes one argument)
 #         p.communicate(input=bytes(text))
-
-
-# def xselGetClipboard():
-#     p = Popen(['xsel', '-o'], stdin=PIPE)
-#     stdout, stderr = p.communicate()
-#     return bytes.decode(stdout)

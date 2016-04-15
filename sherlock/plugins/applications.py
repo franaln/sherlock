@@ -12,14 +12,14 @@ _cached_applications = None
 
 def _get_apps():
     apps = []
-    for app in Gio.app_info_get_all():
-        item = ItemApp(
-            app.get_name(),
-            app.get_executable(),
-            app.get_filename(),
-            [app.get_name(), app.get_executable()]
-        )
-        apps.append(item)
+    # for app in Gio.app_info_get_all():
+    #     item = ItemApp(
+    #         app.get_name(),
+    #         app.get_executable(),
+    #         app.get_filename(),
+    #         [app.get_name(), app.get_executable()]
+    #     )
+    #     apps.append(item)
 
     for path in os.getenv('PATH').split(':'):
         output = utils.get_cmd_output(['stest', '-flx', path])
