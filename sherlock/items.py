@@ -30,7 +30,7 @@ class Item(object):
         }
 
     def __str__(self):
-        return '[Item: %s (%s)]' % (self.title, self.score)
+        return '%s (%s)' % (self.title, self.score)
 
 
 class ItemText(Item):

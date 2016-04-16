@@ -109,7 +109,7 @@ def draw_variable_text(cr, x, y, w, h, text, color=text_color, size=12):
 
 
 def draw_item(cr, pos, item, selected=False, debug=False):
-    draw_item_text(cr, pos, item, selected)
+    draw_item_text(cr, pos, item, selected, debug)
     # draw_item_toggle(cr, pos, item, selected, debug)
     # draw_item_slider(cr, pos, item, selected)
 

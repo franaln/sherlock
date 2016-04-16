@@ -285,6 +285,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
     def clear_menu(self):
         if self.items:
             del self.items[:]
+            self.queue_draw()
         self.selected = 0
         self.hide_action_panel()
         self.hide_menu()

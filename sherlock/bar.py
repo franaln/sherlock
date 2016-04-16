@@ -23,7 +23,7 @@ class Bar(GObject.GObject):
 
         GObject.GObject.__init__(self)
 
-        GLib.timeout_add(250, self.check)
+        GLib.timeout_add(500, self.check)
 
     def _update(self, text):
         self.counter = time.time()

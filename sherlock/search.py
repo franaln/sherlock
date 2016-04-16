@@ -41,15 +41,16 @@ def get_matches(plugin, query, min_score=0, max_results=0):
 
             score = 0
             valuelen = len(value)
+            valuelow = value.lower()
 
             # pre-filter any items that do not contain all characters of 'query'
             # to save on running several more expensive tests
-            if not queryset <= set(value.lower()):
+            if not queryset <= set(valuelow):
                 continue
 
             # item starts with query (case-insensitive)
-            if value.lower().startswith(query) or value.lower().endswith(query):
-                score = 101.0 - (valuelen / querylen)
+            if valuelow.startswith(query) or valuelow.endswith(query):
+                score = 100.0 - 2 * (valuelen / querylen)
 
             if not score:
                 # query matches capitalised letters in item,
@@ -71,7 +72,7 @@ def get_matches(plugin, query, min_score=0, max_results=0):
                 # similar to substring, but scores more highly, as it's
                 # a word within the item
                 if query in atoms:
-                    score = 97.0 - (valuelen / querylen)
+                    score = 96.0 - (valuelen / querylen)
 
             if not score:
                 # 'query' matches start (or all) of the initials of the
@@ -79,17 +80,17 @@ def get_matches(plugin, query, min_score=0, max_results=0):
                 # *and* 'how i met your mother' (the capitals rule only
                 # matches the former)
                 if initials.startswith(query):
-                    score = 96.0 - (leninitials / querylen)
+                    score = 94.0 - (leninitials / querylen)
 
                 # 'query' is a substring of initials, e.g. 'doh' matches
                 # 'The Dukes of Hazzard'
                 elif query in initials:
-                    score = 95.0 - (leninitials / querylen)
+                    score = 92.0 - (leninitials / querylen)
 
             if not score:
                 # 'query' is a substring of item
                 if query in value.lower():
-                    score = 94.0 - (valuelen / querylen)
+                    score = 92.0 - (valuelen / querylen)
 
             if min_score and score < min_score:
                 continue
