@@ -73,5 +73,8 @@ def clear_cache():
     """ Delete all files in cache directory."""
     if os.path.exists(get_cachedir()):
         for filename in os.listdir(get_cachedir()):
+            if not filename.endswith('.cache'):
+                continue
+
             path = os.path.join(get_cachedir(), filename)
             os.unlink(path)
