@@ -34,6 +34,8 @@ def get_matches(plugin, query, min_score=0, max_results=0):
     # Loop over items
     for i, item in enumerate(plugin.get_matches(query)):
 
+        item.score = 0.
+
         if item.no_filter or not item.keys:
             item.score = 100.0
 
@@ -157,3 +159,4 @@ class SearchWorker:
         # executed in the main thread
         self.task_id += 1
         self.queue.put((self.task_id, callback, plugin, query))
+        return self.task_id

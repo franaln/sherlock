@@ -17,7 +17,6 @@ class Bar(GObject.GObject):
         self.cursor = 0
         self.query = ''
         self.selected = False
-
         self.counter = 0
         self.updated = False
 
@@ -43,8 +42,11 @@ class Bar(GObject.GObject):
         if delete:
             newquery = '%s%s' % (self.query[:self.cursor], self.query[self.cursor+1:])
         else:
-            newquery = '%s%s' % (self.query[:self.cursor-1], self.query[self.cursor:])
-            self.cursor -= 1
+            if self.cursor == 0:
+                newquery = self.query
+            else:
+                newquery = '%s%s' % (self.query[:self.cursor-1], self.query[self.cursor:])
+                self.cursor -= 1
         self._update(newquery)
 
     def clear(self):
@@ -71,15 +73,18 @@ class Bar(GObject.GObject):
         self.emit('update')
 
     def move_cursor_left(self):
+        if self.cursor <= 0:
+            return
         self.cursor -= 1
         self.emit('update')
 
     def move_cursor_right(self):
+        if self.cursor >= len(self.query):
+            return
         self.cursor += 1
         self.emit('update')
 
     def draw(self, cr):
-
         """
                   6px
         ---------------------------
@@ -87,6 +92,7 @@ class Bar(GObject.GObject):
         ---------------------------
                   6px
         """
+
         bar_w = drawer.width - 12
         bar_h = drawer.height - 12
 
