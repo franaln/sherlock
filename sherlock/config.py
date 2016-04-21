@@ -30,7 +30,7 @@ files_include = [
     '~/Dropbox',
     '~/Downloads',
     '~/cosas',
-    # '~/tmp',
+    '~/ebooks',
     '~/fotos',
 ]
 

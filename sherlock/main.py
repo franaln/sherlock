@@ -20,6 +20,7 @@ from sherlock import utils
 from sherlock import drawer
 from sherlock import actions
 from sherlock import search
+from sherlock import cache
 from sherlock import items as items_
 from sherlock.bar import Bar
 from sherlock.attic2 import Attic
@@ -34,6 +35,10 @@ class Sherlock(Gtk.Window, GObject.GObject):
     __gsignals__ = {
         'menu-update': (GObject.SIGNAL_RUN_FIRST, None, ()),
     }
+
+    commands = [
+        'clear-cache',
+        ]
 
     def __init__(self, debug=False):
 
@@ -168,13 +173,17 @@ class Sherlock(Gtk.Window, GObject.GObject):
             self.logger.info('file navigation: %s' % query)
             self.file_navigation(query)
 
+        # elif query in self.commands:
+        #     self.run_command(query)
+
         # Search
         else:
             self.search(query)
 
             for m in self.matches:
-                bonus = self.attic.get_item_bonus(m)
-                m.score += bonus
+                if isinstance(m.title, str):
+                    bonus = self.attic.get_item_bonus(m)
+                    m.score += bonus
 
         #self.matches = sorted(self.matches, key=lambda x: x.score, reverse=True)
         #self.queue_draw()
@@ -223,11 +232,11 @@ class Sherlock(Gtk.Window, GObject.GObject):
                 self.select_down()
 
         elif key == 'Up':
-            if not self.menu_visible and self.bar.is_empty():
-                self.bar.select()
-                self.previous_query()
-            else:
-                self.select_up()
+            # if not self.menu_visible and self.bar.is_empty():
+            #     #self.bar.select()
+            #     #self.previous_query()
+            # else:
+            self.select_up()
 
         elif key == 'BackSpace':
             self.bar.delchar()
@@ -469,14 +478,20 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         self.close()
 
+    def run_command(self, cmd):
+        pass
+        # if cmd == 'clear-cache':
+        #     cache.clear_cache()
+
+
 
     # -----------
     #  Navigation
     # -----------
-    def show_previous_query(self):
-        query = self.attic.get_query()
-        if query is not None:
-            self.bar.addchar(query)
+    # def show_previous_query(self):
+    #     query = self.attic.get_query()
+    #     if query is not None:
+    #         self.bar.addchar(query)
 
     def select_down(self):
         if self.action_panel_visible:
@@ -510,13 +525,14 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.queue_draw()
 
     def previous_query(self):
+        self.bar.clear()
         previous_query = self.attic.get_previous_query()
         if previous_query is not None:
             self.bar.addchar(previous_query)
 
     def next_query(self):
+        self.bar.clear()
         next_query = self.attic.get_next_query()
-
         if next_query is not None:
             self.bar.addchar(next_query)
 
@@ -563,12 +579,12 @@ class Sherlock(Gtk.Window, GObject.GObject):
             items.append(items_.ItemUri(abspath))
 
         # sort items by
-        self.items = sorted(items, key=lambda it: it.arg)
+        self.matches = sorted(items, key=lambda it: it.arg)
 
         self.emit('menu-update')
 
     def file_navigation_cd(self):
-        new_query = self.items[self.selected].arg
+        new_query = self.matches[self.selected].arg
         self.bar.addchar(new_query.replace(os.environ['HOME'], '~'), True)
 
     def file_navigation_back(self):

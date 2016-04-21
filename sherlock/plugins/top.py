@@ -64,7 +64,7 @@ def get_matches(query):
     for p in processes:
 
         title = (os.path.basename(p[4]), 'cpu: %s %%' % p[1], 'mem: %s%%' % p[2])
-        subtitle = '%s, %s, %s, %s' % (p[0], p[1], p[2], p[3])
+        subtitle = 'pid: %s' % (p[0])
 
         items.append(Item(title, subtitle))
 
