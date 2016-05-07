@@ -5,8 +5,6 @@ from sherlock import utils
 
 def get_matches(query):
 
-    matches = []
-
     out = utils.get_cmd_output(['df', '-h'])
 
     out = out.split('\n')
@@ -20,6 +18,4 @@ def get_matches(query):
         title = [disk[5], '%s / %s (%s)' % (disk[2], disk[1], disk[4])]
         subtitle = 'Mounted as: %s' % disk[0]
 
-        matches.append(Item(title, subtitle))
-
-    return matches
+        yield Item(title, subtitle)

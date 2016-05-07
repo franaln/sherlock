@@ -14,6 +14,4 @@ def get_matches(query):
 
     if result:
         item = ItemText(result, no_filter=True)
-        return [item,]
-
-    return []
+        yield item

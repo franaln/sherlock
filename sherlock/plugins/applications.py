@@ -43,4 +43,5 @@ def get_matches(query):
     if _cached_applications is None:
         _cached_applications = cache.get_cached_data('apps', _get_apps, max_age=600)
 
-    return _cached_applications
+    for app in _cached_applications:
+        yield app

@@ -4,7 +4,7 @@
 # Theme/Style
 #-------------
 # Font
-fontname = 'Cantarell' #Sans'
+fontname = 'Fira Sans' #'Cantarell' #Sans'
 
 # Colours
 background_color = (0.93, 0.93, 0.93) # #ebebeb
@@ -23,8 +23,7 @@ basic_search = [
     'system',
     'calculator',
     'files',
- #   'path',
-]
+ ]
 
 files_include = [
     '~/Dropbox',
@@ -41,6 +40,7 @@ plugins = {
     'df': 'disks',
     'temp': 'temperature',
     'top': 'top',
+    'time': 'currenttime'
 }
 
 # always check when starts

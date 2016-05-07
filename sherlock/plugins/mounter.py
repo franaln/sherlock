@@ -28,19 +28,15 @@ def _is_mounted(dev):
 
 def get_matches(query):
 
-    items = []
-
     devices = _check_devices()
 
     for dev in devices:
 
         if _is_mounted(dev):
-            items.append(ItemCmd('Unmount /dev/%s' % dev, 'udisks --unmount /dev/%s' % dev))
+            yield ItemCmd('Unmount /dev/%s' % dev, 'udisks --unmount /dev/%s' % dev)
         else:
-            items.append(ItemCmd('Mount /dev/%s' % dev, 'udisks --mount /dev/%s' % dev))
+            yield ItemCmd('Mount /dev/%s' % dev, 'udisks --mount /dev/%s' % dev)
 
-
-    return items
 
 
 

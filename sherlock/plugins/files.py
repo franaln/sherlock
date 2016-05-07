@@ -45,7 +45,5 @@ def get_matches(query):
     if files is None:
         files = cache.get_cached_data('files', _get_files, max_age=1000)
 
-    #cmd = ['locate', '-i', '-n', '1000', '-q', '-e', '-r', query]
-    #files = [ ItemUri(i) for i in utils.get_cmd_output(cmd).split('\n')]
-
-    return files
+    for f in files:
+        yield f

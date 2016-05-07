@@ -60,15 +60,13 @@ def get_matches(query):
     processes = sorted(processes, key=operator.itemgetter(2),
                        reverse=True)
 
-    items = []
     for p in processes:
 
         title = (os.path.basename(p[4]), 'cpu: %s %%' % p[1], 'mem: %s%%' % p[2])
         subtitle = 'pid: %s' % (p[0])
 
-        items.append(Item(title, subtitle))
+        yield Item(title, subtitle)
 
-    return items
 
 # fields = _("pid: %(pid)s  cpu: %(cpu)g%%  mem: %(mem)g%%  time: %(time)s")
 # for pid, cpu, mem, ptime, cmd in processes:

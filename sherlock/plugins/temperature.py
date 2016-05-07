@@ -5,8 +5,6 @@ from sherlock import utils
 
 def get_matches(query):
 
-    matches = []
-
     out = utils.get_cmd_output(['sensors',])
 
     out = out.split('\n')
@@ -22,9 +20,9 @@ def get_matches(query):
         title = '%s: %s' % (core, temp)  ##'%s \t\t %s / %s \t\t %s' % (disk[0], disk[2], disk[1], disk[4])
         subtitle = ''
 
-        matches.append(Item(title, subtitle))
+        yield Item(title, subtitle)
 
-    return matches
+
 
 
 # asus-isa-0000

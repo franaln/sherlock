@@ -28,4 +28,5 @@ _cmds = [
 #     _cmds.append(ItemCmd('Logout','killall compiz'))
 
 def get_matches(query):
-    return _cmds
+    for cmd in _cmds:
+        yield cmd

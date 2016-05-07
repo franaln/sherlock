@@ -266,7 +266,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
     def on_plugin_done(self, task_id, query, result):
 
         if task_id in self.stop_jobs:
-            stop_jobs.remove(task_id)
+            self.stop_jobs.remove(task_id)
             return
 
         if not task_id in self.running_jobs:
@@ -307,15 +307,15 @@ class Sherlock(Gtk.Window, GObject.GObject):
     #  Menu
     # ------
     def show_menu(self):
+        self.queue_draw()
         if not self.menu_visible:
             self.menu_visible = True
             self.resize(self.width, self.height + 300)
-        self.queue_draw()
 
     def hide_menu(self):
+        self.queue_draw()
         self.resize(self.width, self.height)
         self.menu_visible = False
-        self.queue_draw()
 
     def show_action_panel(self):
         match = self.selected_item()
@@ -353,7 +353,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
     # -------------
     def draw(self, widget, event):
 
-        items = self.matches
+        items = list(self.matches)
 
         cr = Gdk.cairo_create(widget.get_window())
 
@@ -465,7 +465,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         action_name = items_.actions[match.category][self.action_selected][1]
 
-        if action_name == 'explore' or os.path.isdir(match.arg):
+        if action_name == 'explore' and os.path.isdir(match.arg):
             self.explore(match.arg)
             return
 

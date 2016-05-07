@@ -35,14 +35,12 @@ def _check_devices():
 
 def get_matches(query):
 
-    items = []
-
     devices = _check_devices()
 
     if 'HDMI' in devices:
-        items.extend(items_hdmi)
+        for item in items_hdmi:
+            yield item
 
     if 'VGA' in devices:
-        items.extend(items_vga)
-
-    return items
+        for item in items_vga:
+            yield item
