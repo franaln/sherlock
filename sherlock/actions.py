@@ -29,7 +29,6 @@ def do_search_google():
 
 
 def escape(text):
-
     cs = ['(', ')', '[', ']', '\'']
 
     newtext = text
@@ -60,10 +59,7 @@ def run_cmd(arg):
 
 
 def run_app(arg):
-    # display = Gdk.Display.get_default()
-    # app = Gio.DesktopAppInfo().new_from_filename(arg)
-    # app.launch(None, display.get_app_launch_context())
-    utils.run_cmd('setsid setsid ' + arg)
+    run_cmd('setsid setsid ' + arg)
 
 
 def run_app_in_terminal(arg):
@@ -81,7 +77,12 @@ def open_uri(arg):
 
 
 def open_folder(arg):
-    run_cmd('setsid nautilus '+arg.split('/')[0])
+    if os.path.isfile(arg):
+        dir_ = '/'.join(arg.split('/')[:-1])
+    else:
+        dir_ = arg
+
+    run_cmd('setsid setsid thunar '+dir_)
 
 def open_console_uri(arg):
     run_cmd('setsid urxvt -e "cd %s"' % os.path.dirname(arg))
