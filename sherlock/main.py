@@ -246,7 +246,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         # Return/Right: execute default action on selected item
         elif 'Return' in key or key == 'Right':
-            if self.file_navigation_mode() and self.selected_item().is_dir() and self.action_selected == 0:
+            if self.file_navigation_mode() and self.selected_item().is_dir() and self.action_selected < 1:
                 self.file_navigation_cd()
             else:
                 self.actionate()
