@@ -63,12 +63,16 @@ def run_app(arg):
 
 
 def run_app_in_terminal(arg):
-    original = Gio.DesktopAppInfo().new_from_filename(arg)
-    app = Gio.AppInfo.create_from_commandline(original.get_commandline(),
-                                              original.get_name(),
-                                              Gio.AppInfoCreateFlags.NEEDS_TERMINAL)
-    display = Gdk.Display.get_default()
-    app.launch(None, display.get_app_launch_context())
+
+    print('urxvtc -e "%s"' % arg)
+    os.system('setsid urxvt -e "%s" +hold' % arg)
+
+    # original = Gio.DesktopAppInfo().new_from_filename(arg)
+    # app = Gio.AppInfo.create_from_commandline(original.get_commandline(),
+    #                                           original.get_name(),
+    #                                           Gio.AppInfoCreateFlags.NEEDS_TERMINAL)
+    # display = Gdk.Display.get_default()
+    # app.launch(None, display.get_app_launch_context())
 
 
 def open_uri(arg):
@@ -85,10 +89,10 @@ def open_folder(arg):
     run_cmd('setsid setsid thunar '+dir_)
 
 def open_console_uri(arg):
-    run_cmd('setsid urxvt -e "cd %s"' % os.path.dirname(arg))
+    run_cmd('setsid urxvt -cd %s' % os.path.dirname(arg))
 
 def copy_cmd_to_console(arg):
-    run_cmd('setsid urxvt -e "cd %s"' % os.path.dirname(arg))
+    run_cmd('setsid urxvt -cd %s' % os.path.dirname(arg))
 
 
 # Outputs

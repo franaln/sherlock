@@ -13,7 +13,7 @@ import shutil
 
 def get_selection():
     """ get clipboard content """
-    cb = subprocess.Popen(["xclip", "-selection", "clipboard", "-o"], stdout=subprocess.PIPE).communicate()[0]
+    cb = subprocess.Popen(["xclip", "-selection", "primary", "-o"], stdout=subprocess.PIPE).communicate()[0]
 
     return cb.decode('utf8').strip()
 

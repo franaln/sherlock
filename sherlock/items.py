@@ -9,8 +9,6 @@ class Item(object):
         self.arg = arg
         self.score = score
         self.no_filter = no_filter
-        # self.key = key
-
         self.keys = keys
 
         if category == 'text' and arg is None:
@@ -32,6 +30,12 @@ class Item(object):
     def __str__(self):
         return '%s (%s)' % (self.title, self.score)
 
+    def __eq__(self, other):
+        return (self.title == other.title and
+                self.subtitle == other.subtitle and
+                self.category == other.category and
+                self.arg == other.arg)
+
 
 class ItemText(Item):
     def __init__(self, text, no_filter=False):
@@ -40,13 +44,13 @@ class ItemText(Item):
 
 class ItemUri(Item):
     def __init__(self, path, no_filter=False):
-        name = os.path.basename(path)
+        name = path.split('/')[-1]  #os.path.basename(path)
         path = path
         key = name
 
-        if os.path.isdir(path):
-            name = '%s/' % name
-            path = '%s/' % path
+        # if os.path.isdir(path):
+        #     name = '%s/' % name
+        #     path = '%s/' % path
 
         Item.__init__(self, title=name, subtitle=path, keys=[key,], category='uri',
                       arg=path, no_filter=no_filter)
@@ -81,10 +85,13 @@ class ItemPlugin(Item):
     def __init__(self, title, kw):
         Item.__init__(self, title=title, subtitle='keyword: %s' % kw,
                       keys=[title,], category='plugin',
-                      arg=title)
+                      arg=kw)
 
-# class ItemToggle(Item):
-#     def __init
+        self.items = []
+        self.score = 200
+
+    def add(self, it):
+        self.items.append(it)
 
 
 
@@ -97,9 +104,9 @@ actions['app'] = [
 
 actions['uri'] = [
     ('Open', 'open_uri'),
-    ('Console', 'open_console_uri'),
     ('Open folder', 'open_folder'),
     ('Explore', 'explore'),
+    #('Console', 'open_console_uri'),
 ]
 
 actions['cmd'] = [

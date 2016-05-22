@@ -1,2 +1,4 @@
-__pycache__/*
-plugins/_*
+sherlock/__pycache__/*
+sherlock/plugins/_*
+arch/sherlock*
+extra/

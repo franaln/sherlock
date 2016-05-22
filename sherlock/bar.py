@@ -6,6 +6,7 @@ from gi.repository import GObject, GLib
 from sherlock import config
 from sherlock import drawer
 
+
 class Bar(GObject.GObject):
 
     __gsignals__ = {
@@ -50,6 +51,7 @@ class Bar(GObject.GObject):
         self._update(newquery)
 
     def clear(self):
+        self.cursor = 0
         self._update('')
 
     def is_empty(self):
@@ -83,31 +85,3 @@ class Bar(GObject.GObject):
             return
         self.cursor += 1
         self.emit('update')
-
-    def draw(self, cr):
-        """
-                  6px
-        ---------------------------
-        6px |10px query|              | 6px
-        ---------------------------
-                  6px
-        """
-
-        bar_w = drawer.width - 12
-        bar_h = drawer.height - 12
-
-        bar_color = config.bar_color
-
-        # drawer.draw_rect(cr, 6, 6, bar_w, bar_h, bar_color)
-
-        query_x = 16
-        query_y = bar_h * 0.5
-
-        # if self.selected:
-        #     drawer.draw_rect(cr, query_x, 18, drawer.calc_text_width(cr, self.query, size=38), 60, config.selection_color)
-
-        drawer.draw_variable_text(cr, query_x, query_y, bar_w-20, 0, self.query, size=38)
-
-        cursor_x = query_x + drawer.calc_text_width(cr, self.query[:self.cursor], size=38)
-
-        drawer.draw_rect(cr, cursor_x, 18, 2, 60)
