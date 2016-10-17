@@ -16,13 +16,33 @@ INITIALS = string.ascii_uppercase + string.digits
 # Split on non-letters, numbers
 split_on_delimiters = re.compile('[^a-zA-Z0-9]').split
 
+def distance(str1, str2):
+    """ return the Levenshtein distance
+    between two strings """
+
+    d = dict()
+    for i in range(len(str1)+1):
+        d[i] = dict()
+        d[i][0] = i
+
+    for i in range(len(str2)+1):
+        d[0][i] = i
+
+    for i in range(1, len(str1)+1):
+        for j in range(1, len(str2)+1):
+            d[i][j] = min(d[i][j-1]+1, d[i-1][j]+1,
+                          d[i-1][j-1]+(not str1[i-1] == str2[j-1]))
+
+    return d[len(str1)][len(str2)]
+
+# def get_matches(plugin, query, min_score=0, max_results=0):
 def get_matches(plugin, query, min_score=0, max_results=0):
 
     """ search filter.
     Returns list of items that match query.
     """
 
-    results = [] #dict()
+    results = []
 
     if not query:
         return []
@@ -36,7 +56,15 @@ def get_matches(plugin, query, min_score=0, max_results=0):
 
         item.score = 0.
 
-        if item.no_filter or not item.keys:
+        try:
+            item.keys
+        except:
+            try:
+                print (item)
+            except:
+                continue
+
+        if not item.keys:
             item.score = 100.0
 
         for value in item.keys:
@@ -93,6 +121,12 @@ def get_matches(plugin, query, min_score=0, max_results=0):
                 # 'query' is a substring of item
                 if query in value.lower():
                     score = 92.0 - (valuelen / querylen)
+
+            if not score:
+                d = distance(query, value[:querylen])
+
+                if d < 3:
+                    score = 100 - d - valuelen + querylen
 
             if min_score and score < min_score:
                 continue

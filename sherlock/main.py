@@ -15,6 +15,11 @@ gi.require_version('PangoCairo', '1.0')
 gi.require_version('Notify', '0.7')
 from gi.repository import Gtk, Gdk, GLib, GObject, GdkPixbuf, Poppler
 
+import dbus
+import dbus.bus
+import dbus.service
+import dbus.mainloop.glib
+
 from sherlock import config
 from sherlock import utils
 from sherlock.drawer import *
@@ -31,7 +36,7 @@ attic_path = os.path.join(cache_dir, 'attic2')
 
 lock = threading.Lock()
 
-class Sherlock(Gtk.Window, GObject.GObject):
+class Menu(Gtk.Window, GObject.GObject):
 
     __gsignals__ = {
         'menu-update': (GObject.SIGNAL_RUN_FIRST, None, ()),
@@ -54,10 +59,10 @@ class Sherlock(Gtk.Window, GObject.GObject):
         # config
 
         # plugins
-        #self.plugins_dir = os.path.expanduser(config.plugins_dir)
         self.base_plugins = dict()
         self.keyword_plugins = dict()
         self.fallback_plugins = dict()
+        self.automatic_plugins = dict()
 
         # bar
         self.bar = Bar()
@@ -82,12 +87,10 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
         self.set_keep_above(True)
         self.set_title('Sherlock')
-        self.show_all()
 
         self.connect('draw', self.draw)
         self.connect('key_press_event', self.on_key_press)
-        self.connect('delete-event', self.close)
-        self.connect('focus-out-event', self.close)
+        self.connect('focus-out-event', self.on_hide_menu)
         self.bar.connect('update', self.on_bar_update)
         self.bar.connect('query-change', self.on_query_change)
         self.connect('menu-update', self.on_menu_update)
@@ -101,8 +104,9 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.running_jobs = []
         self.stop_jobs = []
 
-        # check automatic items
-        self.check_automatic_plugins()
+        # recreate db
+        self.reload_plugins_cache()
+        GLib.timeout_add_seconds(600, self.reload_plugins_cache)
 
 
     # ---------
@@ -114,13 +118,12 @@ class Sherlock(Gtk.Window, GObject.GObject):
             self.logger.info('pluging %s loaded.' % name)
         except ImportError:
             self.logger.error('error loading plugin %s.' % name)
-            raise
             return None
+
         return plugin
 
     def load_plugins(self):
 
-        # sys.path.append(self.plugins_dir)
         plugins_dir = os.path.dirname(__file__) + '/plugins'
         sys.path.append(plugins_dir)
 
@@ -138,17 +141,35 @@ class Sherlock(Gtk.Window, GObject.GObject):
             if os.path.isfile(os.path.join(plugins_dir, '%s.py' % name)):
                 self.fallback_plugins[text] = name
 
-    def check_automatic_plugins(self):
         for name in config.automatic_plugins:
-            plugin = self.import_plugin(name)
-            matches = plugin.get_matches('')
+            self.automatic_plugins[name] = self.import_plugin(name)
+
+    def check_automatic_plugins(self):
+        for name, plugin in self.automatic_plugins.items():
+            self.logger.info('checking automatic plugin: %s' % name)
+            matches = plugin.get_matches()
             if matches:
                 self.items.extend(matches)
                 self.emit('menu-update')
 
+    def reload_plugins_cache(self):
+        self.logger.info('reloading cache')
+        for name, plugin in self.base_plugins.items():
+            #plugin.get_matches('')
+            try:
+                plugin.load_db()
+            except:
+                pass
+
+        return True
+
     # -----------
     #  Callbacks
     # -----------
+    def on_hide_menu(self, widget, a):
+        self.hide()
+        self.bar.clear()
+
     def on_bar_update(self, widget):
         self.queue_draw()
 
@@ -161,7 +182,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.hide_right_panel()
 
         del self.items[:]
-        self.selected = -1
+        self.item_selected = -1
 
         if self.preview is not None:
             self.preview.hide()
@@ -213,7 +234,8 @@ class Sherlock(Gtk.Window, GObject.GObject):
             return
 
         if key == 'Escape':
-            self.close()
+            self.hide()
+            self.bar.clear()
 
         elif key == 'Left':
             if self.file_navigation_mode():
@@ -243,7 +265,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         # Return/Right: execute default action on selected item
         elif 'Return' in key or key == 'Right':
-            if self.file_navigation_mode() and self.selected_item().is_dir() and self.right_item_selected < 1:
+            if self.file_navigation_mode() and self.right_item_selected < 1:
                 self.file_navigation_cd()
             else:
                 self.actionate()
@@ -301,6 +323,10 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.logger.info('closing...')
         self.attic.save()
         Gtk.main_quit()
+
+    def show(self):
+        self.check_automatic_plugins()
+        self.present()
 
     # ------
     #  Menu
@@ -363,7 +389,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
         cr.fill()
 
         # separator
-        cr.set_source_rgb(0.7, 0.7, 0.75)
+        cr.set_source_rgb(*config.separator_color) #0.7, 0.7, 0.75)
         cr.rectangle(0, 90, width, 1)
         cr.fill()
 
@@ -404,6 +430,7 @@ class Sherlock(Gtk.Window, GObject.GObject):
         if self.running_jobs:
             self.stop_jobs = self.running_jobs[:]
             del self.running_jobs[:]
+
 
         matches = []
 
@@ -473,7 +500,11 @@ class Sherlock(Gtk.Window, GObject.GObject):
         if match is None:
             return
 
-        action_name = items_.actions[match.category][self.right_item_selected][1]
+        # action_name = items_.actions[match.category][self.right_item_selected][1]
+
+
+        action_name = match.get_actions()[0][1] #self.right_item_selected]
+
 
         if action_name == 'explore' and os.path.isdir(match.arg):
             self.explore(match.arg)
@@ -486,7 +517,8 @@ class Sherlock(Gtk.Window, GObject.GObject):
 
         action(match.arg)
 
-        self.close()
+        #self.hide_right_panel
+        self.hide()
 
     def run_command(self, cmd):
         pass
@@ -579,8 +611,11 @@ class Sherlock(Gtk.Window, GObject.GObject):
                 continue
 
             abspath = os.path.join(path, p)
+            if os.path.isdir(abspath):
+                p += '/'
+                abspath += '/'
 
-            items.append(items_.ItemUri(abspath))
+            items.append(items_.Item(title=p, subtitle=abspath, keys=[p,], arg=abspath))
 
         # sort items by
         self.items = sorted(items, key=lambda it: it.arg)
@@ -695,3 +730,34 @@ class Sherlock(Gtk.Window, GObject.GObject):
         self.move(20, 0.5*screen_h-0.5*self.height)
 
         self.preview.show_all()
+
+
+
+class Sherlock(dbus.service.Object):
+
+    def __init__ (self, bus, path, name):
+
+        dbus.service.Object.__init__(self, bus, path, name)
+
+        self.running = False
+        self.menu = Menu()
+
+        self.menu.connect("delete-event", Gtk.main_quit)
+
+    @dbus.service.method("org.sherlock.Daemon", in_signature='', out_signature='b')
+    def is_running(self):
+        return self.running
+
+    @dbus.service.method("org.sherlock.Daemon", in_signature='', out_signature='')
+    def run(self):
+        if self.is_running():
+            self.menu.show()
+        else:
+            self.running = True
+            Gtk.main()
+            self.running = False
+
+    @dbus.service.method("org.sherlock.Daemon", in_signature='', out_signature='')
+    def close(self):
+        self.menu.close()
+        Gtk.main_quit()

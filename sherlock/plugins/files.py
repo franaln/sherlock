@@ -22,7 +22,7 @@ def _get_files():
         if fname in exclude or fname.startswith('.') or '/.' in fname:
             continue
 
-        _files.append(ItemUri(os.path.join(home, fname)))
+        _files.append(ItemUri(fname, os.path.join(home, fname)))
 
 
     for dirname in config.include_files:
@@ -40,7 +40,7 @@ def _get_files():
                     del dirnames[i]
                     continue
 
-                _files.append(ItemUri(os.path.join(root, dn)))
+                _files.append(ItemUri(dn, os.path.join(root, dn)))
 
             for fn in filenames:
                 if fn.startswith('.') or fn in exclude:
@@ -49,7 +49,7 @@ def _get_files():
                 if '.' in fn and fn[fn.index('.'):] not in include_ext:
                     continue
 
-                _files.append(ItemUri(os.path.join(root, fn)))
+                _files.append(ItemUri(fn, os.path.join(root, fn)))
 
     return _files
 

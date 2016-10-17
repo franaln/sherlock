@@ -1,7 +1,7 @@
 # Calculator plugin
 
 from sherlock import utils
-from sherlock.items import ItemText
+from sherlock.items import Item
 
 def get_matches(query):
 
@@ -13,5 +13,5 @@ def get_matches(query):
     result = utils.get_cmd_output(['calc', query])
 
     if result:
-        item = ItemText(result, no_filter=True)
+        item = Item(result, '', keys=[])
         yield item

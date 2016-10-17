@@ -4,7 +4,7 @@
 # Theme/Style
 #-------------
 # Font
-fontname = 'Fira Sans' #'Cantarell' #Sans'
+fontname = 'Fira Sans'
 
 # Colours
 background_color = (0.93, 0.93, 0.93) # #ebebeb

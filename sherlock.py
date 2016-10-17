@@ -3,6 +3,11 @@
 
 import os
 import sys
+import argparse
+
+import dbus
+import dbus.bus
+import dbus.mainloop.glib
 
 # Don't import ./sherlock.py when running an installed binary at /usr/.../sherlock.py
 if __file__[:4] == '/usr' :
@@ -12,13 +17,29 @@ from sherlock.main import Sherlock
 
 def main():
 
-    debug = False
-    if '--debug' in sys.argv:
-        debug = True
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-q', '--quit', action='store_true', help='quit')
 
-    m = Sherlock(debug)
-    m.run()
+    args = parser.parse_args()
+
+    dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+    bus = dbus.SessionBus()
+    request = bus.request_name("org.sherlock.Daemon", dbus.bus.NAME_FLAG_DO_NOT_QUEUE)
+
+    if request != dbus.bus.REQUEST_NAME_REPLY_EXISTS:
+        app = Sherlock(bus, '/', "org.sherlock.Daemon")
+    else:
+        obj = bus.get_object("org.sherlock.Daemon", "/")
+        app = dbus.Interface(obj, "org.sherlock.Daemon")
+
+    if args.quit:
+        app.close()
+    else:
+        app.run()
+
+
     return True
+
 
 if __name__ == '__main__':
     sys.exit(main())

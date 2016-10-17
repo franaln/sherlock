@@ -2,13 +2,14 @@ import os
 
 class Item(object):
 
-    def __init__(self, title, subtitle='', keys=[], category='text', arg=None, score=0.0, no_filter=False):
+    __slots__ = ('title', 'subtitle', 'category', 'arg', 'score', 'keys')
+
+    def __init__(self, title, subtitle='', keys=[], category='text', arg=None, score=0.0):
         self.title = title
         self.subtitle = subtitle
         self.category = category
         self.arg = arg
         self.score = score
-        self.no_filter = no_filter
         self.keys = keys
 
         if category == 'text' and arg is None:
@@ -36,30 +37,75 @@ class Item(object):
                 self.category == other.category and
                 self.arg == other.arg)
 
+    def get_actions(self):
+        return (
+            ('Copy', 'copy_to_clipboard'),
+            ('Large type', 'show_large_type'),
+            ('Show QR code', 'show_qrcode'),
+        )
+
 
 class ItemText(Item):
-    def __init__(self, text, no_filter=False):
+    def __init__(self, text):
         Item.__init__(self, title=text, subtitle='', keys=[text,], category='text',
-                      arg=None, no_filter=no_filter)
+                      arg=None)
+
+    def get_actions(self):
+        return (
+            ('Copy', 'copy_to_clipboard'),
+            ('Large type', 'show_large_type'),
+            ('Show QR code', 'show_qrcode'),
+        )
+
+    def copy_to_clipboard(self):
+        # "primary":
+        xsel_proc = subprocess.Popen(['xsel', '-pi'], stdin=subprocess.PIPE)
+        xsel_proc.communicate(self.arg.encode('utf-8'))
+
+        # "clipboard":
+        xsel_proc = subprocess.Popen(['xsel', '-bi'], stdin=subprocess.PIPE)
+        xsel_proc.communicate(self.arg.encode('utf-8'))
+
 
 class ItemUri(Item):
-    def __init__(self, path, no_filter=False):
-        name = path.split('/')[-1]  #os.path.basename(path)
+    def __init__(self, name, path):
+
         path = path
         key = name
 
-        # if os.path.isdir(path):
-        #     name = '%s/' % name
-        #     path = '%s/' % path
+        if os.path.isdir(path):
+            name = '%s/' % name
+            path = '%s/' % path
 
         Item.__init__(self, title=name, subtitle=path, keys=[key,], category='uri',
-                      arg=path, no_filter=no_filter)
+                      arg=path.replace(' ', r'%20'))
 
     def is_dir(self):
-        return os.path.isdir(self.arg)
+        return self.path.endswith('/') #os.path.isdir(self.arg)
 
     def is_file(self):
-        return os.path.isfile(self.arg)
+        return (not self.path.endswith('/')) #os.path.isfile(self.arg)
+
+    def get_actions(self):
+        return (
+            ('Open', 'open_uri'),
+            ('Open folder', 'open_folder'),
+            ('Explore', 'explore'),
+        )
+
+    def open_uri(self):
+        run_cmd_setsid('open file://' + self.arg)
+
+    def open_folder(self):
+        if self.is_file():
+            dir_ = '/'.join(self.arg.split('/')[:-1])
+        else:
+            dir_ = self.arg
+
+        run_cmd_setsid('thunar '+dir_)
+
+    def explore(self):
+        pass
 
 
 class ItemApp(Item):
@@ -71,15 +117,41 @@ class ItemApp(Item):
     def __cmp__(self, other):
         return (self.app_exe == other.app_exe)
 
+    def get_actions(self):
+        return (
+            ('Run', 'run_app'),
+            ('Run in terminal', 'run_app_in_terminal'),
+        )
+
+    def run_app(self):
+        run_cmd_setsid(self.arg)
+
+    def run_app_in_terminal(self):
+        print('urxvtc -e "%s"' % arg)
+        os.system('setsid urxvt -e "%s" +hold' % arg)
+
+
 class ItemCmd(Item):
-    def __init__(self, text, cmd, no_filter=False):
+    def __init__(self, text, cmd):
         Item.__init__(self, title=text, subtitle='', keys=[text,], category='cmd',
-                      arg=cmd, no_filter=no_filter)
+                      arg=cmd)
+
+    def get_actions(self):
+           return (
+               ('Run', 'run_cmd'),
+               ('Copy to console', 'copy_to_console')
+           )
+
+    def run_cmd(self):
+        pass
+
+    def copy_to_console(self):
+        pass
 
 class ItemAction(Item):
     def __init__(self, title, fn, no_filter=False):
         Item.__init__(self, title=title, subtitle='', keys=[title,], category='action',
-                      arg=fn, no_filter=no_filter)
+                      arg=fn)
 
 class ItemPlugin(Item):
     def __init__(self, title, kw):

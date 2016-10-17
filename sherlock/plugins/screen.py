@@ -33,7 +33,7 @@ def _check_devices():
 
     return devices
 
-def get_matches(query):
+def get_matches(query=None):
 
     devices = _check_devices()
 
