@@ -35,8 +35,8 @@ def distance(str1, str2):
 
     return d[len(str1)][len(str2)]
 
-# def get_matches(plugin, query, min_score=0, max_results=0):
-def get_matches(plugin, query, min_score=0, max_results=0):
+
+def filter_matches(plugin, query, min_score=0, max_results=0):
 
     """ search filter.
     Returns list of items that match query.
@@ -52,7 +52,7 @@ def get_matches(plugin, query, min_score=0, max_results=0):
     queryset = set(query)
 
     # Loop over items
-    for i, item in enumerate(plugin.get_matches(query)):
+    for i, item in enumerate(plugin.loop_cache()):
 
         item.score = 0.
 
@@ -60,7 +60,7 @@ def get_matches(plugin, query, min_score=0, max_results=0):
             item.keys
         except:
             try:
-                print (item)
+                print(item)
             except:
                 continue
 
@@ -122,16 +122,16 @@ def get_matches(plugin, query, min_score=0, max_results=0):
                 if query in value.lower():
                     score = 92.0 - (valuelen / querylen)
 
-            if not score:
-                d = distance(query, value[:querylen])
+            # if not score:
+            #     d = distance(query, value[:querylen])
 
-                if d < 3:
-                    score = 100 - d - valuelen + querylen
+            #     if d < 3:
+            #         score = 100 - d - valuelen + querylen
 
-            if min_score and score < min_score:
+            if min_score > 0. and score < min_score:
                 continue
 
-            if score > 0 and score > item.score:
+            if score > 1. and score > item.score:
                 # use "reversed" score (i.e. highest becomes lowest) and
                 # value as sort key. This means items with the same score
                 # will be sorted in alphabetical not reverse alphabetical order
@@ -151,8 +151,8 @@ def get_matches(plugin, query, min_score=0, max_results=0):
             results.append(item)
 
     # sort on keys, then discard the keys
-    #keys = sorted(results.keys(), reverse=False)
-    #results = [results.get(k) for k in keys]
+    # keys = sorted(results.keys(), reverse=False)
+    # results = [results.get(k) for k in keys]
 
     if max_results and len(results) > max_results:
         results = results[:max_results]
@@ -181,7 +181,7 @@ class SearchWorker:
         for id_, done, plugin, query in iter(self.queue.get, None):
             result = []
             try:
-                plugin_matches = get_matches(plugin, query, min_score=60.0, max_results=50)
+                plugin_matches = filter_matches(plugin, query, min_score=60.0, max_results=50)
                 result.extend(plugin_matches)
             except IOError:
                 pass

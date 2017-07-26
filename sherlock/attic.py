@@ -38,7 +38,6 @@ class Attic:
         self.logger = logging.getLogger(__name__)
 
         self.path = path
-
         if os.path.isfile(self.path):
             self.load()
         else:
@@ -46,11 +45,10 @@ class Attic:
             self.attic = dict()
 
         self.pos = len(self.events)
-
         self.changed = False
 
     def load(self):
-        self.logger.info('loading attic')
+        self.logger.info('loading attic from %s' % self.path)
         with open(self.path, 'rb') as f:
             try:
                 self.events = pickle.load(f)
@@ -60,7 +58,6 @@ class Attic:
                 utils.copy_file(self.path, self.path+'.backup')
                 self.events = []
                 self.attic = dict()
-
 
     def save(self):
         if not self.changed:
@@ -77,6 +74,7 @@ class Attic:
         timestamp = datetime.now()
         item_dict = item.to_dict()
 
+        # add event to history
         event = (timestamp, query, item_dict, action)
 
         self.events.insert(0, event)
@@ -84,22 +82,16 @@ class Attic:
         if len(self.events) > history_size:
             del self.events[history_size:]
 
-        if not query in self.attic:
-            self.attic[query] = []
-
-        for n, it in enumerate(self.attic[query]):
-            if it[0]['title'] == item_dict['title']:
-                self.attic[query][n][1] += 1
-                break
+        # add to attic histogram
+        if not item.title in self.attic:
+            self.attic[item.title] = 1
         else:
-            self.attic[query].append([item_dict, 1])
+            self.attic[item.title] += 1
 
         self.changed = True
-
 
     def remove(self):
         self.changed = True
-        pass
 
     def get_next_query(self):
         self.pos += 1
@@ -118,37 +110,26 @@ class Attic:
     def get_history(self):
         return [ Item.from_dict(ev[2]) for ev in self.events ]
 
-    def sort(self, query, items):
-
-        if query not in self.attic:
-            return
-
+    def get_total_score(self):
         total = 0
-        for b in self.attic[query]:
-            total += b[1]
+        for b in self.attic.values:
+            total += b
+        return total
 
-        for item in items:
-            for sitem, count in self.attic[query]:
-                if item.title == sitem['title']:
-                    item.score *= count/total
-
-                else:
-                    item.score *= 1/total
+    def get_item_bonus(self, item):
+        return self.attic.get(item.title, -1)
 
     def get_similar(self, query):
 
         similar_items = []
-
         for q in self.attic.keys():
 
             if q == query:
                 continue
 
             d = distance(query, q)
-
             if d < 2:
                 items = self.attic[q]
-
                 similar_items.extend([Item.from_dict(i[0]) for i in items])
 
         return similar_items

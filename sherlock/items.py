@@ -7,10 +7,11 @@ class Item(object):
     def __init__(self, title, subtitle='', keys=[], category='text', arg=None, score=0.0):
         self.title = title
         self.subtitle = subtitle
+        self.keys = keys
         self.category = category
         self.arg = arg
-        self.score = score
-        self.keys = keys
+
+        self.score = score # temporal because it depends the query (0. by default)
 
         if category == 'text' and arg is None:
             self.arg = self.title
@@ -32,41 +33,32 @@ class Item(object):
         return '%s (%s)' % (self.title, self.score)
 
     def __eq__(self, other):
-        return (self.title == other.title and
-                self.subtitle == other.subtitle and
-                self.category == other.category and
-                self.arg == other.arg)
+        return (self.to_dict() == other.to_dict())
 
     def get_actions(self):
         return (
             ('Copy', 'copy_to_clipboard'),
-            ('Large type', 'show_large_type'),
-            ('Show QR code', 'show_qrcode'),
+            # ('Large type',   'show_large_type'),
+            # ('Show QR code', 'show_qrcode'),
         )
 
 
-class ItemText(Item):
-    def __init__(self, text):
-        Item.__init__(self, title=text, subtitle='', keys=[text,], category='text',
-                      arg=None)
+
+# Apps
+class ItemApp(Item):
+    def __init__(self, title, subtitle, arg, keys):
+        Item.__init__(self, title=title, subtitle=subtitle,
+                      keys=keys, category='app',
+                      arg=arg)
 
     def get_actions(self):
         return (
-            ('Copy', 'copy_to_clipboard'),
-            ('Large type', 'show_large_type'),
-            ('Show QR code', 'show_qrcode'),
+            ('Run', 'run_app'),
+            ('Run in terminal', 'run_app_in_terminal'),
         )
 
-    def copy_to_clipboard(self):
-        # "primary":
-        xsel_proc = subprocess.Popen(['xsel', '-pi'], stdin=subprocess.PIPE)
-        xsel_proc.communicate(self.arg.encode('utf-8'))
 
-        # "clipboard":
-        xsel_proc = subprocess.Popen(['xsel', '-bi'], stdin=subprocess.PIPE)
-        xsel_proc.communicate(self.arg.encode('utf-8'))
-
-
+# Files
 class ItemUri(Item):
     def __init__(self, name, path):
 
@@ -88,49 +80,27 @@ class ItemUri(Item):
 
     def get_actions(self):
         return (
-            ('Open', 'open_uri'),
+            ('Open',        'open_uri'),
             ('Open folder', 'open_folder'),
-            ('Explore', 'explore'),
+            ('Explore',     'explore'),
         )
 
-    def open_uri(self):
-        run_cmd_setsid('open file://' + self.arg)
 
-    def open_folder(self):
-        if self.is_file():
-            dir_ = '/'.join(self.arg.split('/')[:-1])
-        else:
-            dir_ = self.arg
-
-        run_cmd_setsid('thunar '+dir_)
-
-    def explore(self):
-        pass
-
-
-class ItemApp(Item):
-    def __init__(self, name, exe, desktop, keys):
-        Item.__init__(self, title=name, subtitle=exe,
-                      keys=keys, category='app',
-                      arg=desktop)
-
-    def __cmp__(self, other):
-        return (self.app_exe == other.app_exe)
+# Text
+class ItemText(Item):
+    def __init__(self, text):
+        Item.__init__(self, title=text, subtitle='', keys=[text,], category='text',
+                      arg=None)
 
     def get_actions(self):
         return (
-            ('Run', 'run_app'),
-            ('Run in terminal', 'run_app_in_terminal'),
+            ('Copy',         'copy_to_clipboard'),
+            # ('Large type',   'show_large_type'),
+            # ('Show QR code', 'show_qrcode'),
         )
 
-    def run_app(self):
-        run_cmd_setsid(self.arg)
 
-    def run_app_in_terminal(self):
-        print('urxvtc -e "%s"' % arg)
-        os.system('setsid urxvt -e "%s" +hold' % arg)
-
-
+# Command
 class ItemCmd(Item):
     def __init__(self, text, cmd):
         Item.__init__(self, title=text, subtitle='', keys=[text,], category='cmd',
@@ -142,52 +112,20 @@ class ItemCmd(Item):
                ('Copy to console', 'copy_to_console')
            )
 
-    def run_cmd(self):
-        pass
 
-    def copy_to_console(self):
-        pass
+# class ItemAction(Item):
+#     def __init__(self, title, fn, no_filter=False):
+#         Item.__init__(self, title=title, subtitle='', keys=[title,], category='action',
+#                       arg=fn)
 
-class ItemAction(Item):
-    def __init__(self, title, fn, no_filter=False):
-        Item.__init__(self, title=title, subtitle='', keys=[title,], category='action',
-                      arg=fn)
+# class ItemPlugin(Item):
+#     def __init__(self, title, kw):
+#         Item.__init__(self, title=title, subtitle='keyword: %s' % kw,
+#                       keys=[title,], category='plugin',
+#                       arg=kw)
 
-class ItemPlugin(Item):
-    def __init__(self, title, kw):
-        Item.__init__(self, title=title, subtitle='keyword: %s' % kw,
-                      keys=[title,], category='plugin',
-                      arg=kw)
+#         self.items = []
+#         self.score = 200
 
-        self.items = []
-        self.score = 200
-
-    def add(self, it):
-        self.items.append(it)
-
-
-
-actions = dict()
-
-actions['app'] = [
-    ('Run', 'run_app'),
-    ('Run in terminal', 'run_app_in_terminal'),
-]
-
-actions['uri'] = [
-    ('Open', 'open_uri'),
-    ('Open folder', 'open_folder'),
-    ('Explore', 'explore'),
-    #('Console', 'open_console_uri'),
-]
-
-actions['cmd'] = [
-    ('Run', 'run_cmd'),
-    ('Copy to console', 'copy_to_console')
-]
-
-actions['text'] = [
-    ('Copy', 'copy_to_clipboard'),
-    ('Large type', 'show_large_type'),
-    ('Show QR code', 'show_qrcode'),
-]
+#     def add(self, it):
+#         self.items.append(it)

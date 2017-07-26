@@ -5,8 +5,6 @@ An action must be a function with match as argument
 
 ## Actions
   * Run cmd
-  * Run application
-  * Run application in terminal
   * Open file/folder
   * Open file in folder
   * Web search
@@ -24,23 +22,7 @@ from gi.repository import Gtk, Gio, Gdk, Notify, Pango
 
 from sherlock import utils
 
-def do_search_google():
-    pass
-
-
-def escape(text):
-    cs = ['(', ')', '[', ']', '\'']
-
-    newtext = text
-    for c in cs:
-        if c in newtext:
-            newtext = newtext.replace(c, '\\%s' % c)
-
-    return newtext
-
-
-
-# Common actions
+# Command
 def run_cmd(arg):
 
     if '&&' in arg:
@@ -58,27 +40,36 @@ def run_cmd(arg):
             break
 
 
+
+
+
+# Apps
 def run_app(arg):
-    run_cmd('setsid setsid ' + arg)
+    if arg.endswith('.desktop'):
 
+        original = Gio.DesktopAppInfo().new_from_filename(arg)
 
-def run_app_in_terminal(arg):
+        arg = original.get_commandline().split()[0]
 
+    #     app = Gio.AppInfo.create_from_commandline(original.get_commandline(),
+    #                                               original.get_name(),
+    #                                               Gio.AppInfoCreateFlags.NEEDS_TERMINAL)
+    #     display = Gdk.Display.get_default()
+    #     app.launch(None, display.get_app_launch_context())
+
+    # else:
+    print(arg)
+    utils.run_cmd('setsid setsid ' + arg)
+
+def run_app_in_terminal(self):
     print('urxvtc -e "%s"' % arg)
     os.system('setsid urxvt -e "%s" +hold' % arg)
 
-    # original = Gio.DesktopAppInfo().new_from_filename(arg)
-    # app = Gio.AppInfo.create_from_commandline(original.get_commandline(),
-    #                                           original.get_name(),
-    #                                           Gio.AppInfoCreateFlags.NEEDS_TERMINAL)
-    # display = Gdk.Display.get_default()
-    # app.launch(None, display.get_app_launch_context())
 
-
+# Files
 def open_uri(arg):
-    uri = r'file://' + escape(arg).replace(' ', r'%20')
+    uri = r'file://' + utils.escape(arg).replace(' ', r'%20')
     run_cmd('open '+uri)
-
 
 def open_folder(arg):
     if os.path.isfile(arg):
@@ -86,28 +77,32 @@ def open_folder(arg):
     else:
         dir_ = arg
 
-    run_cmd('setsid setsid thunar '+dir_)
-
-def open_console_uri(arg):
-    run_cmd('setsid urxvt -cd %s' % os.path.dirname(arg))
-
-def copy_cmd_to_console(arg):
-    run_cmd('setsid urxvt -cd %s' % os.path.dirname(arg))
+    run_cmd('setsid setsid nautilus '+dir_)
 
 
-# Outputs
+
+
+
+
+
+
+
+# def open_console_uri(arg):
+#     run_cmd('setsid urxvt -cd %s' % os.path.dirname(arg))
+
+# def copy_cmd_to_console(arg):
+#     run_cmd('setsid urxvt -cd %s' % os.path.dirname(arg))
+
+
+# Output
 def copy_to_clipboard(arg):
-    # "primary":
-    xsel_proc = subprocess.Popen(['xsel', '-pi'], stdin=subprocess.PIPE)
-    xsel_proc.communicate(arg.encode('utf-8'))
+    clipboard = Gtk.Clipboard.get(Gdk.SELECTION_PRIMARY)
+    clipboard.set_text(arg, -1)
 
-    # "clipboard":
-    xsel_proc = subprocess.Popen(['xsel', '-bi'], stdin=subprocess.PIPE)
-    xsel_proc.communicate(arg.encode('utf-8'))
-
+    clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+    clipboard.set_text(arg, -1)
 
 def send_notification(match):
-    #Notify.init ("Hello world")
     noti = Notify.Notification.new('Sherlock', match.arg, 'dialog-information')
     noti.show()
 

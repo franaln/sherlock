@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/python
 # Sherlock
 
 import os
@@ -18,7 +18,8 @@ from sherlock.main import Sherlock
 def main():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-q', '--quit', action='store_true', help='quit')
+    parser.add_argument('-q', '--quit', action='store_true', help='Quit')
+    parser.add_argument('-d', '--debug', action='store_true', help='Print debug output')
 
     args = parser.parse_args()
 
@@ -27,7 +28,10 @@ def main():
     request = bus.request_name("org.sherlock.Daemon", dbus.bus.NAME_FLAG_DO_NOT_QUEUE)
 
     if request != dbus.bus.REQUEST_NAME_REPLY_EXISTS:
-        app = Sherlock(bus, '/', "org.sherlock.Daemon")
+        if args.quit:
+            print('not running')
+            return True
+        app = Sherlock(bus, '/', "org.sherlock.Daemon", args.debug)
     else:
         obj = bus.get_object("org.sherlock.Daemon", "/")
         app = dbus.Interface(obj, "org.sherlock.Daemon")
@@ -36,7 +40,6 @@ def main():
         app.close()
     else:
         app.run()
-
 
     return True
 

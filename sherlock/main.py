@@ -6,13 +6,13 @@ import json
 import logging
 import importlib
 import threading
-import cairo
+import datetime
 
 import gi
-gi.require_version('Gtk', '3.0')
-gi.require_version('Poppler', '0.18')
+gi.require_version('Gtk',        '3.0')
+gi.require_version('Poppler',    '0.18')
 gi.require_version('PangoCairo', '1.0')
-gi.require_version('Notify', '0.7')
+gi.require_version('Notify',     '0.7')
 from gi.repository import Gtk, Gdk, GLib, GObject, GdkPixbuf, Poppler
 
 import dbus
@@ -20,29 +20,38 @@ import dbus.bus
 import dbus.service
 import dbus.mainloop.glib
 
-from sherlock import config
-from sherlock import utils
-from sherlock.drawer import *
-from sherlock import actions
-from sherlock import search
-from sherlock import cache
-from sherlock import items as items_
-from sherlock.bar import Bar
-from sherlock.attic2 import Attic
+from sherlock.menu import Menu
+from sherlock.attic import Attic
 
-config_file = os.path.expanduser('~/.config/sherlock/config')
-cache_dir = os.path.expanduser('~/.cache/sherlock/')
-attic_path = os.path.join(cache_dir, 'attic2')
+from sherlock import utils
+from sherlock import search
+
+from sherlock import applications
+from sherlock import files
+
+from sherlock import actions
+from sherlock.items import Item
+
+config_dir = os.path.expanduser('~/.config/sherlock')
+cache_dir  = os.path.expanduser('~/.cache/sherlock/')
+attic_path = os.path.join(cache_dir, 'attic')
 
 lock = threading.Lock()
 
-class Menu(Gtk.Window, GObject.GObject):
+use_threads = True
+debug = False
 
-    __gsignals__ = {
-        'menu-update': (GObject.SIGNAL_RUN_FIRST, None, ()),
-    }
+home_dir = os.environ['HOME']
 
-    def __init__(self, debug=False):
+
+class Sherlock(dbus.service.Object):
+
+    def __init__ (self, bus, path, name, debug):
+
+        dbus.service.Object.__init__(self, bus, path, name)
+
+        self.running = False
+        self.showing = False
 
         self.debug = debug
 
@@ -57,189 +66,119 @@ class Menu(Gtk.Window, GObject.GObject):
         self.logger.info('starting sherlock...')
 
         # config
+        config_file = os.path.join(config_dir, 'config.py')
+        if os.path.exists(config_file) and os.path.isfile(config_file):
+            self.logger.info('loading configfile from %s' % config_file)
+            sys.path.append(config_dir)
+            config = importlib.import_module('config')
+        else:
+            self.logger.info('loading default configfile')
+            from sherlock import config
 
-        # plugins
-        self.base_plugins = dict()
-        self.keyword_plugins = dict()
-        self.fallback_plugins = dict()
-        self.automatic_plugins = dict()
+        self.config = config
 
-        # bar
-        self.bar = Bar()
-
-        # menu
-        self.items = []
-        self.item_selected = 0
-
-        self.right_items = []
-        self.right_item_selected = 0
-
-        self.right_panel_visible = False
-
-        # Attic
+        # Menu & Handler & Attic
+        self.menu = Menu(config, debug)
         self.attic = Attic(attic_path)
 
-        # window
-        super().__init__(type=Gtk.WindowType.TOPLEVEL)
-        self.set_app_paintable(True)
-        self.set_decorated(False)
-        self.set_size_request(width, height)
-        self.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
-        self.set_keep_above(True)
-        self.set_title('Sherlock')
+        # Handler for now
+        self.commands = [
+            'clear',
+            'update',
+        ]
 
-        self.connect('draw', self.draw)
-        self.connect('key_press_event', self.on_key_press)
-        self.connect('focus-out-event', self.on_hide_menu)
-        self.bar.connect('update', self.on_bar_update)
-        self.bar.connect('query-change', self.on_query_change)
-        self.connect('menu-update', self.on_menu_update)
+        # recreate db
+        self.update_cache()
+        GLib.timeout_add_seconds(1800, self.update_cache)
 
         # preview
         self.preview = None
 
-        # search
-        self.load_plugins()
-        self.worker = search.SearchWorker()
-        self.running_jobs = []
-        self.stop_jobs = []
+        #
+        self.menu.connect('delete-event', Gtk.main_quit)
+        self.menu.connect('key_press_event', self.on_key_press)
+        self.menu.connect('focus-out-event', self.on_hide_menu)
+        self.menu.connect('menu-update', self.menu.on_menu_update)
+        self.menu.connect('query-change', self.on_query_change)
 
-        # recreate db
-        self.reload_plugins_cache()
-        GLib.timeout_add_seconds(600, self.reload_plugins_cache)
+    # -------------
+    #  Run & close
+    # -------------
+    @dbus.service.method("org.sherlock.Daemon", in_signature='', out_signature='')
+    def run(self):
+        if self.running:
+            if not self.showing:
+                self.show_menu()
+            else:
+                self.hide_menu()
+        else:
+            self.running = True
+            Gtk.main()
+            self.running = False
 
+    @dbus.service.method("org.sherlock.Daemon", in_signature='', out_signature='')
+    def close(self, *args):
+        self.logger.info('closing...')
+        self.attic.save()
+        self.showing = False
+        Gtk.main_quit()
 
-    # ---------
-    #  Plugins
-    # ---------
-    def import_plugin(self, name):
-        try:
-            plugin = importlib.import_module(name)
-            self.logger.info('pluging %s loaded.' % name)
-        except ImportError:
-            self.logger.error('error loading plugin %s.' % name)
-            return None
-
-        return plugin
-
-    def load_plugins(self):
-
-        plugins_dir = os.path.dirname(__file__) + '/plugins'
-        sys.path.append(plugins_dir)
-
-        for name in config.basic_search:
-            plugin = self.import_plugin(name)
-
-            if plugin is not None:
-                self.base_plugins[name] = plugin
-
-        for kw, name in config.plugins.items():
-            if os.path.isfile(os.path.join(plugins_dir, '%s.py' % name)):
-                self.keyword_plugins[kw] = name
-
-        for text, name in config.fallback_plugins.items():
-            if os.path.isfile(os.path.join(plugins_dir, '%s.py' % name)):
-                self.fallback_plugins[text] = name
-
-        for name in config.automatic_plugins:
-            self.automatic_plugins[name] = self.import_plugin(name)
-
-    def check_automatic_plugins(self):
-        for name, plugin in self.automatic_plugins.items():
-            self.logger.info('checking automatic plugin: %s' % name)
-            matches = plugin.get_matches()
-            if matches:
-                self.items.extend(matches)
-                self.emit('menu-update')
-
-    def reload_plugins_cache(self):
-        self.logger.info('reloading cache')
-        for name, plugin in self.base_plugins.items():
-            #plugin.get_matches('')
-            try:
-                plugin.load_db()
-            except:
-                pass
-
-        return True
 
     # -----------
     #  Callbacks
     # -----------
     def on_hide_menu(self, widget, a):
-        self.hide()
-        self.bar.clear()
-
-    def on_bar_update(self, widget):
-        self.queue_draw()
-
-    def on_menu_update(self, widget):
-        self.queue_draw()
+        self.hide_menu()
 
     def on_query_change(self, widget, query):
+        self.logger.debug('query change: %s', query)
 
         # Clear menu
-        self.hide_right_panel()
-
-        del self.items[:]
-        self.item_selected = -1
-
-        if self.preview is not None:
-            self.preview.hide()
+        self.menu.hide_right_panel()
+        self.menu.clear_menu()
 
         if not query:
-            self.emit('menu-update')
+            self.menu.emit('menu-update')
             return
 
-        # File navigation
-        if self.file_navigation_mode(query):
-            self.logger.info('file navigation: %s' % query)
-            self.file_navigation(query)
-
-        # elif query in self.commands:
-        #     self.run_command(query)
-
-        # Search
-        else:
-            self.search(query)
-
+        self.search(query)
 
     def on_key_press(self, window, event):
         key = Gdk.keyval_name(event.keyval)
-        self.logger.debug('key pressed: %s', key)
 
         # CTRL is pressed
         if event.state & Gdk.ModifierType.CONTROL_MASK:
             if key == 'Left':
-                self.bar.move_cursor_left()
+                self.menu.move_cursor_left()
             elif key == 'Right':
-                self.bar.move_cursor_right()
+                self.menu.move_cursor_right()
             elif key == 'Up':
                 self.previous_query()
             elif key == 'Down':
                 self.next_query()
             elif key == 'a':
-                self.bar.move_cursor_begin()
+                self.menu.move_cursor_begin()
             elif key == 'e':
-                self.bar.move_cursor_end()
+                self.menu.move_cursor_end()
             elif 'space' in key:
-                self.toggle_preview()
+                pass
+                # self.toggle_preview()
             elif key == 'y':
-                self.bar.addchar(utils.get_selection())
+                self.menu.addchar(utils.get_selection())
             elif key == 'BackSpace':
-                self.bar.clear()
+                self.menu.clear_bar()
             elif key == 'h':
-                self.show_history()
+                pass
+                #self.show_history()
 
             return
 
         if key == 'Escape':
-            self.hide()
-            self.bar.clear()
+            self.hide_menu()
 
         elif key == 'Left':
             if self.file_navigation_mode():
-                self.file_navigation_back()
+                self.file_navigation_cd_back()
 
         elif key == 'Down':
             # if not self.menu_visible:
@@ -248,341 +187,133 @@ class Menu(Gtk.Window, GObject.GObject):
             #     if self.matches:
             #         self.show_menu()
             # else:
-            self.select_down()
+            self.menu.select_down()
 
         elif key == 'Up':
             # if not self.menu_visible and self.bar.is_empty():
             #     #self.bar.select()
             #     #self.previous_query()
             # else:
-            self.select_up()
+            self.menu.select_up()
 
         elif key == 'BackSpace':
-            self.bar.delchar()
+            self.menu.delchar()
 
         elif key == 'Delete':
-            self.bar.delchar(True)
+            self.menu.delchar(True)
 
         # Return/Right: execute default action on selected item
         elif 'Return' in key or key == 'Right':
-            if self.file_navigation_mode() and self.right_item_selected < 1:
+            if self.file_navigation_mode(): ## and self.right_item_selected < 1:
                 self.file_navigation_cd()
             else:
                 self.actionate()
 
         elif 'Tab' in key:
-            if self.items:
-                self.toggle_right_panel()
+            if self.menu.items:
+                self.menu.toggle_right_panel()
 
         elif 'Alt' in key or 'Control' in key:
             pass
 
         else:
             if event.string:
-                self.bar.addchar(event.string)
+                self.menu.addchar(event.string)
 
 
-    def on_plugin_done(self, task_id, query, result):
+    # ----------------
+    # Show / Hide menu
+    # ----------------
+    def show_menu(self):
+        # self.check_automatic_plugins()
+        self.menu.present()
+        self.showing = True
 
-        if task_id in self.stop_jobs:
-            self.stop_jobs.remove(task_id)
-            return
-
-        if not task_id in self.running_jobs:
-            return
-
-        self.logger.debug('%d results from %s with query %s. All: %s' % (len(result), task_id, query, [str(i) for i in result]))
-
-        if query and result:
-            with lock:
-
-                for m in result:
-                    m.score += self.attic.get_item_bonus(m)
-
-                if items_.ItemCmd("run '%s' in a shell" % query, query) in self.items:
-                    self.items.remove(items_.ItemCmd("run '%s' in a shell" % query, query))
-                self.items.extend(result)
-                self.items = sorted(self.items, key=lambda x: x.score, reverse=True)
-
-            self.emit('menu-update')
+    def hide_menu(self):
+        self.menu.clear_bar()
+        self.menu.hide()
+        self.showing = False
 
 
-        # self.items = [i for i in self.items if i.score > 60.]
-        #self.items = sorted(self.items, key=lambda x: x.score, reverse=True)
-        #if len(query) > 1:
-        #self.items.extend(self.attic.get_similar(query))
+    # ---------
+    #  Actions
+    # ---------
+    def run_internal_command(self, cmd):
+        if cmd == 'clear':
+            pass #cache.clear_cache()
+        elif cmd == 'update':
+            pass # update cache
 
-
-    # -------------
-    #  Run & close
-    # -------------
-    def run(self):
-        Gtk.main()
-
-    def close(self, *args):
-        self.logger.info('closing...')
-        self.attic.save()
-        Gtk.main_quit()
-
-    def show(self):
-        self.check_automatic_plugins()
-        self.present()
-
-    # ------
-    #  Menu
-    # ------
-    def show_right_panel(self):
-        match = self.selected_item()
-
-        try:
-            match_items = items_.actions[match.category]
-        except:
-            match_items = [ (i.title, '') for i in self.keyword_plugins[match.arg].get_matches('') ]
-
-        if len(match_items) < 2:
-            return
-
-        if match_items:
-            self.right_items = list(match_items)
-        self.right_panel_visible = True
-        self.emit('menu-update')
-
-    def hide_right_panel(self):
-        if not self.right_panel_visible:
-            return
-        self.right_panel_visible = False
-        self.right_items = []
-        self.right_item_selected = 0
-        self.emit('menu-update')
-
-    def toggle_right_panel(self):
-        if self.right_panel_visible:
-            self.hide_right_panel()
-        else:
-            self.show_right_panel()
-
-    def selected_item(self):
-        if not self.items:
-            return None
-        return self.items[self.item_selected] if self.item_selected >=0 else self.items[0]
-
-
-    # -------------
-    #  Draw window
-    # -------------
-    def draw(self, widget, event):
-
-        items = list(self.items)
-
-        cr = Gdk.cairo_create(widget.get_window())
-
-        draw_background(cr)
-
-        # query
-        draw_variable_text(cr, query_x, query_y, bar_w-20, 0, self.bar.query, size=38)
-
-        # cursor
-        cursor_x = query_x + calc_text_width(cr, self.bar.query[:self.bar.cursor], size=38)
-
-        cr.set_source_rgb(*config.text_color)
-        cr.rectangle(cursor_x, 20, 1.5, bar_h-40)
-        cr.fill()
-
-        # separator
-        cr.set_source_rgb(*config.separator_color) #0.7, 0.7, 0.75)
-        cr.rectangle(0, 90, width, 1)
-        cr.fill()
-
-        if not items:
-            return
-
-        # items
-        first_item = 0 if (self.item_selected < 5) else (self.item_selected - 4)
-
-        n_items = len(items)
-        max_items = min(5, n_items)
-
-        for i in range(max_items):
-            draw_item(cr, i, items[first_item + i],
-                      (first_item + i == self.item_selected), self.debug)
-
-        if self.right_panel_visible:
-            draw_right_panel(cr, self.right_items, self.right_item_selected)
-
-        return False
-
-    # --------
-    #  Search
-    # --------
-    def search_plugin(self, plugin, query):
-        job_id = self.worker.add_job(self.on_plugin_done, plugin, query)
-        self.running_jobs.append(job_id)
-        # plugin_matches = search.get_matches(plugin, query, min_score=60.0, max_results=50)
-        # self.matches.extend(plugin_matches)
-
-    def search(self, query):
-
-        if not query:
-            return
-
-        self.logger.info('searching %s' % query)
-
-        if self.running_jobs:
-            self.stop_jobs = self.running_jobs[:]
-            del self.running_jobs[:]
-
-
-        matches = []
-
-        # Keyword plugin
-        #if query.startswith('.'):
-        #query = query[1:].strip()
-        if query in self.keyword_plugins:
-            # for keyword, name in self.keyword_plugins.items():
-            #if query.startswith(keyword):
-            # query = query[len(keyword):].strip()
-            name = self.keyword_plugins[query]
-            if isinstance(name, str):
-                self.keyword_plugins[query] = self.import_plugin(name)
-
-
-            it = items_.ItemPlugin(name, query)
-            matches.append(it)
-
-            # # plugin_matches =
-
-            # for match in plugin_matches:
-            #     it.add(match)
-
-            # if plugin_matches:
-            #     matches.extend(plugin_matches)
-
-
-        # Basic search
-        #if True: #not matches:
-
-            # if query == '.' and self.keyword_plugins:
-            #     for kw, name in self.keyword_plugins.items():
-            #         self.items.append(items_.ItemPlugin(name, kw))
-
-            # else:
-        for name in self.base_plugins.keys():
-            self.search_plugin(self.base_plugins[name], query)
-
-        # fallback plugins
-        if not self.items:
-            for text in self.fallback_plugins.keys():
-                title = text.replace('query', '\'%s\'' % query)
-                it = items_.ItemText(title, no_filter=True)
-                self.items.append(it)
-
-        # order matches by score
-        if matches:
-            self.items.extend(matches)
-        else:
-            if query.startswith("'"):
-                query = query[1:]
-                it = items_.ItemCmd("run '%s' in a shell" % query, query)
-                it.score = 110
-            else:
-                it = items_.ItemCmd("run '%s' in a shell" % query, query)
-
-            self.items.append(it)
-
-        self.emit('menu-update')
-
-    # --------
-    #  Action
-    # --------
     def actionate(self):
 
-        match = self.selected_item()
+        match = self.menu.selected_item()
         if match is None:
             return
 
-        # action_name = items_.actions[match.category][self.right_item_selected][1]
+        #     # action_name = items_.actions[match.category][self.right_item_selected][1]
 
+        #     if self.right_item_selected >= 0:
+        #         action_name = match.get_actions()[self.right_item_selected][1]
+        #     else:
+        action_name = match.get_actions()[0][1]
 
-        action_name = match.get_actions()[0][1] #self.right_item_selected]
-
-
-        if action_name == 'explore' and os.path.isdir(match.arg):
-            self.explore(match.arg)
-            return
+        #     if action_name == 'explore' and os.path.isdir(match.arg) and not os.path.isfile(match.arg):
+        #         self.explore(match.arg)
+        #         return
 
         action = getattr(actions, action_name)
+
+        self.attic.add(self.menu.query, match, None)
+
         self.logger.info('executing %s %s' % (action_name, match.arg))
-
-        self.attic.add(self.bar.query, match, None)
-
         action(match.arg)
 
-        #self.hide_right_panel
-        self.hide()
-
-    def run_command(self, cmd):
-        pass
-        # if cmd == 'clear-cache':
-        #     cache.clear_cache()
+        self.hide_menu()
 
 
 
     # -----------
     #  Navigation
     # -----------
-    def select_down(self):
-        if self.right_panel_visible:
-            if self.right_item_selected == len(self.right_items) - 1:
-                return
-            self.right_item_selected += 1
-        else:
-            if self.item_selected == len(self.items) - 1:
-                return
-            self.item_selected += 1
-
-            if self.preview is not None and self.preview.get_visible():
-                self.update_preview()
-
-        self.emit('menu-update')
-
-    def select_up(self):
-        if self.right_panel_visible:
-            if self.right_item_selected == 0:
-                return
-            self.right_item_selected -= 1
-        else:
-            if self.item_selected == 0:
-                return
-            self.item_selected -= 1
-
-            if self.preview is not None and self.preview.get_visible():
-                self.update_preview()
-
-        self.emit('menu-update')
-
     def previous_query(self):
-        self.bar.clear()
+        self.menu.clear_bar()
         previous_query = self.attic.get_previous_query()
         if previous_query is not None:
-            self.bar.addchar(previous_query)
+            self.menu.addchar(previous_query)
 
     def next_query(self):
-        self.bar.clear()
+        self.menu.clear_bar()
         next_query = self.attic.get_next_query()
         if next_query is not None:
-            self.bar.addchar(next_query)
+            self.menu.addchar(next_query)
 
-    def show_history(self):
-        self.items = self.attic.get_history()
-        self.emit('menu-update')
+    # def show_history(self):
+    #     self.items = self.attic.get_history()
+    #     self.menu.emit('menu-update')
 
 
-    # -----------------
-    #  File navigation
-    # -----------------
+    # ---------
+    #  Handler
+    # ---------
+    def clear_cache(self):
+        self.logger.info('deleting applications & files cache')
+        #applications.update_cache()
+        #files.update_cache()
+        #return True
+
+    def update_cache(self):
+        self.logger.info('updating applications & files cache')
+        applications.update_cache()
+        files.update_cache()
+        return True
+
+
+    # ---------------
+    # File navigation
+    # ---------------
     def file_navigation_mode(self, query=None):
         if query is None:
-            query = self.bar.query
+            query = self.menu.query
         return (query.startswith('/') or query.startswith('~/'))
 
     def file_navigation(self, query):
@@ -615,149 +346,183 @@ class Menu(Gtk.Window, GObject.GObject):
                 p += '/'
                 abspath += '/'
 
-            items.append(items_.Item(title=p, subtitle=abspath, keys=[p,], arg=abspath))
+            items.append(Item(title=p, subtitle=abspath, keys=[p,], arg=abspath))
 
         # sort items by
-        self.items = sorted(items, key=lambda it: it.arg)
-
-        self.emit('menu-update')
+        return sorted(items, key=lambda it: it.arg)
 
     def file_navigation_cd(self):
-        new_query = self.items[self.item_selected].arg
-        self.bar.addchar(new_query.replace(os.environ['HOME'], '~'), True)
+        new_query = self.menu.selected_item().arg
+        self.menu.addchar(new_query.replace(home_dir, '~'), True)
 
-    def file_navigation_back(self):
-        query = os.path.expanduser(self.bar.query[:-1])
+    def file_navigation_cd_back(self):
+        query = os.path.expanduser(self.menu.query[:-1])
         idx = query.rfind('/')
         new_query = query[:idx]+'/'
-        self.bar.addchar(new_query.replace(os.environ['HOME'], '~'), True)
+        self.menu.addchar(new_query.replace(home_dir, '~'), True)
 
     def explore(self, arg):
-        self.bar.addchar(arg.replace(os.environ['HOME'], '~'), True)
+        self.menu.addchar(arg.replace(home_dir, '~'), True)
 
+    # --------
+    #  Search
+    # --------
+    def do_work(self, plugin, query, result):
+        matches = search.filter_matches(plugin, query, min_score=60.0)
+        result.extend(matches)
 
-    # -----------------
-    #  File Preview
-    # -----------------
-    def toggle_preview(self):
-        if self.preview is None:
-            self.create_preview()
-        elif self.preview is not None and self.preview.get_visible():
-            self.preview.hide()
-            self.move(0.5*Gdk.Screen.width()-0.5*width, 0.5*Gdk.Screen.height()-0.5*height)
-        else:
-            self.update_preview()
+    def search(self, query):
 
-    def create_preview(self):
-        self.preview = Gtk.Window(type=Gtk.WindowType.POPUP)
-
-        self.box = Gtk.Box()
-        self.box.set_orientation(Gtk.Orientation.VERTICAL)
-        self.preview.add(self.box)
-
-        self.image = Gtk.Image()
-        self.box.pack_start(self.image, False, False, 0)
-
-        self.update_preview()
-
-    def update_preview(self):
-
-        path = self.selected_item().arg
-
-        pb = None
-        # if path is an image
-        try:
-            pb = GdkPixbuf.Pixbuf.new_from_file(path)
-        except:
-            pass
-
-        # if path is a pdf
-        if pb is None and path.endswith('.pdf'):
-            try:
-                doc = Poppler.Document.new_from_file('file://'+path)
-
-                page = doc.get_page(0)
-
-                width, height = page.get_size()
-
-                surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, int(width), int(height))
-                ctx = cairo.Context(surface)
-                ctx.save()
-                page.render(ctx)
-                ctx.restore()
-
-                ctx.set_operator(cairo.OPERATOR_DEST_OVER)
-                ctx.set_source_rgb(1, 1, 1)
-                ctx.paint()
-
-                pb = Gdk.pixbuf_get_from_surface(surface, 0, 0, width, height)
-            except:
-                raise #pass
-
-        if pb is None:
-            self.preview.hide()
+        if not query:
             return
 
-        self.logger.info('showing preview for %s' % path)
+        self.logger.info('searching %s' % query)
+
+        matches = []
+
+        # if self.preview is not None:
+        #     self.preview.hide()
 
 
-        screen_w = Gdk.Screen.width()
-        screen_h = Gdk.Screen.height()
+        # 0. check if match trigger: command('), navigation (~ o /)
+        if query.startswith("'"):
+            self.logger.info('shell command')
+            pass # shell command
 
-        w, h = pb.get_width(), pb.get_height()
+        # File navigation
+        if self.file_navigation_mode(query):
+            self.logger.info('file navigation: %s' % query)
+            matches.extend(self.file_navigation(query))
+            self.menu.items = matches
+            self.menu.emit('menu-update')
+            return
 
-        max_w = 0.66*screen_w
-        max_h = screen_h
-
-        ratio = min(max_w/float(w), max_h/float(h))
-
-        if w > max_w or h > max_h:
-
-            new_w = w  * ratio
-            new_h = h * ratio
-
-            pb = pb.scale_simple(new_w, new_h, GdkPixbuf.InterpType.BILINEAR)
-
-        self.image.set_from_pixbuf(pb)
-
-        w, h = pb.get_width(), pb.get_height()
-        self.preview.resize(w, h)
-
-        xpos = 0.66*screen_w - 0.5*w
-        ypos = 0.5*screen_h - 0.5*h
-        self.preview.move(xpos, ypos)
-
-        self.move(20, 0.5*screen_h-0.5*self.height)
-
-        self.preview.show_all()
+        # 1. check if match internal command
+        if query in self.commands:
+            pass #self.run_command(query)
 
 
+        # 2. check if match math expression
+        if any(i in query for i in '+-*/%^)('):
+            expression = query.replace(' ', '').replace(',', '.')
 
-class Sherlock(dbus.service.Object):
+            result = utils.get_cmd_output(['calc', expression])
 
-    def __init__ (self, bus, path, name):
+            matches.append(Item(result, ''))
 
-        dbus.service.Object.__init__(self, bus, path, name)
 
-        self.running = False
-        self.menu = Menu()
+        # if query == '.' and self.keyword_plugins:
+        #     for kw, name in self.keyword_plugins.items():
+        #         self.items.append(items_.ItemPlugin(name, kw))
 
-        self.menu.connect("delete-event", Gtk.main_quit)
+        # 3. filter applications, files, system commands
+        if use_threads:
+            result = []
 
-    @dbus.service.method("org.sherlock.Daemon", in_signature='', out_signature='b')
-    def is_running(self):
-        return self.running
+            j1 = threading.Thread(target=self.do_work, args=(applications, query, result))
+            j2 = threading.Thread(target=self.do_work, args=(files, query, result))
 
-    @dbus.service.method("org.sherlock.Daemon", in_signature='', out_signature='')
-    def run(self):
-        if self.is_running():
-            self.menu.show()
+            j1.start()
+            j2.start()
+
+            j1.join()
+            j2.join()
+
+            matches.extend(result)
         else:
-            self.running = True
-            Gtk.main()
-            self.running = False
+            app_matches   = search.filter_matches(applications, query, min_score=60.0, max_results=50)
+            files_matches = search.filter_matches(files, query, min_score=60.0, max_results=50)
 
-    @dbus.service.method("org.sherlock.Daemon", in_signature='', out_signature='')
-    def close(self):
-        self.menu.close()
-        Gtk.main_quit()
+            matches.extend(app_matches)
+            matches.extend(files_matches)
+
+
+        # # Keyword plugin
+        # kw = query.split()[0]
+        # #if query.startswith('.'):
+        # #query = query[1:].strip()
+        # if kw in self.keyword_plugins:
+        #     # for keyword, name in self.keyword_plugins.items():
+        #     #if query.startswith(keyword):
+        #     pl = self.keyword_plugins[kw]
+        #     if isinstance(pl, str):
+        #         self.keyword_plugins[kw] = self.import_plugin(pl)
+        #         pl = self.keyword_plugins[kw]
+
+        #     # it = items_.ItemPlugin(name, query)
+        #     # matches.append(it)
+
+        #     query = query[len(kw):].strip()
+        #     plugin_matches = pl.get_matches(query)
+
+            # for match in plugin_matches:
+            #     it.add(match)
+
+            # if plugin_matches:
+            #     for it in plugin_matches:
+            #         self.items.append(it)
+
+
+        # fallback plugins
+        # if not self.items:
+        #     for text in self.fallback_plugins.keys():
+        #         title = text.replace('query', '\'%s\'' % query)
+        #         it = items_.ItemText(title, no_filter=True)
+        #         self.items.append(it)
+
+        # # order matches by score
+        # if matches:
+        #     self.items.extend(matches)
+        # else:
+        #     if query.startswith("'"):
+        #         query = query[1:]
+        #         it = items_.ItemCmd("run '%s' in a shell" % query, query)
+        #         it.score = 1000
+        #     else:
+        #         it = items_.ItemCmd("run '%s' in a shell" % query, query)
+
+        #     self.items.append(it)
+
+        self.menu.items = self.sort_items(matches)
+        self.menu.emit('menu-update')
+
+
+
+    # def on_plugin_done(self, task_id, query, result):
+
+    #     if task_id in self.stop_jobs:
+    #         self.stop_jobs.remove(task_id)
+    #         return
+
+    #     if not task_id in self.running_jobs:
+    #         return
+
+    #     self.logger.debug('%d results from %s with query %s. All: %s' % (len(result), task_id, query, [str(i) for i in result]))
+
+    #     if query and result:
+    #         with lock:
+
+    #             if items_.ItemCmd("run '%s' in a shell" % query, query) in self.items:
+    #                 self.items.remove(items_.ItemCmd("run '%s' in a shell" % query, query))
+    #             self.items.extend(result)
+    #             self.items = sorted(self.items, key=lambda x: x.score, reverse=True)
+
+    #         self.emit('menu-update')
+
+
+    # --------
+    #  Sort
+    # --------
+    def sort_items(self, items):
+
+        for m in items:
+            m.score += self.attic.get_item_bonus(m)
+
+        items = sorted(items, key=lambda x: x.score, reverse=True)
+
+        # self.items = [i for i in self.items if i.score > 60.]
+        #self.items = sorted(self.items, key=lambda x: x.score, reverse=True)
+        #if len(query) > 1:
+        #self.items.extend(self.attic.get_similar(query))
+
+        return items

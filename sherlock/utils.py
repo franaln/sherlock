@@ -7,9 +7,15 @@ import time
 import subprocess
 import shutil
 
-#-------------#
-# Other utils #
-#-------------#
+def escape(text):
+    cs = ['(', ')', '[', ']', '\'']
+
+    newtext = text
+    for c in cs:
+        if c in newtext:
+            newtext = newtext.replace(c, '\\%s' % c)
+
+    return newtext
 
 def get_selection():
     """ get clipboard content """
@@ -47,12 +53,3 @@ def copy_file(src, dest):
         print('Error: %s' % e)
     except IOError as e:
         print('Error: %s' % e.strerror)
-
-# def xselSetClipboard(text):
-#     p = Popen(['xsel', '-i'], stdin=PIPE)
-#     try:
-#         # works on Python 3 (bytes() requires an encoding)
-#         p.communicate(input=bytes(text, 'utf-8'))
-#     except TypeError:
-#         # works on Python 2 (bytes() only takes one argument)
-#         p.communicate(input=bytes(text))

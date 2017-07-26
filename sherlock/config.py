@@ -20,9 +20,9 @@ seltext_color    = (1.00, 1.00, 1.00)
 #--------------
 basic_search = [
     'applications',
-    'system',
-    'calculator',
-    'files',
+    # 'system',
+    # 'calculator',
+    # 'files',
  ]
 
 include_files = [
@@ -31,6 +31,7 @@ include_files = [
     '~/cosas',
     '~/ebooks',
     '~/fotos',
+    '~/cernbox',
 ]
 
 include_ext = ['.pdf', '.tex', '.txt', '.md', '.jpg', '.png',]
@@ -42,13 +43,14 @@ plugins = {
     'df':   'disks',
     'temp': 'temperature',
     'top':  'top',
-    'time': 'currenttime'
+    'time': 'currenttime',
+    'td': 'todo',
 }
 
 # always check when starts
 automatic_plugins = [
-    'screen',
-    'mounter',
+    # 'screen',
+    # 'mounter',
 ]
 
 # Fallback plugins
