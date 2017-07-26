@@ -44,7 +44,7 @@ class Attic:
             self.events = []
             self.attic = dict()
 
-        self.pos = len(self.events)
+        self.pos = -1
         self.changed = False
 
     def load(self):
@@ -94,16 +94,16 @@ class Attic:
         self.changed = True
 
     def get_next_query(self):
-        self.pos += 1
-        if self.pos >= len(self.events):
-            self.pos = len(self.events)
+        self.pos -= 1
+        if self.pos < 0:
+            self.pos = 0
             return None
         return self.events[self.pos][1]
 
     def get_previous_query(self):
-        self.pos -= 1
-        if self.pos < 0:
-            self.pos = 0
+        self.pos += 1
+        if self.pos >= len(self.events):
+            self.pos = len(self.events)
             return None
         return self.events[self.pos][1]
 
