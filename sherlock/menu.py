@@ -412,19 +412,20 @@ class Menu(Gtk.Window, GObject.GObject):
     def show_right_panel(self):
         match = self.selected_item()
 
-        try:
-            match_items = items_.actions[match.category]
-        except:
-            match_items = [ (i.title, '') for i in self.keyword_plugins[match.arg].get_matches('') ]
+        match_actions = match.get_actions()
 
-        if len(match_items) < 2:
+        # try:
+        #     match_items = items_.actions[match.category]
+        # except:
+        #     match_items = [ (i.title, '') for i in self.keyword_plugins[match.arg].get_matches('') ]
+
+        if len(match_actions) < 2:
             return
 
-        if match_items:
-            self.right_items = list(match_items)
+        if match_actions:
+            self.right_items = list(match_actions)
         self.right_panel_visible = True
         self.emit('menu-update')
-
 
     def select_down(self):
         if self.right_panel_visible:

@@ -3,8 +3,6 @@ import re
 import time
 import string
 import logging
-import threading
-import queue
 
 from gi.repository import GObject
 
@@ -122,11 +120,11 @@ def filter_matches(plugin, query, min_score=0, max_results=0):
                 if query in value.lower():
                     score = 92.0 - (valuelen / querylen)
 
-            # if not score:
-            #     d = distance(query, value[:querylen])
+            if not score:
+                d = distance(query, value[:querylen])
 
-            #     if d < 3:
-            #         score = 100 - d - valuelen + querylen
+                if d < 3:
+                    score = 100 - d - valuelen + querylen
 
             if min_score > 0. and score < min_score:
                 continue
@@ -159,38 +157,3 @@ def filter_matches(plugin, query, min_score=0, max_results=0):
 
     # return list of ordered items
     return results
-
-
-class SearchWorker:
-
-    def __init__(self):
-
-        self.logger = logging.getLogger(__name__)
-        self.logger.info('starting search worker')
-
-        self.task_id = 0
-        self.queue = queue.Queue(maxsize=100)
-
-        for _ in range(4):
-            t = threading.Thread(target=self.work)
-            t.daemon = True
-            t.start()
-
-    def work(self):
-
-        for id_, done, plugin, query in iter(self.queue.get, None):
-            result = []
-            try:
-                plugin_matches = filter_matches(plugin, query, min_score=60.0, max_results=50)
-                result.extend(plugin_matches)
-            except IOError:
-                pass
-
-            # signal task completion; run done() in the main thread
-            GObject.idle_add(done, id_, query, result)
-
-    def add_job(self, callback, plugin, query):
-        # executed in the main thread
-        self.task_id += 1
-        self.queue.put((self.task_id, callback, plugin, query))
-        return self.task_id
