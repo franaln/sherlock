@@ -34,7 +34,7 @@ def distance(str1, str2):
     return d[len(str1)][len(str2)]
 
 
-def filter_matches(plugin, query, min_score=0, max_results=0):
+def filter_items(gen_items, query, min_score=0, max_results=0):
 
     """ search filter.
     Returns list of items that match query.
@@ -50,7 +50,7 @@ def filter_matches(plugin, query, min_score=0, max_results=0):
     queryset = set(query)
 
     # Loop over items
-    for i, item in enumerate(plugin.loop_cache()):
+    for i, item in enumerate(gen_items):
 
         item.score = 0.
 

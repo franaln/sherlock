@@ -40,9 +40,6 @@ def run_cmd(arg):
             break
 
 
-
-
-
 # Apps
 def run_app(arg):
     if arg.endswith('.desktop'):
@@ -78,13 +75,6 @@ def open_folder(arg):
         dir_ = arg
 
     run_cmd('setsid setsid nautilus '+dir_)
-
-
-
-
-
-
-
 
 
 # def open_console_uri(arg):

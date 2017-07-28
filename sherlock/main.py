@@ -3,6 +3,7 @@
 import os
 import sys
 import json
+import cairo
 import logging
 import importlib
 import threading
@@ -28,9 +29,10 @@ from sherlock import search
 
 from sherlock import applications
 from sherlock import files
+from sherlock import system
 
 from sherlock import actions
-from sherlock.items import Item
+from sherlock.items import Item, ItemCmd
 
 config_dir = os.path.expanduser('~/.config/sherlock')
 cache_dir  = os.path.expanduser('~/.cache/sherlock/')
@@ -129,6 +131,9 @@ class Sherlock(dbus.service.Object):
     # -----------
     def on_hide_menu(self, widget, a):
         self.hide_menu()
+        if self.preview is not None:
+            self.preview.hide()
+            self.preview = None
 
     def on_query_change(self, widget, query):
         self.logger.debug('query change: %s', query)
@@ -160,13 +165,12 @@ class Sherlock(dbus.service.Object):
                 self.menu.move_cursor_begin()
             elif key == 'e':
                 self.menu.move_cursor_end()
-            elif 'space' in key:
-                pass
-                # self.toggle_preview()
-            elif key == 'y':
-                self.menu.addchar(utils.get_selection())
             elif key == 'BackSpace':
                 self.menu.clear_bar()
+            elif 'space' in key:
+                self.toggle_preview()
+            elif key == 'y':
+                self.menu.addchar(utils.get_selection())
             elif key == 'h':
                 pass
                 #self.show_history()
@@ -250,26 +254,27 @@ class Sherlock(dbus.service.Object):
         if match is None:
             return
 
-        #     # action_name = items_.actions[match.category][self.right_item_selected][1]
+        actions = match.get_actions()
+        if self.menu.right_item_selected >= 0:
+            action_name = actions[self.menu.right_item_selected][1]
+        else:
+            action_name = actions[0][1]
 
-        #     if self.right_item_selected >= 0:
-        #         action_name = match.get_actions()[self.right_item_selected][1]
-        #     else:
-        action_name = match.get_actions()[0][1]
+        # if action_name == 'explore': # and os.path.isdir(match.arg) and not os.path.isfile(match.arg):
+        #     self.explore(match.arg)
+        #     return
 
-        #     if action_name == 'explore' and os.path.isdir(match.arg) and not os.path.isfile(match.arg):
-        #         self.explore(match.arg)
-        #         return
+        try:
+            action = getattr(actions, action_name)
+        except:
+            self.logger.error('Action %s not implemented' % action_name)
 
-        action = getattr(actions, action_name)
-
-        self.attic.add(self.menu.query, match, None)
+        self.attic.add(self.menu.query, match, action_name)
 
         self.logger.info('executing %s %s' % (action_name, match.arg))
         action(match.arg)
 
         self.hide_menu()
-
 
 
     # -----------
@@ -367,8 +372,8 @@ class Sherlock(dbus.service.Object):
     # --------
     #  Search
     # --------
-    def do_work(self, plugin, query, result):
-        matches = search.filter_matches(plugin, query, min_score=60.0)
+    def do_work(self, gen_items, query, result):
+        matches = search.filter_items(gen_items, query, min_score=60.0)
         result.extend(matches)
 
     def search(self, query):
@@ -380,14 +385,18 @@ class Sherlock(dbus.service.Object):
 
         matches = []
 
-        # if self.preview is not None:
-        #     self.preview.hide()
+        if self.preview is not None:
+            self.preview.hide()
 
 
         # 0. check if match trigger: command('), navigation (~ o /)
         if query.startswith("'"):
-            self.logger.info('shell command')
-            pass # shell command
+            self.logger.info('shell command trigger')
+            cmd = query[1:]
+            it = ItemCmd("run '%s' in a shell" % cmd, cmd)
+            it.score = 1000
+            matches.append(it)
+
 
         # File navigation
         if self.file_navigation_mode(query):
@@ -400,6 +409,7 @@ class Sherlock(dbus.service.Object):
         # 1. check if match internal command
         if query in self.commands:
             pass #self.run_command(query)
+
 
 
         # 2. check if match math expression
@@ -419,8 +429,8 @@ class Sherlock(dbus.service.Object):
         if use_threads:
             result = []
 
-            j1 = threading.Thread(target=self.do_work, args=(applications, query, result))
-            j2 = threading.Thread(target=self.do_work, args=(files, query, result))
+            j1 = threading.Thread(target=self.do_work, args=(applications.get_items(), query, result))
+            j2 = threading.Thread(target=self.do_work, args=(files.get_items(), query, result))
 
             j1.start()
             j2.start()
@@ -430,12 +440,13 @@ class Sherlock(dbus.service.Object):
 
             matches.extend(result)
         else:
-            app_matches   = search.filter_matches(applications, query, min_score=60.0, max_results=50)
-            files_matches = search.filter_matches(files, query, min_score=60.0, max_results=50)
+            app_matches   = search.filter_items(applications.get_items(), query, min_score=60.0, max_results=50)
+            files_matches = search.filter_items(files.get_items(), query, min_score=60.0, max_results=50)
 
             matches.extend(app_matches)
             matches.extend(files_matches)
 
+        matches.extend(search.filter_items(system.get_items(), query, min_score=60.))
 
         # # Keyword plugin
         # kw = query.split()[0]
@@ -473,41 +484,17 @@ class Sherlock(dbus.service.Object):
         # # order matches by score
         # if matches:
         #     self.items.extend(matches)
-        # else:
-        #     if query.startswith("'"):
-        #         query = query[1:]
-        #         it = items_.ItemCmd("run '%s' in a shell" % query, query)
-        #         it.score = 1000
-        #     else:
-        #         it = items_.ItemCmd("run '%s' in a shell" % query, query)
+
+        # Fallback options
+        if not matches:
+            it = ItemCmd("run '%s' in a shell" % query, query)
+            it.score = 1000
+            matches.append(it)
 
         #     self.items.append(it)
 
         self.menu.items = self.sort_items(matches)
         self.menu.emit('menu-update')
-
-
-
-    # def on_plugin_done(self, task_id, query, result):
-
-    #     if task_id in self.stop_jobs:
-    #         self.stop_jobs.remove(task_id)
-    #         return
-
-    #     if not task_id in self.running_jobs:
-    #         return
-
-    #     self.logger.debug('%d results from %s with query %s. All: %s' % (len(result), task_id, query, [str(i) for i in result]))
-
-    #     if query and result:
-    #         with lock:
-
-    #             if items_.ItemCmd("run '%s' in a shell" % query, query) in self.items:
-    #                 self.items.remove(items_.ItemCmd("run '%s' in a shell" % query, query))
-    #             self.items.extend(result)
-    #             self.items = sorted(self.items, key=lambda x: x.score, reverse=True)
-
-    #         self.emit('menu-update')
 
 
     # --------
@@ -516,13 +503,107 @@ class Sherlock(dbus.service.Object):
     def sort_items(self, items):
 
         for m in items:
-            m.score += self.attic.get_item_bonus(m)
+            m.bonus = self.attic.get_item_bonus(m)
 
-        items = sorted(items, key=lambda x: x.score, reverse=True)
+        items = sorted(items, key=lambda x: x.score+x.bonus, reverse=True)
 
         # self.items = [i for i in self.items if i.score > 60.]
-        #self.items = sorted(self.items, key=lambda x: x.score, reverse=True)
         #if len(query) > 1:
         #self.items.extend(self.attic.get_similar(query))
 
         return items
+
+
+    # -----------------
+    #  File Preview
+    # -----------------
+    def toggle_preview(self):
+        if self.preview is None:
+            self.create_preview()
+        elif self.preview is not None and self.preview.get_visible():
+            self.preview.hide()
+            self.menu.move(0.5*Gdk.Screen.width()-0.5*width, 0.5*Gdk.Screen.height()-0.5*height)
+        else:
+            self.update_preview()
+
+    def create_preview(self):
+        self.preview = Gtk.Window(type=Gtk.WindowType.POPUP)
+
+        self.box = Gtk.Box()
+        self.box.set_orientation(Gtk.Orientation.VERTICAL)
+        self.preview.add(self.box)
+
+        self.image = Gtk.Image()
+        self.box.pack_start(self.image, False, False, 0)
+
+        self.update_preview()
+
+    def update_preview(self):
+
+        path = self.menu.selected_item().arg
+
+        pb = None
+        # if path is an image
+        try:
+            pb = GdkPixbuf.Pixbuf.new_from_file(path)
+        except:
+            pass
+
+        # if path is a pdf
+        if pb is None and path.endswith('.pdf'):
+            try:
+                doc = Poppler.Document.new_from_file('file://%s' % path)
+
+                page = doc.get_page(0)
+
+                width, height = page.get_size()
+
+                surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, int(width), int(height))
+                ctx = cairo.Context(surface)
+                ctx.save()
+                page.render(ctx)
+                ctx.restore()
+
+                ctx.set_operator(cairo.OPERATOR_DEST_OVER)
+                ctx.set_source_rgb(1, 1, 1)
+                ctx.paint()
+
+                pb = Gdk.pixbuf_get_from_surface(surface, 0, 0, width, height)
+            except:
+                raise #pass
+
+        if pb is None:
+            self.preview.hide()
+            return
+
+        self.logger.info('showing preview for %s' % path)
+
+        screen_w = Gdk.Screen.width()
+        screen_h = Gdk.Screen.height()
+
+        w, h = pb.get_width(), pb.get_height()
+
+        max_w = 0.66*screen_w
+        max_h = screen_h
+
+        ratio = min(max_w/float(w), max_h/float(h))
+
+        if w > max_w or h > max_h:
+
+            new_w = w  * ratio
+            new_h = h * ratio
+
+            pb = pb.scale_simple(new_w, new_h, GdkPixbuf.InterpType.BILINEAR)
+
+        self.image.set_from_pixbuf(pb)
+
+        w, h = pb.get_width(), pb.get_height()
+        self.preview.resize(w, h)
+
+        xpos = 0.66 * screen_w - 0.5 * w
+        ypos = 0.50 * screen_h - 0.5 * h
+        self.preview.move(xpos, ypos)
+
+        self.menu.move(20, 0.5*screen_h-0.5*self.menu.height)
+
+        self.preview.show_all()

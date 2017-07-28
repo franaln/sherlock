@@ -7,6 +7,8 @@ import time
 import subprocess
 import shutil
 
+from gi.repository import Gtk, Gdk
+
 def escape(text):
     cs = ['(', ')', '[', ']', '\'']
 
@@ -18,10 +20,9 @@ def escape(text):
     return newtext
 
 def get_selection():
-    """ get clipboard content """
-    cb = subprocess.Popen(["xclip", "-selection", "primary", "-o"], stdout=subprocess.PIPE).communicate()[0]
-
-    return cb.decode('utf8').strip()
+    pass
+    # clipboard = Gtk.Clipboard.get(Gdk.SELECTION_PRIMARY)
+    #     return clipboard.get_text()
 
 
 def run_cmd(cmd):

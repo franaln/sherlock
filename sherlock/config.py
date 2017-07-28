@@ -4,7 +4,7 @@
 # Theme/Style
 #-------------
 # Font
-fontname = 'Fira Sans'
+fontname = 'Source Sans Pro'
 
 # Colours
 background_color = (0.93, 0.93, 0.93) # #ebebeb
@@ -32,6 +32,10 @@ include_files = [
     '~/ebooks',
     '~/fotos',
     '~/cernbox',
+    '~/tmp',
+    '~/Music',
+    '~/Pictures',
+
 ]
 
 include_ext = ['.pdf', '.tex', '.txt', '.md', '.jpg', '.png',]

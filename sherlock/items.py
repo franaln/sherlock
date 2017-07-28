@@ -12,6 +12,7 @@ class Item(object):
         self.arg = arg
 
         self.score = score # temporal because it depends the query (0. by default)
+        self.bonus = 0
 
         if category == 'text' and arg is None:
             self.arg = self.title
