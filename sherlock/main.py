@@ -30,6 +30,7 @@ from sherlock import search
 from sherlock import applications
 from sherlock import files
 from sherlock import system
+from sherlock import bookmarks
 
 from sherlock import actions
 from sherlock.items import Item, ItemCmd
@@ -310,6 +311,7 @@ class Sherlock(dbus.service.Object):
         self.logger.info('updating applications & files cache')
         applications.update_cache()
         files.update_cache()
+        bookmarks.update_cache()
         return True
 
 
@@ -425,26 +427,31 @@ class Sherlock(dbus.service.Object):
         #     for kw, name in self.keyword_plugins.items():
         #         self.items.append(items_.ItemPlugin(name, kw))
 
-        # 3. filter applications, files, system commands
+        # 3. filter applications, files, bookmarks, system commands
         if use_threads:
             result = []
 
             j1 = threading.Thread(target=self.do_cache_thread_search, args=(applications.get_items(), query, result))
             j2 = threading.Thread(target=self.do_cache_thread_search, args=(files.get_items(), query, result))
+            j3 = threading.Thread(target=self.do_cache_thread_search, args=(bookmarks.get_items(), query, result))
 
             j1.start()
             j2.start()
+            j3.start()
 
             j1.join()
             j2.join()
+            j3.join()
 
             matches.extend(result)
         else:
-            app_matches   = search.filter_items(applications.get_items(), query, min_score=60.0, max_results=50)
-            files_matches = search.filter_items(files.get_items(), query, min_score=60.0, max_results=50)
+            applications_matches = search.filter_items(applications.get_items(), query, min_score=60.0, max_results=50)
+            files_matches        = search.filter_items(files.get_items(),        query, min_score=60.0, max_results=50)
+            bookmarks_matches    = search.filter_items(bookmarks.get_items(),    query, min_score=60.0, max_results=50)
 
-            matches.extend(app_matches)
+            matches.extend(applications_matches)
             matches.extend(files_matches)
+            matches.extend(bookmarks_matches)
 
         matches.extend(search.filter_items(system.get_items(), query, min_score=60.))
 

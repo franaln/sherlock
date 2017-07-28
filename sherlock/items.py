@@ -87,6 +87,17 @@ class ItemUri(Item):
         )
 
 
+# URL
+class ItemUrl(Item):
+    def __init__(self, name, url):
+        Item.__init__(self, title=name, subtitle=url, keys=[name,], category='url',
+                      arg=url)
+
+    def get_actions(self):
+        return (
+            ('Open', '')
+            )
+
 # Text
 class ItemText(Item):
     def __init__(self, text):
