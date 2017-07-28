@@ -254,11 +254,11 @@ class Sherlock(dbus.service.Object):
         if match is None:
             return
 
-        actions = match.get_actions()
+        match_actions = match.get_actions()
         if self.menu.right_item_selected >= 0:
-            action_name = actions[self.menu.right_item_selected][1]
+            action_name = match_actions[self.menu.right_item_selected][1]
         else:
-            action_name = actions[0][1]
+            action_name = match_actions[0][1]
 
         # if action_name == 'explore': # and os.path.isdir(match.arg) and not os.path.isfile(match.arg):
         #     self.explore(match.arg)
@@ -418,7 +418,7 @@ class Sherlock(dbus.service.Object):
 
             result = utils.get_cmd_output(['calc', expression])
 
-            matches.append(Item(result, ''))
+            matches.append(Item('= %s' % result, '', arg=result))
 
 
         # if query == '.' and self.keyword_plugins:

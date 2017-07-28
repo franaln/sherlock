@@ -2,7 +2,7 @@ import os
 
 class Item(object):
 
-    __slots__ = ('title', 'subtitle', 'category', 'arg', 'score', 'keys')
+    __slots__ = ('title', 'subtitle', 'category', 'arg', 'keys', 'score', 'bonus')
 
     def __init__(self, title, subtitle='', keys=[], category='text', arg=None, score=0.0):
         self.title = title
