@@ -55,7 +55,7 @@ def run_app(arg):
     #     app.launch(None, display.get_app_launch_context())
 
     # else:
-    utils.run_cmd('setsid setsid ' + arg)
+    utils.run_cmd('setsid setsid %s' % arg)
 
 def run_app_in_terminal(self):
     print('urxvtc -e "%s"' % arg)
@@ -82,6 +82,10 @@ def open_folder(arg):
 # def copy_cmd_to_console(arg):
 #     run_cmd('setsid urxvt -cd %s' % os.path.dirname(arg))
 
+# URL
+def open_url(arg):
+    browser = os.environ['BROWSER']
+    run_cmd('%s %s' % (browser, arg))
 
 # Output
 def copy_to_clipboard(arg):

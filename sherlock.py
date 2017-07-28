@@ -37,6 +37,7 @@ def main():
         app = dbus.Interface(obj, "org.sherlock.Daemon")
 
     if args.quit:
+        print('closing app')
         app.close()
     else:
         app.run()

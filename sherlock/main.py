@@ -302,13 +302,13 @@ class Sherlock(dbus.service.Object):
     #  Handler
     # ---------
     def clear_cache(self):
-        self.logger.info('deleting applications & files cache')
+        self.logger.info('deleting cache')
         #applications.update_cache()
         #files.update_cache()
         #return True
 
     def update_cache(self):
-        self.logger.info('updating applications & files cache')
+        self.logger.info('updating cache')
         applications.update_cache()
         files.update_cache()
         bookmarks.update_cache()

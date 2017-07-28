@@ -90,12 +90,13 @@ class ItemUri(Item):
 # URL
 class ItemUrl(Item):
     def __init__(self, name, url):
-        Item.__init__(self, title=name, subtitle=url, keys=[name,], category='url',
+        Item.__init__(self, title=name, subtitle=url, keys=[name, url], category='url',
                       arg=url)
 
     def get_actions(self):
         return (
-            ('Open', '')
+            ('Open', 'open_url'),
+            ('Copy', 'copy_to_clipboard'),
             )
 
 # Text
