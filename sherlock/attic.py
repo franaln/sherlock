@@ -69,7 +69,7 @@ class Attic:
 
     def add(self, query, item, action):
 
-        self.logger.info('adding query=%s, item=%s, action=%s to the attic' % (query, item, action))
+        self.logger.info('adding to attic: query=%s, item=%s, action=%s' % (query, item, action))
 
         timestamp = datetime.now()
         item_dict = item.to_dict()

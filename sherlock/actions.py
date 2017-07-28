@@ -55,7 +55,6 @@ def run_app(arg):
     #     app.launch(None, display.get_app_launch_context())
 
     # else:
-    print(arg)
     utils.run_cmd('setsid setsid ' + arg)
 
 def run_app_in_terminal(self):

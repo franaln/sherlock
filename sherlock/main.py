@@ -79,7 +79,7 @@ class Sherlock(dbus.service.Object):
 
         self.config = config
 
-        # Menu & Handler & Attic
+        # Menu & Attic
         self.menu = Menu(config, debug)
         self.attic = Attic(attic_path)
 
@@ -172,8 +172,8 @@ class Sherlock(dbus.service.Object):
             elif key == 'y':
                 self.menu.addchar(utils.get_selection())
             elif key == 'h':
-                pass
                 #self.show_history()
+                pass
 
             return
 
@@ -267,11 +267,11 @@ class Sherlock(dbus.service.Object):
         try:
             action = getattr(actions, action_name)
         except:
-            self.logger.error('Action %s not implemented' % action_name)
+            self.logger.error('action %s not implemented' % action_name)
 
         self.attic.add(self.menu.query, match, action_name)
 
-        self.logger.info('executing %s %s' % (action_name, match.arg))
+        self.logger.info('executing: %s %s' % (action_name, match.arg))
         action(match.arg)
 
         self.hide_menu()
@@ -372,7 +372,7 @@ class Sherlock(dbus.service.Object):
     # --------
     #  Search
     # --------
-    def do_work(self, gen_items, query, result):
+    def do_cache_thread_search(self, gen_items, query, result):
         matches = search.filter_items(gen_items, query, min_score=60.0)
         result.extend(matches)
 
@@ -429,8 +429,8 @@ class Sherlock(dbus.service.Object):
         if use_threads:
             result = []
 
-            j1 = threading.Thread(target=self.do_work, args=(applications.get_items(), query, result))
-            j2 = threading.Thread(target=self.do_work, args=(files.get_items(), query, result))
+            j1 = threading.Thread(target=self.do_cache_thread_search, args=(applications.get_items(), query, result))
+            j2 = threading.Thread(target=self.do_cache_thread_search, args=(files.get_items(), query, result))
 
             j1.start()
             j2.start()
@@ -469,10 +469,6 @@ class Sherlock(dbus.service.Object):
             # for match in plugin_matches:
             #     it.add(match)
 
-            # if plugin_matches:
-            #     for it in plugin_matches:
-            #         self.items.append(it)
-
 
         # fallback plugins
         # if not self.items:
@@ -481,15 +477,16 @@ class Sherlock(dbus.service.Object):
         #         it = items_.ItemText(title, no_filter=True)
         #         self.items.append(it)
 
-        # # order matches by score
-        # if matches:
-        #     self.items.extend(matches)
 
         # Fallback options
         if not matches:
+            # shell command
             it = ItemCmd("run '%s' in a shell" % query, query)
             it.score = 1000
             matches.append(it)
+
+            # web search
+
 
         #     self.items.append(it)
 
