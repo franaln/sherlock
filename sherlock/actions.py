@@ -22,6 +22,7 @@ from gi.repository import Gtk, Gio, Gdk, Notify, Pango
 
 from sherlock import utils
 
+
 # Command
 def run_cmd(arg):
 
@@ -43,19 +44,9 @@ def run_cmd(arg):
 # Apps
 def run_app(arg):
     if arg.endswith('.desktop'):
-
-        original = Gio.DesktopAppInfo().new_from_filename(arg)
-
-        arg = original.get_commandline().split()[0]
-
-    #     app = Gio.AppInfo.create_from_commandline(original.get_commandline(),
-    #                                               original.get_name(),
-    #                                               Gio.AppInfoCreateFlags.NEEDS_TERMINAL)
-    #     display = Gdk.Display.get_default()
-    #     app.launch(None, display.get_app_launch_context())
-
-    # else:
-    utils.run_cmd('setsid setsid %s' % arg)
+        utils.launch_app(arg)
+    else:
+        utils.run_cmd('setsid setsid %s' % arg)
 
 def run_app_in_terminal(self):
     print('urxvtc -e "%s"' % arg)
@@ -84,8 +75,9 @@ def open_folder(arg):
 
 # URL
 def open_url(arg):
-    browser = os.environ['BROWSER']
-    run_cmd('%s %s' % (browser, arg))
+    # browser = os.environ['BROWSER']
+    # run_cmd('%s %s' % (browser, arg))
+    utils.launch_app('/usr/share/applications/chromium.desktop', [arg,])
 
 # Output
 def copy_to_clipboard(arg):

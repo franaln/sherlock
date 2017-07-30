@@ -24,6 +24,9 @@ def update_cache():
     for n in get_bookmarks(content['roots']['bookmark_bar']):
         if n is not None:
             bookmarks.append(ItemUrl(n['name'], n['url']))
+    for n in get_bookmarks(content['roots']['other']):
+        if n is not None:
+            bookmarks.append(ItemUrl(n['name'], n['url']))
 
     cache.cache_data('bookmarks', bookmarks)
 
