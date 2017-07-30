@@ -22,15 +22,11 @@ import dbus.service
 import dbus.mainloop.glib
 
 from sherlock.menu import Menu
+from sherlock.handler import Handler
 from sherlock.attic import Attic
 
 from sherlock import utils
 from sherlock import search
-
-from sherlock import applications
-from sherlock import files
-from sherlock import system
-from sherlock import bookmarks
 
 from sherlock import actions
 from sherlock.items import Item, ItemCmd
@@ -41,8 +37,7 @@ attic_path = os.path.join(cache_dir, 'attic')
 
 lock = threading.Lock()
 
-use_threads = True
-debug = False
+use_threads = False
 
 home_dir = os.environ['HOME']
 
@@ -82,6 +77,7 @@ class Sherlock(dbus.service.Object):
 
         # Menu & Attic
         self.menu = Menu(config, debug)
+        self.handler = Handler(config)
         self.attic = Attic(attic_path)
 
         # Handler for now
@@ -91,8 +87,8 @@ class Sherlock(dbus.service.Object):
         ]
 
         # recreate db
-        self.update_cache()
-        GLib.timeout_add_seconds(1800, self.update_cache)
+        self.handler.update_cache()
+        GLib.timeout_add_seconds(1800, self.handler.update_cache)
 
         # preview
         self.preview = None
@@ -298,23 +294,6 @@ class Sherlock(dbus.service.Object):
     #     self.menu.emit('menu-update')
 
 
-    # ---------
-    #  Handler
-    # ---------
-    def clear_cache(self):
-        self.logger.info('deleting cache')
-        #applications.update_cache()
-        #files.update_cache()
-        #return True
-
-    def update_cache(self):
-        self.logger.info('updating cache')
-        applications.update_cache()
-        files.update_cache()
-        bookmarks.update_cache()
-        return True
-
-
     # ---------------
     # File navigation
     # ---------------
@@ -431,29 +410,24 @@ class Sherlock(dbus.service.Object):
         if use_threads:
             result = []
 
-            j1 = threading.Thread(target=self.do_cache_thread_search, args=(applications.get_items(), query, result))
-            j2 = threading.Thread(target=self.do_cache_thread_search, args=(files.get_items(), query, result))
-            j3 = threading.Thread(target=self.do_cache_thread_search, args=(bookmarks.get_items(), query, result))
+            # # merge db and split in 4?
+            # j1 = threading.Thread(target=self.do_cache_thread_search, args=(applications.get_items(), query, result))
+            # j2 = threading.Thread(target=self.do_cache_thread_search, args=(files.get_items(), query, result))
+            # j3 = threading.Thread(target=self.do_cache_thread_search, args=(bookmarks.get_items(), query, result))
 
-            j1.start()
-            j2.start()
-            j3.start()
+            # j1.start()
+            # j2.start()
+            # j3.start()
 
-            j1.join()
-            j2.join()
-            j3.join()
+            # j1.join()
+            # j2.join()
+            # j3.join()
 
-            matches.extend(result)
+            # matches.extend(result)
         else:
-            applications_matches = search.filter_items(applications.get_items(), query, min_score=60.0, max_results=50)
-            files_matches        = search.filter_items(files.get_items(),        query, min_score=60.0, max_results=50)
-            bookmarks_matches    = search.filter_items(bookmarks.get_items(),    query, min_score=60.0, max_results=50)
-
-            matches.extend(applications_matches)
-            matches.extend(files_matches)
-            matches.extend(bookmarks_matches)
-
-        matches.extend(search.filter_items(system.get_items(), query, min_score=60.))
+            for plugin in self.handler.plugins.values():
+                plugin_matches = search.filter_items(plugin.get_items(), query, min_score=60.0)
+                matches.extend(plugin_matches)
 
         # # Keyword plugin
         # kw = query.split()[0]
