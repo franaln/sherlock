@@ -13,11 +13,6 @@ class Handler:
 
         # plugins
         self.plugins = dict()
-        # self.base_plugins = dict()
-        # self.keyword_plugins = dict()
-        # self.fallback_plugins = dict()
-        # self.automatic_plugins = dict()
-
         self.load_plugins()
 
     def import_plugin(self, name):
@@ -41,17 +36,6 @@ class Handler:
             if plugin is not None:
                 self.plugins[name] = plugin
 
-        # for kw, name in config.plugins.items():
-        #     if os.path.isfile(os.path.join(plugins_dir, '%s.py' % name)):
-        #         self.keyword_plugins[kw] = name
-
-        # for text, name in config.fallback_plugins.items():
-        #     if os.path.isfile(os.path.join(plugins_dir, '%s.py' % name)):
-        #         self.fallback_plugins[text] = name
-
-        # for name in config.automatic_plugins:
-        #     self.automatic_plugins[name] = self.import_plugin(name)
-
     # def check_automatic_plugins(self):
     #     for name, plugin in self.automatic_plugins.items():
     #         self.logger.info('checking automatic plugin %s' % name)
@@ -59,11 +43,6 @@ class Handler:
     #         if matches:
     #             self.items.extend(matches)
     #             self.emit('menu-update')
-
-
-        # def clear_cache(self):
-        # self.logger.info('deleting cache')
-        # #return True
 
     def update_cache(self):
         for name, plugin in self.plugins.items():

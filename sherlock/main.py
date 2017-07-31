@@ -391,15 +391,10 @@ class Sherlock(dbus.service.Object):
         if query in self.commands:
             pass #self.run_command(query)
 
-
-
-        # 2. check if match math expression
-        if any(i in query for i in '+-*/%^)('):
-            expression = query.replace(' ', '').replace(',', '.')
-
-            result = utils.get_cmd_output(['calc', expression])
-
-            matches.append(Item('= %s' % result, '', arg=result))
+        # 2. check if match any trigger
+        for plugin in self.handler.plugins.values():
+            if hasattr(plugin, 'match_trigger') and plugin.match_trigger(query):
+                matches.extend([ it for it in plugin.get_items(query) ])
 
 
         # if query == '.' and self.keyword_plugins:
@@ -407,59 +402,37 @@ class Sherlock(dbus.service.Object):
         #         self.items.append(items_.ItemPlugin(name, kw))
 
         # 3. filter applications, files, bookmarks, system commands
-        if use_threads:
-            result = []
+        if not matches:
+            if use_threads:
+                result = []
 
-            # # merge db and split in 4?
-            # j1 = threading.Thread(target=self.do_cache_thread_search, args=(applications.get_items(), query, result))
-            # j2 = threading.Thread(target=self.do_cache_thread_search, args=(files.get_items(), query, result))
-            # j3 = threading.Thread(target=self.do_cache_thread_search, args=(bookmarks.get_items(), query, result))
+                # # merge db and split in 4?
+                # j1 = threading.Thread(target=self.do_cache_thread_search, args=(applications.get_items(), query, result))
+                # j2 = threading.Thread(target=self.do_cache_thread_search, args=(files.get_items(), query, result))
+                # j3 = threading.Thread(target=self.do_cache_thread_search, args=(bookmarks.get_items(), query, result))
 
-            # j1.start()
-            # j2.start()
-            # j3.start()
+                # j1.start()
+                # j2.start()
+                # j3.start()
 
-            # j1.join()
-            # j2.join()
-            # j3.join()
+                # j1.join()
+                # j2.join()
+                # j3.join()
 
             # matches.extend(result)
-        else:
-            for plugin in self.handler.plugins.values():
-                plugin_matches = search.filter_items(plugin.get_items(), query, min_score=60.0)
-                matches.extend(plugin_matches)
-
-        # # Keyword plugin
-        # kw = query.split()[0]
-        # #if query.startswith('.'):
-        # #query = query[1:].strip()
-        # if kw in self.keyword_plugins:
-        #     # for keyword, name in self.keyword_plugins.items():
-        #     #if query.startswith(keyword):
-        #     pl = self.keyword_plugins[kw]
-        #     if isinstance(pl, str):
-        #         self.keyword_plugins[kw] = self.import_plugin(pl)
-        #         pl = self.keyword_plugins[kw]
-
-        #     # it = items_.ItemPlugin(name, query)
-        #     # matches.append(it)
-
-        #     query = query[len(kw):].strip()
-        #     plugin_matches = pl.get_matches(query)
-
-            # for match in plugin_matches:
-            #     it.add(match)
+            else:
+                for plugin in self.handler.plugins.values():
+                    plugin_matches = search.filter_items(plugin.get_items(), query, min_score=60.0)
+                    matches.extend(plugin_matches)
 
 
-        # fallback plugins
+        # 4. Fallback plugins
         # if not self.items:
         #     for text in self.fallback_plugins.keys():
         #         title = text.replace('query', '\'%s\'' % query)
         #         it = items_.ItemText(title, no_filter=True)
         #         self.items.append(it)
 
-
-        # Fallback options
         if not matches:
             # shell command
             it = ItemCmd("run '%s' in a shell" % query, query)

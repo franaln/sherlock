@@ -18,12 +18,14 @@ seltext_color    = (1.00, 1.00, 1.00)
 #--------------
 # Basic search
 #--------------
-basic_search = [
+basic_plugins = [
+    'calculator',
     'applications',
-    # 'system',
-    # 'calculator',
-    # 'files',
- ]
+    'system',
+    'files',
+    'bookmarks',
+    'websearch',
+]
 
 include_files = [
     '~/Dropbox',
