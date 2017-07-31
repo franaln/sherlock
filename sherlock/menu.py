@@ -181,7 +181,7 @@ class Menu(Gtk.Window, GObject.GObject):
         self.item_h = 82
         self.item_m = 41
 
-        self.right_x = 0.5 * self.width
+        self.right_x = 0.7 * self.width
         self.right_w = self.width - self.right_x
         self.left_w = self.right_x
 
@@ -314,11 +314,6 @@ class Menu(Gtk.Window, GObject.GObject):
 
         match_actions = match.get_actions()
 
-        # try:
-        #     match_items = items_.actions[match.category]
-        # except:
-        #     match_items = [ (i.title, '') for i in self.keyword_plugins[match.arg].get_matches('') ]
-
         if len(match_actions) < 2:
             return
 
@@ -406,12 +401,27 @@ class Menu(Gtk.Window, GObject.GObject):
         return False
 
 
+    def draw_icon(self, cr, item, x, y):
+
+        pixel_size = 28
+
+        cr.translate (x, y)
+        cr.rectangle(0, 0, pixel_size, pixel_size)
+        cr.clip()
+
+        icon_theme = Gtk.IconTheme.get_default()
+        icon_pixbuf = icon_theme.load_icon("audio-volume-muted-blocked-panel", pixel_size, Gtk.IconLookupFlags.FORCE_SYMBOLIC)
+
+        Gdk.cairo_set_source_pixbuf(cr, icon_pixbuf, 0, 0);
+        cr.paint()
+
+
     def draw_item(self, cr, pos, item, selected, debug=False):
 
         """
         ---------------------------------
-        | TEXT                  |       |
-        | subtext               |       |
+        |    | TEXT             |       |
+        |    | subtext          |       |
         ---------------------------------
         """
 
@@ -429,6 +439,12 @@ class Menu(Gtk.Window, GObject.GObject):
         text_h = self.item_m
         title = item.title
 
+        # icon
+        # cr.save()
+        # self.draw_icon(cr, item, 10, base_y+0.5*self.item_m)
+        # cr.restore()
+
+        # text
         if isinstance(title, list) or isinstance(title, tuple):
 
             title_list = title
@@ -472,7 +488,7 @@ class Menu(Gtk.Window, GObject.GObject):
 
         elif selected:
             try:
-                action_name = items.actions[item.category][0][0]
+                action_name = item.get_actions()[0][0]
                 draw_text(cr, self.left_w + self.right_w*0.5, base_y, self.right_w, self.item_h, action_name, seltext_color, 12)
             except:
                 pass
