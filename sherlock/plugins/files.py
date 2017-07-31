@@ -7,7 +7,9 @@ from sherlock import config
 from sherlock.items import ItemUri
 
 exclude = ('.git', '.svn')
-include_ext = config.include_ext
+
+include_dirs = config.files_include
+include_extensions = config.files_include_extensions
 
 def update_cache():
 
@@ -23,7 +25,7 @@ def update_cache():
         files.append(ItemUri(fname, os.path.join(home, fname)))
 
 
-    for dirname in config.include_files:
+    for dirname in include_dirs:
 
         for root, dirnames, filenames in os.walk(os.path.expanduser(dirname)):
 
@@ -44,7 +46,7 @@ def update_cache():
                 if fn.startswith('.') or fn in exclude:
                     continue
 
-                if '.' in fn and fn[fn.index('.'):] not in include_ext:
+                if '.' in fn and fn[fn.index('.'):] not in include_extensions:
                     continue
 
                 files.append(ItemUri(fn, os.path.join(root, fn)))

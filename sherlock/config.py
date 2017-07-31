@@ -27,7 +27,7 @@ basic_plugins = [
     'websearch',
 ]
 
-include_files = [
+files_include = [
     '~/Dropbox',
     '~/Downloads',
     '~/cosas',
@@ -40,7 +40,7 @@ include_files = [
 
 ]
 
-include_ext = ['.pdf', '.tex', '.txt', '.md', '.jpg', '.png',]
+files_include_extensions = ['.pdf', '.tex', '.txt', '.md', '.jpg', '.png',]
 
 #---------
 # Plugins

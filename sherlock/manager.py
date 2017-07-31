@@ -3,7 +3,7 @@ import sys
 import logging
 import importlib
 
-class Handler:
+class Manager:
 
     def __init__(self, config):
 
@@ -13,6 +13,8 @@ class Handler:
 
         # plugins
         self.plugins = dict()
+        self.trigger_plugins = dict()
+
         self.load_plugins()
 
     def import_plugin(self, name):
@@ -34,7 +36,11 @@ class Handler:
             plugin = self.import_plugin(name)
 
             if plugin is not None:
-                self.plugins[name] = plugin
+                if hasattr(plugin, 'match_trigger'):
+                    self.trigger_plugins[name] = plugin
+                else:
+                    self.plugins[name] = plugin
+
 
     # def check_automatic_plugins(self):
     #     for name, plugin in self.automatic_plugins.items():

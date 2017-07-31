@@ -22,7 +22,7 @@ import dbus.service
 import dbus.mainloop.glib
 
 from sherlock.menu import Menu
-from sherlock.handler import Handler
+from sherlock.manager import Manager
 from sherlock.attic import Attic
 
 from sherlock import utils
@@ -77,7 +77,7 @@ class Sherlock(dbus.service.Object):
 
         # Menu & Attic
         self.menu = Menu(config, debug)
-        self.handler = Handler(config)
+        self.manager = Manager(config)
         self.attic = Attic(attic_path)
 
         # Handler for now
@@ -87,8 +87,8 @@ class Sherlock(dbus.service.Object):
         ]
 
         # recreate db
-        self.handler.update_cache()
-        GLib.timeout_add_seconds(1800, self.handler.update_cache)
+        self.manager.update_cache()
+        GLib.timeout_add_seconds(1800, self.manager.update_cache)
 
         # preview
         self.preview = None
@@ -392,8 +392,8 @@ class Sherlock(dbus.service.Object):
             pass #self.run_command(query)
 
         # 2. check if match any trigger
-        for plugin in self.handler.plugins.values():
-            if hasattr(plugin, 'match_trigger') and plugin.match_trigger(query):
+        for plugin in self.manager.trigger_plugins.values():
+            if plugin.match_trigger(query):
                 matches.extend([ it for it in plugin.get_items(query) ])
 
 
@@ -421,7 +421,7 @@ class Sherlock(dbus.service.Object):
 
             # matches.extend(result)
             else:
-                for plugin in self.handler.plugins.values():
+                for plugin in self.manager.plugins.values():
                     plugin_matches = search.filter_items(plugin.get_items(), query, min_score=60.0)
                     matches.extend(plugin_matches)
 
