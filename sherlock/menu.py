@@ -493,14 +493,14 @@ class Menu(Gtk.Window, GObject.GObject):
             except:
                 pass
 
-        # arrow
-        cr.set_source_rgb(1, 1, 1)
-        cr.set_line_width(1.5)
-        cr.move_to(self.width-20, base_y + self.item_m + 4)
-        cr.rel_line_to(4, -4)
-        cr.rel_line_to(-4, -4)
-        cr.set_line_join(cairo.LINE_JOIN_ROUND)
-        cr.stroke()
+            # arrow
+            cr.set_source_rgb(1, 1, 1)
+            cr.set_line_width(1.5)
+            cr.move_to(self.width-20, base_y + self.item_m + 4)
+            cr.rel_line_to(4, -4)
+            cr.rel_line_to(-4, -4)
+            cr.set_line_join(cairo.LINE_JOIN_ROUND)
+            cr.stroke()
 
     def draw_right_panel(self, cr, actions, selected):
 
