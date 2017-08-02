@@ -3,6 +3,8 @@ import sys
 import logging
 import importlib
 
+from sherlock.items import ItemCmd
+
 class Manager:
 
     def __init__(self, config):
@@ -14,6 +16,8 @@ class Manager:
         # plugins
         self.plugins = dict()
         self.trigger_plugins = dict()
+
+        self.fallback_plugins = []
 
         self.load_plugins()
 
@@ -41,6 +45,8 @@ class Manager:
                 else:
                     self.plugins[name] = plugin
 
+                if hasattr(plugin, 'get_fallback_items'):
+                    self.fallback_plugins.append(name)
 
     # def check_automatic_plugins(self):
     #     for name, plugin in self.automatic_plugins.items():
@@ -58,3 +64,18 @@ class Manager:
             except AttributeError:
                 self.logger.debug('updateing cache: skipping plugin %s (doesn\'t have a update cache method)' % name)
         return True
+
+    def get_fallback_items(self, query):
+        items = []
+        for name in self.fallback_plugins:
+            if name in self.plugins:
+                items.extend(self.plugins[name].get_fallback_items(query))
+            elif name in self.trigger_plugins:
+                items.extend(self.trigger_plugins[name].get_fallback_items(query))
+
+        # shell command
+        it = ItemCmd("run '%s' in a shell" % query, query)
+        items.append(it)
+
+
+        return items

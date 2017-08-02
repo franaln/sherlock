@@ -42,16 +42,16 @@ files_include = [
 
 files_include_extensions = ['.pdf', '.tex', '.txt', '.md', '.jpg', '.png',]
 
-#---------
-# Plugins
-#---------
-plugins = {
-    'df':   'disks',
-    'temp': 'temperature',
-    'top':  'top',
-    'time': 'currenttime',
-    'td': 'todo',
-}
+# #---------
+# # Plugins
+# #---------
+# plugins = {
+#     'df':   'disks',
+#     'temp': 'temperature',
+#     'top':  'top',
+#     'time': 'currenttime',
+#     'td': 'todo',
+# }
 
 # always check when starts
 automatic_plugins = [
@@ -59,16 +59,4 @@ automatic_plugins = [
     # 'mounter',
 ]
 
-# Fallback plugins
-# (Use it when there are no other matches)
-fallback_plugins = {
-    #'Search /home for query': '',
-    #'Search google for query': 'calculator',
-}
-
-
-#-------------
-# Directories
-#-------------
-#plugins_dir = '~/dev/sherlock/sherlock/plugins/'
-cache_dir = '~/.cache/sherlock/'
+cache_dir  = '/home/fran/.cache/sherlock/'

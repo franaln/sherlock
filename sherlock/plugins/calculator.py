@@ -10,4 +10,5 @@ def get_items(query):
 
     result = get_cmd_output(['calc', expression])
 
-    yield Item('= %s' % result, '', arg=result)
+    if result:
+        yield Item('= %s' % result, '', arg=result)

@@ -20,6 +20,6 @@ def get_items(query):
             yield ItemUrl('Search "%s" with %s' % (search_expr, name), arg)
 
 def get_fallback_items(query):
-    _, name, url = _engines[0]
-    arg = url % search_expr
-    yield ItemUrl('Search "%s" with %s' % (query, name), arg)
+    for _, name, url in _engines:
+        arg = url % query
+        yield ItemUrl('Search "%s" with %s' % (query, name), arg)

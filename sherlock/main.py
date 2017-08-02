@@ -29,7 +29,7 @@ from sherlock import utils
 from sherlock import search
 
 from sherlock import actions
-from sherlock.items import Item, ItemCmd, ItemUri
+from sherlock.items import Item, ItemUri
 
 config_dir = os.path.expanduser('~/.config/sherlock')
 cache_dir  = os.path.expanduser('~/.cache/sherlock/')
@@ -384,11 +384,11 @@ class Sherlock(dbus.service.Object):
             self.menu.emit('menu-update')
             return
 
-        # 1. check if match internal command
+        # Check if match internal command
         if query in self.commands:
             pass #self.run_command(query)
 
-        # 2. check if match any trigger
+        # Check if match any plugin trigger
         for plugin in self.manager.trigger_plugins.values():
             if plugin.match_trigger(query):
                 matches.extend([ it for it in plugin.get_items(query) ])
@@ -423,23 +423,10 @@ class Sherlock(dbus.service.Object):
                     matches.extend(plugin_matches)
 
 
-        # 4. Fallback plugins
-        # if not self.items:
-        #     for text in self.fallback_plugins.keys():
-        #         title = text.replace('query', '\'%s\'' % query)
-        #         it = items_.ItemText(title, no_filter=True)
-        #         self.items.append(it)
-
+        # Fallback plugins
         if not matches:
-            # shell command
-            it = ItemCmd("run '%s' in a shell" % query, query)
-            it.score = 1000
-            matches.append(it)
+            matches = self.manager.get_fallback_items(query)
 
-            # web search
-
-
-        #     self.items.append(it)
 
         self.menu.items = self.sort_items(matches)
         self.menu.emit('menu-update')
