@@ -74,17 +74,25 @@ class ItemUri(Item):
                       arg=path.replace(' ', r'%20'))
 
     def is_dir(self):
-        return self.path.endswith('/') #os.path.isdir(self.arg)
+        return self.subtitle.endswith('/') #os.path.isdir(self.arg)
 
     def is_file(self):
-        return (not self.path.endswith('/')) #os.path.isfile(self.arg)
+        return (not self.subtitle.endswith('/')) #os.path.isfile(self.arg)
 
     def get_actions(self):
-        return (
-            ('Open',        'open_uri'),
-            ('Open folder', 'open_folder'),
-            ('Explore',     'explore'),
-        )
+        if self.is_dir():
+            return (
+                ('Open directory', 'open_dir'),
+                ('Explore', 'explore'),
+            )
+
+        elif self.is_file():
+            return (
+                ('Open', 'open_uri'),
+                ('Open directory', 'open_dir'),
+                ('Explore', 'explore'),
+            )
+
 
 
 # URL

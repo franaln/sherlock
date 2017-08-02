@@ -357,7 +357,7 @@ class Menu(Gtk.Window, GObject.GObject):
     def draw_bar(self, cr):
 
         ## query
-        draw_variable_text(cr, self.query_x, self.query_y, self.bar_w-20, 0, self.query, size=38)
+        draw_variable_text(cr, self.query_x, self.query_y, self.bar_w-50, 0, self.query, size=38)
 
         ## cursor
         cursor_x = self.query_x + calc_text_width(cr, self.query[:self.cursor], size=38)

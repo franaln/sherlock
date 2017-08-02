@@ -10,10 +10,10 @@ import threading
 import datetime
 
 import gi
-gi.require_version('Gtk',        '3.0')
-gi.require_version('Poppler',    '0.18')
+gi.require_version('Gtk', '3.0')
+gi.require_version('Poppler', '0.18')
 gi.require_version('PangoCairo', '1.0')
-gi.require_version('Notify',     '0.7')
+gi.require_version('Notify', '0.7')
 from gi.repository import Gtk, Gdk, GLib, GObject, GdkPixbuf, Poppler
 
 import dbus
@@ -23,13 +23,13 @@ import dbus.mainloop.glib
 
 from sherlock.menu import Menu
 from sherlock.manager import Manager
-from sherlock.attic import Attic
+from sherlock.attic2 import Attic
 
 from sherlock import utils
 from sherlock import search
 
 from sherlock import actions
-from sherlock.items import Item, ItemCmd
+from sherlock.items import Item, ItemCmd, ItemUri
 
 config_dir = os.path.expanduser('~/.config/sherlock')
 cache_dir  = os.path.expanduser('~/.cache/sherlock/')
@@ -75,12 +75,11 @@ class Sherlock(dbus.service.Object):
 
         self.config = config
 
-        # Menu & Attic
+        # Menu & Manager & Attic
         self.menu = Menu(config, debug)
         self.manager = Manager(config)
         self.attic = Attic(attic_path)
 
-        # Handler for now
         self.commands = [
             'clear',
             'update',
@@ -257,9 +256,10 @@ class Sherlock(dbus.service.Object):
         else:
             action_name = match_actions[0][1]
 
-        # if action_name == 'explore': # and os.path.isdir(match.arg) and not os.path.isfile(match.arg):
-        #     self.explore(match.arg)
-        #     return
+        if action_name == 'explore':
+            if os.path.isdir(match.arg) or os.path.isfile(match.arg):
+                self.explore(match.arg)
+            return
 
         try:
             action = getattr(actions, action_name)
@@ -328,18 +328,15 @@ class Sherlock(dbus.service.Object):
                 continue
 
             abspath = os.path.join(path, p)
-            if os.path.isdir(abspath):
-                p += '/'
-                abspath += '/'
 
-            items.append(Item(title=p, subtitle=abspath, keys=[p,], arg=abspath))
+            items.append(ItemUri(p, abspath))
 
-        # sort items by
         return sorted(items, key=lambda it: it.arg)
 
     def file_navigation_cd(self):
-        new_query = self.menu.selected_item().arg
-        self.menu.addchar(new_query.replace(home_dir, '~'), True)
+        if self.menu.selected_item() is not None:
+            new_query = self.menu.selected_item().arg
+            self.menu.addchar(new_query.replace(home_dir, '~'), True)
 
     def file_navigation_cd_back(self):
         query = os.path.expanduser(self.menu.query[:-1])
