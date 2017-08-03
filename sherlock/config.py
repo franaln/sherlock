@@ -23,8 +23,10 @@ basic_plugins = [
     'applications',
     'system',
     'files',
-    'bookmarks',
+    #'bookmarks',
+    'chromium',
     'websearch',
+    'currency',
 ]
 
 files_include = [
