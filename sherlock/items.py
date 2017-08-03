@@ -55,7 +55,7 @@ class ItemApp(Item):
     def get_actions(self):
         return (
             ('Run', 'run_app'),
-            ('Run in terminal', 'run_app_in_terminal'),
+            ('Run in terminal', 'run_app_terminal'),
         )
 
 
@@ -79,17 +79,22 @@ class ItemUri(Item):
     def is_file(self):
         return (not self.subtitle.endswith('/')) #os.path.isfile(self.arg)
 
+    def __eq__(self, other):
+        return (self.subtitle == other.subtitle)
+
     def get_actions(self):
         if self.is_dir():
             return (
-                ('Open directory', 'open_dir'),
+                ('Open', 'open_dir'),
+                ('Open in terminal', 'open_dir_terminal'),
                 ('Explore', 'explore'),
             )
 
         elif self.is_file():
             return (
                 ('Open', 'open_uri'),
-                ('Open directory', 'open_dir'),
+                ('Open dir', 'open_dir'),
+                ('Open in terminal', 'open_dir_terminal'),
                 ('Explore', 'explore'),
             )
 
@@ -100,6 +105,9 @@ class ItemUrl(Item):
     def __init__(self, name, url):
         Item.__init__(self, title=name, subtitle=url, keys=[name, url], category='url',
                       arg=url)
+
+    def __eq__(self, other):
+        return (self.title == other.title or self.subtitle == other.subtitle)
 
     def get_actions(self):
         return (

@@ -81,7 +81,6 @@ def launch_app(desktop_file, paths=[], in_terminal=None, timestamp=None, screen=
         "Name": de.getName(),
     }
 
-
     lex = shlex.shlex(desktop_info['Exec'])
     lex.whitespace_split = True
 

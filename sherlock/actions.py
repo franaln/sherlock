@@ -26,12 +26,12 @@ from sherlock import utils
 # Command
 def run_cmd(arg):
 
-    if '&&' in arg:
-        cmds = arg.split('&&')
-    elif ';' in arg:
-        cmds = arg.split(';')
-    else:
-        cmds = [arg,]
+    # if '&&' in arg:
+    #     cmds = arg.split('&&')
+    # elif ';' in arg:
+    #     cmds = arg.split(';')
+    # else:
+    cmds = [arg,]
 
     st = 0
     for cmd in cmds:
@@ -48,7 +48,7 @@ def run_app(arg):
     else:
         utils.run_cmd('setsid setsid %s' % arg)
 
-def run_app_in_terminal(self):
+def run_app_terminal(self):
     print('urxvtc -e "%s"' % arg)
     os.system('setsid urxvt -e "%s" +hold' % arg)
 
@@ -58,7 +58,7 @@ def open_uri(arg):
     uri = r'file://' + utils.escape(arg).replace(' ', r'%20')
     run_cmd('open '+uri)
 
-def open_folder(arg):
+def open_dir(arg):
     if os.path.isfile(arg):
         dir_ = '/'.join(arg.split('/')[:-1])
     else:
@@ -66,18 +66,20 @@ def open_folder(arg):
 
     run_cmd('setsid setsid nautilus '+dir_)
 
+def open_dir_terminal(arg):
+    if os.path.isfile(arg):
+        dir_ = '/'.join(arg.split('/')[:-1])
+    else:
+        dir_ = arg
+    cmd = 'urxvt -e sh -c "cd %s ; bash"' % dir_
+    os.system(cmd)
 
-# def open_console_uri(arg):
-#     run_cmd('setsid urxvt -cd %s' % os.path.dirname(arg))
-
-# def copy_cmd_to_console(arg):
-#     run_cmd('setsid urxvt -cd %s' % os.path.dirname(arg))
 
 # URL
 def open_url(arg):
-    # browser = os.environ['BROWSER']
-    # run_cmd('%s %s' % (browser, arg))
-    utils.launch_app('/usr/share/applications/chromium.desktop', [arg,])
+    browser = os.environ['BROWSER']
+    if browser == 'chromium':
+        utils.launch_app('/usr/share/applications/chromium.desktop', [arg,])
 
 # Output
 def copy_to_clipboard(arg):
