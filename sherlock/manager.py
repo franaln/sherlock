@@ -12,12 +12,14 @@ actions_dict = {
     'file': (
         ('Open', 'open_file'),
         ('Open dir', 'open_dir'),
-        ('Open in terminal', 'open_dir_terminal'),
+        ('Open dir in terminal', 'open_dir_terminal'),
         ('Explore', 'explore'),
     ),
 
     'dir': (
         ('Open', 'open_dir'),
+        ('Open in terminal', 'open_dir_terminal'),
+        ('Explore', 'explore'),
         ),
 
 

@@ -228,7 +228,7 @@ class Sherlock(GObject.GObject):
             elif 'space' in key:
                 self.toggle_preview()
             elif key == 'y':
-                self.addchar(utils.get_selection())
+                self.addchar(self.clipboard.get_selection())
             elif key == 'h':
                 #self.show_history()
                 pass
@@ -381,45 +381,47 @@ class Sherlock(GObject.GObject):
         path_content = os.listdir(path)
 
         items = []
-        for p in path_content:
+        for name in path_content:
 
             # exclude hidden files
-            if p.startswith('.'):
+            if name.startswith('.'):
                 continue
 
             # filter by query
-            if query and query.lower() not in p.lower():
+            if query and query.lower() not in name.lower():
                 continue
 
-            abspath = os.path.join(path, p)
+            abspath = os.path.join(path, name)
 
+            category = 'file'
             if os.path.isdir(path):
-                p = '%s/' % p
+                category = 'dir'
+                name = '%s/' % name
                 abspath = '%s/' % abspath
 
-            items.append(Item(text=p, subtext=abspath, category='uri',
+            items.append(Item(text=name, subtext=abspath, category=category,
                               keys=name, arg=abspath))
 
         return sorted(items, key=lambda it: it.arg)
 
     def file_navigation_cd(self):
-        if self.menu.selected_item() is not None:
-            new_query = self.menu.selected_item().arg
-            self.menu.addchar(new_query.replace(home_dir, '~'), True)
+        if self.selected_item() is not None:
+            new_query = self.selected_item().arg
+            self.addchar(new_query.replace(home_dir, '~'), True)
 
     def file_navigation_cd_back(self):
-        query = os.path.expanduser(self.menu.query[:-1])
+        query = os.path.expanduser(self.query[:-1])
         idx = query.rfind('/')
         new_query = query[:idx]+'/'
-        self.menu.addchar(new_query.replace(home_dir, '~'), True)
+        self.addchar(new_query.replace(home_dir, '~'), True)
 
     def explore(self, arg):
-        self.menu.addchar(arg.replace(home_dir, '~'), True)
+        self.addchar(arg.replace(home_dir, '~'), True)
 
 
-    #
-    # Clipboard
-    #
+    # -----------
+    #  Clipboard
+    # -----------
     def show_clipboard_history(self):
         self.items = self.clipboard.get_history()
         self.emit('menu-update')
@@ -457,8 +459,8 @@ class Sherlock(GObject.GObject):
         if self.file_navigation_mode(query):
             self.logger.info('file navigation: %s' % query)
             matches.extend(self.file_navigation(query))
-            self.menu.items = matches
-            self.menu.emit('menu-update')
+            self.items = matches
+            self.emit('menu-update')
             return
 
         # Check if match internal command
@@ -713,8 +715,8 @@ class Sherlock(GObject.GObject):
 
         match_actions = self.manager.get_actions(match)
 
-        if len(match_actions) < 2:
-            return
+        # if len(match_actions) < 2:
+        #     return
 
         if match_actions:
             self.right_items = list(match_actions)
