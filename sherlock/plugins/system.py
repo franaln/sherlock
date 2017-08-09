@@ -1,16 +1,16 @@
 # System commands plugin
 
-from sherlock.items import ItemCmd
+from sherlock.items import Item
 
 _cmds = [
-    ItemCmd('Sleep',     'systmectl suspend'),
-    ItemCmd('Power off', 'systemctl poweroff'),
-    ItemCmd('Reboot',    'systemctl reboot'),
-    ItemCmd('Hibernate', 'systemctl hibernate'),
-    ItemCmd('Lock',      'slimlock'),
-    ItemCmd('Logout',    'openbox --exit'),
+    ('Sleep',     'systmectl suspend'),
+    ('Power off', 'systemctl poweroff'),
+    ('Reboot',    'systemctl reboot'),
+    ('Hibernate', 'systemctl hibernate'),
+    ('Lock',      'slimlock'),
+    ('Logout',    'openbox --exit'),
 ]
 
 def get_items():
-    for cmd in _cmds:
-        yield cmd
+    for name, cmd in _cmds:
+        yield Item(text=name, subtext='', keys=name, arg=cmd, category='cmd')

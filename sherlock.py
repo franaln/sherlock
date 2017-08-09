@@ -13,7 +13,7 @@ import dbus.mainloop.glib
 if __file__[:4] == '/usr' :
     sys.path.remove(os.path.dirname(__file__))
 
-from sherlock.main import Sherlock
+from sherlock.main import SherlockDbus
 
 def main():
 
@@ -31,7 +31,7 @@ def main():
         if args.quit:
             print('not running')
             return True
-        app = Sherlock(bus, '/', "org.sherlock.Daemon", args.debug)
+        app = SherlockDbus(bus, '/', "org.sherlock.Daemon", args.debug)
     else:
         obj = bus.get_object("org.sherlock.Daemon", "/")
         app = dbus.Interface(obj, "org.sherlock.Daemon")

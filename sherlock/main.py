@@ -3,7 +3,7 @@
 import os
 import sys
 import json
-import cairo
+import time
 import logging
 import importlib
 import threading
@@ -14,26 +14,29 @@ gi.require_version('Gtk', '3.0')
 gi.require_version('Poppler', '0.18')
 gi.require_version('PangoCairo', '1.0')
 gi.require_version('Notify', '0.7')
-from gi.repository import Gtk, Gdk, GLib, GObject, GdkPixbuf, Poppler
+from gi.repository import Gtk, Gdk, GLib, GObject, GdkPixbuf, Poppler, Pango, PangoCairo
 
 import dbus
 import dbus.bus
 import dbus.service
 import dbus.mainloop.glib
 
-from sherlock.menu import Menu
 from sherlock.manager import Manager
-from sherlock.attic2 import Attic
 
+from sherlock.attic2 import Attic
+from sherlock.clipboard import Clipboard
+
+from sherlock import config
 from sherlock import utils
 from sherlock import search
-
+from sherlock.drawutils import *
 from sherlock import actions
-from sherlock.items import Item, ItemUri
+from sherlock.items import Item
 
 config_dir = os.path.expanduser('~/.config/sherlock')
 cache_dir  = os.path.expanduser('~/.cache/sherlock/')
-attic_path = os.path.join(cache_dir, 'attic')
+attic_path = os.path.join(cache_dir, 'attic.json')
+clipboard_path = os.path.join(cache_dir, 'clipboard.json')
 
 lock = threading.Lock()
 
@@ -41,12 +44,43 @@ use_threads = False
 
 home_dir = os.environ['HOME']
 
+## Size (hardcoded)
+win_width  = 800
+win_height = 500
+bar_w = 800
+bar_h = 90
+menu_w = 800
+menu_h = 410
+item_h = 82
+item_m = 41
+right_x = 500
+right_w = 300
+left_w = 500
+query_x = 25
+query_y = bar_h * 0.5
 
-class Sherlock(dbus.service.Object):
+# Font/Colors
+fontname      = config.fontname
+bkg_color     = config.background_color
+bar_color     = config.bar_color
+sep_color     = config.separator_color
+sel_color     = config.selection_color
+text_color    = config.text_color
+subtext_color = config.subtext_color
+seltext_color = config.seltext_color
 
-    def __init__ (self, bus, path, name, debug):
 
-        dbus.service.Object.__init__(self, bus, path, name)
+class Sherlock(GObject.GObject):
+
+    __gsignals__ = {
+        'bar-update': (GObject.SIGNAL_RUN_FIRST, None, ()),
+        'query-change': (GObject.SIGNAL_RUN_FIRST, None, (str,)),
+        'menu-update': (GObject.SIGNAL_RUN_FIRST, None, ()),
+    }
+
+    def __init__ (self, debug):
+
+        GObject.GObject.__init__(self)
 
         self.running = False
         self.showing = False
@@ -75,15 +109,45 @@ class Sherlock(dbus.service.Object):
 
         self.config = config
 
-        # Menu & Manager & Attic
-        self.menu = Menu(config, debug)
+        # Manager & Attic & Clipboard
         self.manager = Manager(config)
         self.attic = Attic(attic_path)
+        self.clipboard = Clipboard(clipboard_path)
 
         self.commands = [
             'clear',
             'update',
         ]
+
+        # Menu
+
+        self.items = []
+        self.item_selected = 0
+
+        self.right_items = []
+        self.right_item_selected = 0
+        self.right_panel_visible = False
+
+        ## Bar
+        self.cursor = 0
+        self.query = ''
+        self.selected = False
+        self.counter = 0
+        self.updated = False
+
+        GLib.timeout_add(500, self.check)
+
+        self.menu = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
+        self.menu.set_app_paintable(True)
+        self.menu.set_decorated(False)
+        self.menu.set_size_request(win_width, win_height)
+        self.menu.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
+        self.menu.set_keep_above(True)
+        self.menu.set_title('Sherlock')
+
+        self.menu.connect('draw', self.draw)
+        self.connect('bar-update', self.on_bar_update)
+
 
         # recreate db
         self.manager.update_cache()
@@ -96,13 +160,12 @@ class Sherlock(dbus.service.Object):
         self.menu.connect('delete-event', Gtk.main_quit)
         self.menu.connect('key_press_event', self.on_key_press)
         self.menu.connect('focus-out-event', self.on_hide_menu)
-        self.menu.connect('menu-update', self.menu.on_menu_update)
-        self.menu.connect('query-change', self.on_query_change)
+        self.connect('menu-update', self.on_menu_update)
+        self.connect('query-change', self.on_query_change)
 
     # -------------
     #  Run & close
     # -------------
-    @dbus.service.method("org.sherlock.Daemon", in_signature='', out_signature='')
     def run(self):
         if self.running:
             if not self.showing:
@@ -114,13 +177,12 @@ class Sherlock(dbus.service.Object):
             Gtk.main()
             self.running = False
 
-    @dbus.service.method("org.sherlock.Daemon", in_signature='', out_signature='')
     def close(self, *args):
         self.logger.info('closing...')
         self.attic.save()
+        self.clipboard.save()
         self.showing = False
         Gtk.main_quit()
-
 
     # -----------
     #  Callbacks
@@ -135,11 +197,11 @@ class Sherlock(dbus.service.Object):
         self.logger.debug('query change: %s', query)
 
         # Clear menu
-        self.menu.hide_right_panel()
-        self.menu.clear_menu()
+        self.hide_right_panel()
+        self.clear_menu()
 
         if not query:
-            self.menu.emit('menu-update')
+            self.emit('menu-update')
             return
 
         self.search(query)
@@ -150,26 +212,28 @@ class Sherlock(dbus.service.Object):
         # CTRL is pressed
         if event.state & Gdk.ModifierType.CONTROL_MASK:
             if key == 'Left':
-                self.menu.move_cursor_left()
+                self.move_cursor_left()
             elif key == 'Right':
-                self.menu.move_cursor_right()
+                self.move_cursor_right()
             elif key == 'Up':
                 self.previous_query()
             elif key == 'Down':
                 self.next_query()
             elif key == 'a':
-                self.menu.move_cursor_begin()
+                self.move_cursor_begin()
             elif key == 'e':
-                self.menu.move_cursor_end()
+                self.move_cursor_end()
             elif key == 'BackSpace':
-                self.menu.clear_bar()
+                self.clear_bar()
             elif 'space' in key:
                 self.toggle_preview()
             elif key == 'y':
-                self.menu.addchar(utils.get_selection())
+                self.addchar(utils.get_selection())
             elif key == 'h':
                 #self.show_history()
                 pass
+            elif key == 'v':
+                self.show_clipboard_history()
 
             return
 
@@ -187,20 +251,20 @@ class Sherlock(dbus.service.Object):
             #     if self.matches:
             #         self.show_menu()
             # else:
-            self.menu.select_down()
+            self.select_down()
 
         elif key == 'Up':
             # if not self.menu_visible and self.bar.is_empty():
             #     #self.bar.select()
             #     #self.previous_query()
             # else:
-            self.menu.select_up()
+            self.select_up()
 
         elif key == 'BackSpace':
-            self.menu.delchar()
+            self.delchar()
 
         elif key == 'Delete':
-            self.menu.delchar(True)
+            self.delchar(True)
 
         # Return/Right: execute default action on selected item
         elif 'Return' in key or key == 'Right':
@@ -210,15 +274,15 @@ class Sherlock(dbus.service.Object):
                 self.actionate()
 
         elif 'Tab' in key:
-            if self.menu.items:
-                self.menu.toggle_right_panel()
+            if self.items:
+                self.toggle_right_panel()
 
         elif 'Alt' in key or 'Control' in key:
             pass
 
         else:
             if event.string:
-                self.menu.addchar(event.string)
+                self.addchar(event.string)
 
 
     # ----------------
@@ -230,7 +294,7 @@ class Sherlock(dbus.service.Object):
         self.showing = True
 
     def hide_menu(self):
-        self.menu.clear_bar()
+        self.clear_bar()
         self.menu.hide()
         self.showing = False
 
@@ -246,13 +310,13 @@ class Sherlock(dbus.service.Object):
 
     def actionate(self):
 
-        match = self.menu.selected_item()
+        match = self.selected_item()
         if match is None:
             return
 
-        match_actions = match.get_actions()
-        if self.menu.right_item_selected >= 0:
-            action_name = match_actions[self.menu.right_item_selected][1]
+        match_actions = self.manager.get_actions(match)
+        if self.right_item_selected >= 0:
+            action_name = match_actions[self.right_item_selected][1]
         else:
             action_name = match_actions[0][1]
 
@@ -266,9 +330,9 @@ class Sherlock(dbus.service.Object):
         except:
             self.logger.error('action %s not implemented' % action_name)
 
-        self.attic.add(self.menu.query, match, action_name)
+        self.attic.add(self.query, match, action_name)
 
-        self.logger.info('executing: %s %s' % (action_name, match.arg))
+        self.logger.info('executing: "%s" with arg "%s"' % (action_name, match.arg))
         action(match.arg)
 
         self.hide_menu()
@@ -278,16 +342,16 @@ class Sherlock(dbus.service.Object):
     #  Navigation
     # -----------
     def previous_query(self):
-        self.menu.clear_bar()
+        self.clear_bar()
         previous_query = self.attic.get_previous_query()
         if previous_query is not None:
-            self.menu.addchar(previous_query)
+            self.addchar(previous_query)
 
     def next_query(self):
-        self.menu.clear_bar()
+        self.clear_bar()
         next_query = self.attic.get_next_query()
         if next_query is not None:
-            self.menu.addchar(next_query)
+            self.addchar(next_query)
 
     # def show_history(self):
     #     self.items = self.attic.get_history()
@@ -299,7 +363,7 @@ class Sherlock(dbus.service.Object):
     # ---------------
     def file_navigation_mode(self, query=None):
         if query is None:
-            query = self.menu.query
+            query = self.query
         return (query.startswith('/') or query.startswith('~/'))
 
     def file_navigation(self, query):
@@ -329,7 +393,12 @@ class Sherlock(dbus.service.Object):
 
             abspath = os.path.join(path, p)
 
-            items.append(ItemUri(p, abspath))
+            if os.path.isdir(path):
+                p = '%s/' % p
+                abspath = '%s/' % abspath
+
+            items.append(Item(text=p, subtext=abspath, category='uri',
+                              keys=name, arg=abspath))
 
         return sorted(items, key=lambda it: it.arg)
 
@@ -346,6 +415,15 @@ class Sherlock(dbus.service.Object):
 
     def explore(self, arg):
         self.menu.addchar(arg.replace(home_dir, '~'), True)
+
+
+    #
+    # Clipboard
+    #
+    def show_clipboard_history(self):
+        self.items = self.clipboard.get_history()
+        self.emit('menu-update')
+
 
     # --------
     #  Search
@@ -366,8 +444,8 @@ class Sherlock(dbus.service.Object):
         if self.preview is not None:
             self.preview.hide()
 
-
-        # 0. check if match trigger: command('), navigation (~ o /)
+        # Check if match any trigger
+        # command(')
         if query.startswith("'"):
             self.logger.info('shell command trigger')
             cmd = query[1:]
@@ -375,8 +453,7 @@ class Sherlock(dbus.service.Object):
             it.score = 1000
             matches.append(it)
 
-
-        # File navigation
+        # File navigation ('~/' or '/')
         if self.file_navigation_mode(query):
             self.logger.info('file navigation: %s' % query)
             matches.extend(self.file_navigation(query))
@@ -394,11 +471,7 @@ class Sherlock(dbus.service.Object):
                 matches.extend([ it for it in plugin.get_items(query) ])
 
 
-        # if query == '.' and self.keyword_plugins:
-        #     for kw, name in self.keyword_plugins.items():
-        #         self.items.append(items_.ItemPlugin(name, kw))
-
-        # 3. filter applications, files, bookmarks, system commands
+        # Filter non-trigger plugins
         if not matches:
             if use_threads:
                 result = []
@@ -416,7 +489,7 @@ class Sherlock(dbus.service.Object):
                 # j2.join()
                 # j3.join()
 
-            # matches.extend(result)
+                # matches.extend(result)
             else:
                 for plugin in self.manager.plugins.values():
                     plugin_matches = search.filter_items(plugin.get_items(), query, min_score=60.0)
@@ -428,8 +501,8 @@ class Sherlock(dbus.service.Object):
             matches = self.manager.get_fallback_items(query)
 
 
-        self.menu.items = self.sort_items(matches)
-        self.menu.emit('menu-update')
+        self.items = self.sort_items(matches)
+        self.emit('menu-update')
 
 
     # --------
@@ -542,3 +615,298 @@ class Sherlock(dbus.service.Object):
         self.menu.move(20, 0.5*screen_h-0.5*self.menu.height)
 
         self.preview.show_all()
+
+    # ------
+    #  Menu
+    # ------
+    def on_bar_update(self, widget):
+        self.menu.queue_draw()
+
+    def on_menu_update(self, widget):
+        self.menu.queue_draw()
+
+    def _update(self, text):
+        self.counter = time.time()
+        self.updated = True
+        self.query = text
+        self.emit('bar-update')
+
+    def addchar(self, char, clear=False):
+        if clear:
+            self.clear_bar()
+        newquery = '%s%s%s' % (self.query[:self.cursor], char, self.query[self.cursor:])
+        self._update(newquery)
+        self.cursor += len(char)
+
+    def delchar(self, delete=False):
+        if delete:
+            newquery = '%s%s' % (self.query[:self.cursor], self.query[self.cursor+1:])
+        else:
+            if self.cursor == 0:
+                newquery = self.query
+            else:
+                newquery = '%s%s' % (self.query[:self.cursor-1], self.query[self.cursor:])
+                self.cursor -= 1
+        self._update(newquery)
+
+    def clear_bar(self):
+        self.cursor = 0
+        self._update('')
+
+    def is_empty(self):
+        return bool(not self.query)
+
+    def check(self):
+        if time.time() > (self.counter + 0.25) and self.updated:
+            self.updated = False
+            self.emit('query-change', self.query)
+        return True
+
+    def select(self):
+        self.selected = True
+
+    def move_cursor_begin(self):
+        self.cursor = 0
+        self.emit('bar-update')
+
+    def move_cursor_end(self):
+        self.cursor = len(self.query)
+        self.emit('bar-update')
+
+    def move_cursor_left(self):
+        if self.cursor <= 0:
+            return
+        self.cursor -= 1
+        self.emit('bar-update')
+
+    def move_cursor_right(self):
+        if self.cursor >= len(self.query):
+            return
+        self.cursor += 1
+        self.emit('bar-update')
+
+    def selected_item(self):
+        if not self.items:
+            return None
+        return self.items[self.item_selected] if self.item_selected >=0 else self.items[0]
+
+    def clear_menu(self):
+        del self.items[:]
+        self.item_selected = -1
+
+    def toggle_right_panel(self):
+        if self.right_panel_visible:
+            self.hide_right_panel()
+        else:
+            self.show_right_panel()
+
+    def hide_right_panel(self):
+        if not self.right_panel_visible:
+            return
+        self.right_panel_visible = False
+        self.right_items = []
+        self.right_item_selected = 0
+        self.emit('menu-update')
+
+    def show_right_panel(self):
+        match = self.selected_item()
+
+        match_actions = self.manager.get_actions(match)
+
+        if len(match_actions) < 2:
+            return
+
+        if match_actions:
+            self.right_items = list(match_actions)
+        self.right_panel_visible = True
+        self.emit('menu-update')
+
+    def select_down(self):
+        if self.right_panel_visible:
+            if self.right_item_selected == len(self.right_items) - 1:
+                return
+            self.right_item_selected += 1
+        else:
+            if self.item_selected == len(self.items) - 1:
+                return
+            self.item_selected += 1
+
+            # if self.preview is not None and self.preview.get_visible():
+            #     self.update_preview()
+        self.emit('menu-update')
+
+    def select_up(self):
+        if self.right_panel_visible:
+            if self.right_item_selected == 0:
+                return
+            self.right_item_selected -= 1
+        else:
+            if self.item_selected == 0:
+                return
+            self.item_selected -= 1
+
+            # if self.preview is not None and self.preview.get_visible():
+            #     self.update_preview()
+
+        self.emit('menu-update')
+
+    def draw_bar(self, cr):
+
+        ## query
+        draw_variable_text(cr, query_x, query_y, bar_w-50, 0, self.query, text_color, fontname, size=38)
+
+        ## cursor
+        cursor_x = query_x + calc_text_width(cr, self.query[:self.cursor], 38, fontname)
+
+        cr.set_source_rgb(*config.text_color)
+        cr.rectangle(cursor_x, 20, 1.5, bar_h-40)
+        cr.fill()
+
+        ## separator
+        cr.set_source_rgb(*config.separator_color)
+        cr.rectangle(0, 90, win_width, 1)
+        cr.fill()
+
+    def draw_left_side(self, cr):
+
+        items = self.items
+
+        first_item = 0 if (self.item_selected < 5) else (self.item_selected - 4)
+
+        n_items = len(items)
+        max_items = min(5, n_items)
+
+        for i in range(max_items):
+            self.draw_item(cr, i, items[first_item + i],
+                      (first_item + i == self.item_selected), self.debug)
+
+    def draw_right_side(self, cr):
+        if self.right_panel_visible:
+            self.draw_right_panel(cr, self.right_items, self.right_item_selected)
+
+    def draw(self, widget, event):
+
+        cr = Gdk.cairo_create(widget.get_window())
+
+        draw_background(cr, bkg_color)
+
+        self.draw_bar(cr)
+        self.draw_left_side(cr)
+        self.draw_right_side(cr)
+
+        return False
+
+
+    def draw_icon(self, cr, item, x, y):
+
+        pixel_size = 28
+
+        cr.translate (x, y)
+        cr.rectangle(0, 0, pixel_size, pixel_size)
+        cr.clip()
+
+        icon_theme = Gtk.IconTheme.get_default()
+        icon_pixbuf = icon_theme.load_icon("chromium-browser", pixel_size, Gtk.IconLookupFlags.FORCE_SIZE)
+
+        Gdk.cairo_set_source_pixbuf(cr, icon_pixbuf, 0, 0);
+        cr.paint()
+
+
+    def draw_item(self, cr, pos, item, selected, debug=False):
+
+        """
+        ---------------------------------
+        |    | TEXT             |       |
+        |    | subtext          |       |
+        ---------------------------------
+        """
+
+        # pos -> (x, y)
+        base_y = bar_h + pos * item_h
+
+        if pos == 0:
+            draw_horizontal_separator(cr, -5, base_y, win_width+10, sep_color)
+
+        if selected:
+            draw_rect(cr, 0, base_y, win_width, item_h, sel_color)
+        elif pos < 4:
+            draw_horizontal_separator(cr, 0, base_y + item_h - 1, win_width, sep_color)
+
+        text_h = item_m
+        text = item.text
+
+        text_x = 20
+
+        # icon
+        if item.icon:
+            cr.save()
+            self.draw_icon(cr, item, 10, base_y+0.5*item_h-14)
+            cr.restore()
+            text_x = 50
+
+        if item.subtext:
+            if selected:
+                draw_text(cr, text_x, base_y+6, left_w, text_h, text, seltext_color, fontname, 20)
+            else:
+                draw_text(cr, text_x, base_y+6, left_w, text_h, text, text_color, fontname, 20)
+
+            y = base_y + item_h * 0.5
+            if selected:
+                draw_text(cr, text_x, y, left_w, text_h, item.subtext, seltext_color, fontname, 10)
+            else:
+                draw_text(cr, text_x, y, left_w, text_h, item.subtext, subtext_color, fontname, 10)
+
+        else:
+            if selected:
+                draw_text(cr, text_x, base_y, left_w, item_h, text, seltext_color, fontname, 20)
+            else:
+                draw_text(cr, text_x, base_y, left_w, item_h, text, text_color, fontname, 20)
+
+        # Default action and more actions arrow
+        # if debug:
+        #     draw_text(cr, left_w + right_w*0.5, base_y, right_w, item_h, '%.2f/%.2f' % (item.score, item.bonus), text_color, fontname, 10)
+
+        if selected:
+            try:
+                action_name = self.manager.get_actions(item)[0][0]
+                draw_text(cr, left_w + right_w*0.5, base_y, right_w, item_h, action_name, seltext_color, fontname, 12)
+            except:
+                pass
+
+            # arrow
+            draw_small_arrow(cr, win_width-20, base_y + item_m + 4)
+
+    def draw_right_panel(self, cr, actions, selected):
+
+        draw_rect(cr, right_x, bar_h, right_w, menu_h, bkg_color)
+
+        draw_vertical_separator(cr, right_x, bar_h, menu_h, sep_color)
+
+        for pos, action in enumerate(actions):
+
+            base_y =  bar_h + 82 * pos
+
+            draw_horizontal_separator(cr, right_x, base_y+81, right_w, sep_color)
+
+            if selected == pos:
+                draw_rect(cr, right_x, base_y, right_w, 82, sel_color)
+                draw_text(cr, right_x+10, base_y, right_w, 82, action[0], seltext_color, fontname)
+            else:
+                draw_text(cr, right_x+10, base_y, right_w, 82, action[0], text_color, fontname)
+
+
+
+class SherlockDbus(dbus.service.Object):
+
+    def __init__(self, bus, path, name, debug):
+        dbus.service.Object.__init__(self, bus, path, name)
+
+        self.app = Sherlock(debug)
+
+    @dbus.service.method("org.sherlock.Daemon", in_signature='', out_signature='')
+    def run(self):
+        self.app.run()
+
+    @dbus.service.method("org.sherlock.Daemon", in_signature='', out_signature='')
+    def close(self, *args):
+        self.app.close()

@@ -4,12 +4,13 @@ import os
 from sherlock import utils
 from sherlock import cache
 from sherlock import config
-from sherlock.items import ItemUri
+from sherlock.items import Item
 
 exclude = ('.git', '.svn')
 
 include_dirs = config.files_include
 include_extensions = config.files_include_extensions
+
 
 def update_cache():
 
@@ -22,8 +23,16 @@ def update_cache():
         if fname in exclude or fname.startswith('.') or '/.' in fname:
             continue
 
-        files.append(ItemUri(fname, os.path.join(home, fname)))
+        path = os.path.join(home, fname)
 
+        if os.path.isdir(path):
+            files.append(
+                Item(text=fname, subtext=path, category='dir', keys=fname, arg=path)
+            )
+        else:
+            files.append(
+                Item(text=fname, subtext=path, category='file', keys=fname, arg=path)
+            )
 
     for dirname in include_dirs:
 
@@ -40,7 +49,11 @@ def update_cache():
                     del dirnames[i]
                     continue
 
-                files.append(ItemUri(dn, os.path.join(root, dn)))
+                path =  os.path.join(root, dn)
+
+                files.append(
+                    Item(text=dn, subtext=path, category='dir', keys=dn, arg=path)
+                )
 
             for fn in filenames:
                 if fn.startswith('.') or fn in exclude:
@@ -49,7 +62,11 @@ def update_cache():
                 if '.' in fn and fn[fn.index('.'):] not in include_extensions:
                     continue
 
-                files.append(ItemUri(fn, os.path.join(root, fn)))
+                path = os.path.join(root, fn)
+
+                files.append(
+                    Item(text=fn, subtext=path, category='file', keys=fn, arg=path)
+                )
 
     cache.cache_data('files', files)
     return

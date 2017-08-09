@@ -2,159 +2,39 @@ import os
 
 class Item(object):
 
-    __slots__ = ('title', 'subtitle', 'category', 'arg', 'keys', 'score', 'bonus')
+    __slots__ = ('text', 'subtext', 'icon', 'keys', 'arg', 'category', 'score', 'bonus')
 
-    def __init__(self, title, subtitle='', keys=[], category='text', arg=None, score=0.0):
-        self.title = title
-        self.subtitle = subtitle
-        self.keys = keys
+    def __init__(self, text, subtext='', category='text', icon='', keys=[], arg=None):
+        self.text = text
+        self.subtext = subtext
+        self.icon = icon
+
+        if isinstance(keys, str): # list of strings used to filter items
+            self.keys = [keys,]
+        else:
+            self.keys = keys
+        self.arg = arg   # string passed as argument to actions
+
         self.category = category
-        self.arg = arg
 
-        self.score = score # temporal because it depends the query (0. by default)
+        self.score = 0 # temporal values to store the sorting scores
         self.bonus = 0
-
-        if category == 'text' and arg is None:
-            self.arg = self.title
 
     @classmethod
     def from_dict(cls, d):
-        return cls(d['title'], d['subtitle'], d['keys'], d['category'], d['arg'])
+        return cls(d['text'], d['subtext'], d['category'], d['icon'], d['keys'], d['arg'])
 
     def to_dict(self):
         return {
-            'title': self.title,
-            'subtitle': self.subtitle,
+            'text': self.text,
+            'subtext': self.subtext,
+            'icon': self.icon,
             'keys': self.keys,
-            'category': self.category,
-            'arg': self.arg
+            'arg': self.arg,
         }
 
     def __str__(self):
-        return '%s (%s)' % (self.title, self.score)
+        return '%s (%s)' % (self.text, self.score)
 
     def __eq__(self, other):
         return (self.to_dict() == other.to_dict())
-
-    def get_actions(self):
-        return (
-            ('Copy', 'copy_to_clipboard'),
-            # ('Large type',   'show_large_type'),
-            # ('Show QR code', 'show_qrcode'),
-        )
-
-
-
-# Apps
-class ItemApp(Item):
-    def __init__(self, title, subtitle, arg, keys):
-        Item.__init__(self, title=title, subtitle=subtitle,
-                      keys=keys, category='app',
-                      arg=arg)
-
-    def get_actions(self):
-        return (
-            ('Run', 'run_app'),
-            ('Run in terminal', 'run_app_terminal'),
-        )
-
-
-# Files
-class ItemUri(Item):
-    def __init__(self, name, path):
-
-        path = path
-        key = name
-
-        if os.path.isdir(path):
-            name = '%s/' % name
-            path = '%s/' % path
-
-        Item.__init__(self, title=name, subtitle=path, keys=[key,], category='uri',
-                      arg=path.replace(' ', r'%20'))
-
-    def is_dir(self):
-        return self.subtitle.endswith('/') #os.path.isdir(self.arg)
-
-    def is_file(self):
-        return (not self.subtitle.endswith('/')) #os.path.isfile(self.arg)
-
-    def __eq__(self, other):
-        return (self.subtitle == other.subtitle)
-
-    def get_actions(self):
-        if self.is_dir():
-            return (
-                ('Open', 'open_dir'),
-                ('Open in terminal', 'open_dir_terminal'),
-                ('Explore', 'explore'),
-            )
-
-        elif self.is_file():
-            return (
-                ('Open', 'open_uri'),
-                ('Open dir', 'open_dir'),
-                ('Open in terminal', 'open_dir_terminal'),
-                ('Explore', 'explore'),
-            )
-
-
-
-# URL
-class ItemUrl(Item):
-    def __init__(self, name, url):
-        Item.__init__(self, title=name, subtitle=url, keys=[name, url], category='url',
-                      arg=url)
-
-    def __eq__(self, other):
-        return (self.title == other.title or self.subtitle == other.subtitle)
-
-    def get_actions(self):
-        return (
-            ('Open', 'open_url'),
-            ('Copy', 'copy_to_clipboard'),
-            )
-
-# Text
-class ItemText(Item):
-    def __init__(self, text):
-        Item.__init__(self, title=text, subtitle='', keys=[text,], category='text',
-                      arg=None)
-
-    def get_actions(self):
-        return (
-            ('Copy',         'copy_to_clipboard'),
-            # ('Large type',   'show_large_type'),
-            # ('Show QR code', 'show_qrcode'),
-        )
-
-
-# Command
-class ItemCmd(Item):
-    def __init__(self, text, cmd):
-        Item.__init__(self, title=text, subtitle='', keys=[text,], category='cmd',
-                      arg=cmd)
-
-    def get_actions(self):
-           return (
-               ('Run', 'run_cmd'),
-               ('Copy to console', 'copy_to_console')
-           )
-
-
-# class ItemAction(Item):
-#     def __init__(self, title, fn, no_filter=False):
-#         Item.__init__(self, title=title, subtitle='', keys=[title,], category='action',
-#                       arg=fn)
-
-# class ItemPlugin(Item):
-#     def __init__(self, title, kw):
-#         Item.__init__(self, title=title, subtitle='keyword: %s' % kw,
-#                       keys=[title,], category='plugin',
-#                       arg=kw)
-
-#         self.items = []
-#         self.score = 200
-
-#     def add(self, it):
-#         self.items.append(it)

@@ -3,7 +3,39 @@ import sys
 import logging
 import importlib
 
-from sherlock.items import ItemCmd
+actions_dict = {
+    'app': (
+        ('Run', 'run_app'),
+        ('Run in terminal', 'run_app_terminal'),
+    ),
+
+    'file': (
+        ('Open', 'open_file'),
+        ('Open dir', 'open_dir'),
+        ('Open in terminal', 'open_dir_terminal'),
+        ('Explore', 'explore'),
+    ),
+
+    'dir': (
+        ('Open', 'open_dir'),
+        ),
+
+
+    'url': (
+        ('Open', 'open_url'),
+        ('Copy', 'copy_to_clipboard'),
+    ),
+
+    'cmd': (
+        ('Run', 'run_cmd'),
+        ('Copy to console', 'copy_to_console')
+    ),
+
+    'text': (
+        ('Copy', 'copy_to_clipboard'),
+    ),
+}
+
 
 class Manager:
 
@@ -24,7 +56,7 @@ class Manager:
     def import_plugin(self, name):
         try:
             plugin = importlib.import_module(name)
-            self.logger.info('pluging %s loaded.' % name)
+            self.logger.info('plugin %s loaded.' % name)
         except ImportError:
             self.logger.error('error loading plugin %s.' % name)
             return None
@@ -73,9 +105,18 @@ class Manager:
             elif name in self.trigger_plugins:
                 items.extend(self.trigger_plugins[name].get_fallback_items(query))
 
-        # shell command
-        it = ItemCmd("run '%s' in a shell" % query, query)
-        items.append(it)
-
+        # # shell command
+        # it = ItemCmd("run '%s' in a shell" % query, query)
+        # items.append(it)
 
         return items
+
+    # --------
+    # Actions
+    # --------
+    def get_actions(self, item):
+        """ return posible actions for the item """
+        return actions_dict.get(item.category, ())
+
+    def get_action(self, name):
+        pass

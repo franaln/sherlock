@@ -1,4 +1,4 @@
-from sherlock.items import ItemUrl
+from sherlock.items import Item
 
 _engines = [
     ('gg', 'Google',  'https://www.google.com/search?q=%s'),
@@ -17,9 +17,11 @@ def get_items(query):
         if query.startswith(trigger+' '):
             search_expr = query.replace('%s ' % trigger, '')
             arg = url % search_expr
-            yield ItemUrl('Search "%s" with %s' % (search_expr, name), arg)
+            yield Item(text='Search "%s" with %s' % (search_expr, name), subtext=arg,
+                       arg=arg, category='url')
 
 def get_fallback_items(query):
     for _, name, url in _engines:
         arg = url % query
-        yield ItemUrl('Search "%s" with %s' % (query, name), arg)
+        yield Item(text='Search "%s" with %s' % (query, name), subtext=arg, arg=arg,
+                   category='url')
