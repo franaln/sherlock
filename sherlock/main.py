@@ -69,6 +69,19 @@ text_color    = config.text_color
 subtext_color = config.subtext_color
 seltext_color = config.seltext_color
 
+# modes
+MODE_NORMAL          = 0
+MODE_HISTORY         = 1
+MODE_FILE_NAVIGATION = 2
+MODE_CLIPBOARD       = 3
+
+mode_labels = {
+    MODE_NORMAL: '',
+    MODE_HISTORY: 'Sherlock History',
+    MODE_FILE_NAVIGATION: 'File Navigation',
+    MODE_CLIPBOARD: 'Clipboard History',
+}
+
 
 class Sherlock(GObject.GObject):
 
@@ -119,23 +132,15 @@ class Sherlock(GObject.GObject):
             'update',
         ]
 
-        # Menu
+        self.mode = MODE_NORMAL
 
+        # Menu
         self.items = []
         self.item_selected = 0
 
         self.right_items = []
         self.right_item_selected = 0
         self.right_panel_visible = False
-
-        ## Bar
-        self.cursor = 0
-        self.query = ''
-        self.selected = False
-        self.counter = 0
-        self.updated = False
-
-        GLib.timeout_add(500, self.check)
 
         self.menu = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
         self.menu.set_app_paintable(True)
@@ -146,7 +151,18 @@ class Sherlock(GObject.GObject):
         self.menu.set_title('Sherlock')
 
         self.menu.connect('draw', self.draw)
+
+        # Bar
+        self.cursor = 0
+        self.query = ''
+        self.selected = False
+        self.counter = 0
+        self.updated = False
+
+        GLib.timeout_add(500, self.check)
+
         self.connect('bar-update', self.on_bar_update)
+
 
 
         # recreate db
@@ -228,20 +244,26 @@ class Sherlock(GObject.GObject):
             elif 'space' in key:
                 self.toggle_preview()
             elif key == 'y':
-                self.addchar(self.clipboard.get_selection())
+                selected_text = self.clipboard.get_text()
+                if selected_text:
+                    self.addchar(selected_text)
             elif key == 'h':
                 #self.show_history()
                 pass
             elif key == 'v':
+                self.change_mode(MODE_CLIPBOARD)
                 self.show_clipboard_history()
 
             return
 
         if key == 'Escape':
-            self.hide_menu()
+            if self.mode != MODE_NORMAL:
+                self.back_to_normal_mode()
+            else:
+                self.hide_menu()
 
         elif key == 'Left':
-            if self.file_navigation_mode():
+            if self.mode == MODE_FILE_NAVIGATION:
                 self.file_navigation_cd_back()
 
         elif key == 'Down':
@@ -266,12 +288,15 @@ class Sherlock(GObject.GObject):
         elif key == 'Delete':
             self.delchar(True)
 
-        # Return/Right: execute default action on selected item
-        elif 'Return' in key or key == 'Right':
-            if self.file_navigation_mode(): ## and self.right_item_selected < 1:
+        elif key == 'Right':
+            if self.mode == MODE_FILE_NAVIGATION:
                 self.file_navigation_cd()
             else:
-                self.actionate()
+                if self.items:
+                    self.toggle_right_panel()
+
+        elif 'Return' in key:
+            self.actionate()
 
         elif 'Tab' in key:
             if self.items:
@@ -358,13 +383,30 @@ class Sherlock(GObject.GObject):
     #     self.menu.emit('menu-update')
 
 
-    # ---------------
-    # File navigation
-    # ---------------
-    def file_navigation_mode(self, query=None):
-        if query is None:
-            query = self.query
-        return (query.startswith('/') or query.startswith('~/'))
+
+    #
+    # Modes
+    #
+    def change_mode(self, mode):
+        self.mode = mode
+        self.logger.info('changing mode to: %s' % mode_labels[mode])
+
+    def back_to_normal_mode(self):
+        self.mode = MODE_NORMAL
+        self.clear_bar()
+        self.clear_menu()
+
+
+    # ---------------------
+    # File navigation mode
+    # ---------------------
+    def enter_file_navigation_mode(self):
+        self.mode = MODE_FILE_NAVIGATION
+        self.logger.info('changing mode to: FILE_NAVIGATION')
+
+    def exit_file_navigation_mode(self):
+        self.mode = MODE_NORMAL
+        self.logger.info('changing mode to: NORMAL')
 
     def file_navigation(self, query):
 
@@ -456,8 +498,9 @@ class Sherlock(GObject.GObject):
             matches.append(it)
 
         # File navigation ('~/' or '/')
-        if self.file_navigation_mode(query):
-            self.logger.info('file navigation: %s' % query)
+        if query.startswith('/') or query.startswith('~/'):
+            self.enter_file_navigation_mode()
+
             matches.extend(self.file_navigation(query))
             self.items = matches
             self.emit('menu-update')
@@ -752,67 +795,6 @@ class Sherlock(GObject.GObject):
 
         self.emit('menu-update')
 
-    def draw_bar(self, cr):
-
-        ## query
-        draw_variable_text(cr, query_x, query_y, bar_w-50, 0, self.query, text_color, fontname, size=38)
-
-        ## cursor
-        cursor_x = query_x + calc_text_width(cr, self.query[:self.cursor], 38, fontname)
-
-        cr.set_source_rgb(*config.text_color)
-        cr.rectangle(cursor_x, 20, 1.5, bar_h-40)
-        cr.fill()
-
-        ## separator
-        cr.set_source_rgb(*config.separator_color)
-        cr.rectangle(0, 90, win_width, 1)
-        cr.fill()
-
-    def draw_left_side(self, cr):
-
-        items = self.items
-
-        first_item = 0 if (self.item_selected < 5) else (self.item_selected - 4)
-
-        n_items = len(items)
-        max_items = min(5, n_items)
-
-        for i in range(max_items):
-            self.draw_item(cr, i, items[first_item + i],
-                      (first_item + i == self.item_selected), self.debug)
-
-    def draw_right_side(self, cr):
-        if self.right_panel_visible:
-            self.draw_right_panel(cr, self.right_items, self.right_item_selected)
-
-    def draw(self, widget, event):
-
-        cr = Gdk.cairo_create(widget.get_window())
-
-        draw_background(cr, bkg_color)
-
-        self.draw_bar(cr)
-        self.draw_left_side(cr)
-        self.draw_right_side(cr)
-
-        return False
-
-
-    def draw_icon(self, cr, item, x, y):
-
-        pixel_size = 28
-
-        cr.translate (x, y)
-        cr.rectangle(0, 0, pixel_size, pixel_size)
-        cr.clip()
-
-        icon_theme = Gtk.IconTheme.get_default()
-        icon_pixbuf = icon_theme.load_icon("chromium-browser", pixel_size, Gtk.IconLookupFlags.FORCE_SIZE)
-
-        Gdk.cairo_set_source_pixbuf(cr, icon_pixbuf, 0, 0);
-        cr.paint()
-
 
     def draw_item(self, cr, pos, item, selected, debug=False):
 
@@ -830,9 +812,9 @@ class Sherlock(GObject.GObject):
             draw_horizontal_separator(cr, -5, base_y, win_width+10, sep_color)
 
         if selected:
-            draw_rect(cr, 0, base_y, win_width, item_h, sel_color)
+            draw_rect(cr, 0, base_y-1, win_width, item_h+1, sel_color)
         elif pos < 4:
-            draw_horizontal_separator(cr, 0, base_y + item_h - 1, win_width, sep_color)
+            draw_horizontal_separator(cr, 0, base_y+item_h, win_width, sep_color)
 
         text_h = item_m
         text = item.text
@@ -865,9 +847,6 @@ class Sherlock(GObject.GObject):
                 draw_text(cr, text_x, base_y, left_w, item_h, text, text_color, fontname, 20)
 
         # Default action and more actions arrow
-        # if debug:
-        #     draw_text(cr, left_w + right_w*0.5, base_y, right_w, item_h, '%.2f/%.2f' % (item.score, item.bonus), text_color, fontname, 10)
-
         if selected:
             try:
                 action_name = self.manager.get_actions(item)[0][0]
@@ -878,23 +857,79 @@ class Sherlock(GObject.GObject):
             # arrow
             draw_small_arrow(cr, win_width-20, base_y + item_m + 4)
 
-    def draw_right_panel(self, cr, actions, selected):
 
-        draw_rect(cr, right_x, bar_h, right_w, menu_h, bkg_color)
+    def draw(self, widget, event):
 
-        draw_vertical_separator(cr, right_x, bar_h, menu_h, sep_color)
+        cr = Gdk.cairo_create(widget.get_window())
 
-        for pos, action in enumerate(actions):
+        draw_background(cr, bkg_color)
 
-            base_y =  bar_h + 82 * pos
+        # Bar
+        ## query
+        draw_variable_text(cr, query_x, query_y, bar_w-50, 0, self.query, text_color, fontname, size=38)
 
-            draw_horizontal_separator(cr, right_x, base_y+81, right_w, sep_color)
+        ## cursor
+        cursor_x = query_x + calc_text_width(cr, self.query[:self.cursor], 38, fontname)
+        cr.set_source_rgb(*config.text_color)
+        cr.rectangle(cursor_x, 20, 1.5, bar_h-40)
+        cr.fill()
 
-            if selected == pos:
-                draw_rect(cr, right_x, base_y, right_w, 82, sel_color)
-                draw_text(cr, right_x+10, base_y, right_w, 82, action[0], seltext_color, fontname)
-            else:
-                draw_text(cr, right_x+10, base_y, right_w, 82, action[0], text_color, fontname)
+        ## mode
+        if mode_labels.get(self.mode, ''):
+            draw_text(cr, 0.7*win_width, 20, 0.3*win_width-10, 0,
+                      mode_labels[self.mode], text_color, fontname, 12, justification='right')
+
+        ## bar/menu separator
+        draw_horizontal_separator(cr, 0, bar_h-0.5, win_width, sep_color)
+
+        # Menu
+        items = self.items
+
+        first_item = 0 if (self.item_selected < 5) else (self.item_selected - 4)
+
+        n_items = len(items)
+        max_items = min(5, n_items)
+
+        for i in range(max_items):
+            self.draw_item(cr, i, items[first_item + i],
+                      (first_item + i == self.item_selected))
+
+        if self.right_panel_visible:
+
+            draw_rect(cr, right_x, bar_h, right_w, menu_h, bkg_color)
+
+            for pos, action in enumerate(self.right_items):
+
+                base_y =  bar_h + item_h * pos
+
+                draw_horizontal_separator(cr, right_x, base_y+81, right_w, sep_color)
+
+                if self.right_item_selected == pos:
+                    draw_rect(cr, right_x, base_y, right_w, 82, sel_color)
+                    draw_text(cr, right_x+10, base_y, right_w, 82, action[0], seltext_color, fontname)
+                else:
+                    draw_text(cr, right_x+10, base_y, right_w, 82, action[0], text_color, fontname)
+
+
+            draw_vertical_separator(cr, right_x, bar_h, menu_h, sep_color)
+
+        return False
+
+
+    def draw_icon(self, cr, item, x, y):
+
+        pixel_size = 28
+
+        cr.translate (x, y)
+        cr.rectangle(0, 0, pixel_size, pixel_size)
+        cr.clip()
+
+        icon_theme = Gtk.IconTheme.get_default()
+        icon_pixbuf = icon_theme.load_icon(item.icon, pixel_size, Gtk.IconLookupFlags.FORCE_SIZE)
+
+        Gdk.cairo_set_source_pixbuf(cr, icon_pixbuf, 0, 0);
+        cr.paint()
+
 
 
 
