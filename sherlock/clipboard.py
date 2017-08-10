@@ -136,7 +136,7 @@ class Clipboard:
                 it_time = 'Copied %i seconds ago' % td.seconds
             elif td.seconds < 3600:
                 it_time = 'Copied %i minutes ago' % (td.seconds/60)
-            elif td.secodns < 24*3600:
+            elif td.seconds < 24*3600:
                 it_time = 'Copied %i hours ago' % (td.seconds/3600)
             else:
                 it_time = 'Copied at %s' % data_dict['timestamp']
@@ -146,6 +146,12 @@ class Clipboard:
             items.append(it)
 
         return items
+
+    def get_text(self):
+        text = clipboard.wait_for_text()
+        if text is None or not text:
+            text = ''
+        return text
 
     # def get_text(self):
     #     text = self.clipboard.wait_for_text()

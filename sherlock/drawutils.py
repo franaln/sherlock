@@ -14,15 +14,15 @@ def draw_rect(cr, x, y, width, height, color):
 def draw_horizontal_separator(cr, x, y, size, color):
     cr.set_source_rgb(*color)
     cr.set_line_width(1.)
-    cr.move_to(x+5, y)
-    cr.line_to(x+size-5, y)
+    cr.move_to(x, y)
+    cr.line_to(x+size, y)
     cr.stroke()
 
 def draw_vertical_separator(cr, x, y, size, color):
     cr.set_source_rgb(*color)
     cr.set_line_width(0.8)
-    cr.move_to(x, y+5)
-    cr.line_to(x, y+size-5)
+    cr.move_to(x, y)
+    cr.line_to(x, y+size)
     cr.stroke()
 
 def calc_text_width(cr, text, size, fontname):
@@ -34,7 +34,7 @@ def calc_text_width(cr, text, size, fontname):
     tw, th = layout.get_pixel_size()
     return tw
 
-def draw_text(cr, x, y, w, h, text, color, fontname, size=12, center=False):
+def draw_text(cr, x, y, w, h, text, color, fontname, size=12, justification='left'):
     layout = PangoCairo.create_layout(cr)
     font = Pango.FontDescription('%s %s' % (fontname, size))
     layout.set_font_description(font)
@@ -45,10 +45,13 @@ def draw_text(cr, x, y, w, h, text, color, fontname, size=12, center=False):
 
     tw, th = layout.get_pixel_size()
     cr.set_source_rgb(*color)
-    if center:
+    if justification == 'center':
         cr.move_to(x + (w*0.5 - tw*0.5), y + (h*0.5 - th*0.5))
-    else:
+    elif justification == 'left':
         cr.move_to(x, y + (h*0.5 - th*0.5))
+    elif justification == 'right':
+        cr.move_to(x+w-tw, y + (h*0.5 - th*0.5))
+
     PangoCairo.show_layout(cr, layout)
 
 def draw_variable_text(cr, x, y, w, h, text, color, fontname, size=12):
