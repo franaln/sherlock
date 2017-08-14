@@ -22,8 +22,7 @@ import dbus.service
 import dbus.mainloop.glib
 
 from sherlock.manager import Manager
-
-from sherlock.attic2 import Attic
+from sherlock.attic import Attic
 from sherlock.clipboard import Clipboard
 
 from sherlock import config
@@ -55,7 +54,6 @@ item_h = 82
 item_m = 41
 right_x = 500
 right_w = 300
-left_w = 500
 query_x = 25
 query_y = bar_h * 0.5
 
@@ -128,8 +126,8 @@ class Sherlock(GObject.GObject):
         self.clipboard = Clipboard(clipboard_path)
 
         self.commands = [
-            'clear',
-            'update',
+            'update-cache',
+            'reload-config',
         ]
 
         self.mode = MODE_NORMAL
@@ -162,7 +160,6 @@ class Sherlock(GObject.GObject):
         GLib.timeout_add(500, self.check)
 
         self.connect('bar-update', self.on_bar_update)
-
 
 
         # recreate db
@@ -220,7 +217,17 @@ class Sherlock(GObject.GObject):
             self.emit('menu-update')
             return
 
-        self.search(query)
+        if self.mode == MODE_FILE_NAVIGATION:
+            self.handle_query_file_navigation_mode(query)
+
+        elif self.mode == MODE_CLIPBOARD:
+            self.handle_query_clipboard_mode(query)
+
+        elif self.mode == MODE_HISTORY:
+            self.handle_query_history_mode(query)
+
+        else: # MODE_NORMAL
+            self.search(query)
 
     def on_key_press(self, window, event):
         key = Gdk.keyval_name(event.keyval)
@@ -247,12 +254,18 @@ class Sherlock(GObject.GObject):
                 selected_text = self.clipboard.get_text()
                 if selected_text:
                     self.addchar(selected_text)
+
+            # modes
             elif key == 'h':
-                #self.show_history()
-                pass
+                self.change_mode(MODE_HISTORY)
+                self.show_history()
+
             elif key == 'v':
                 self.change_mode(MODE_CLIPBOARD)
                 self.show_clipboard_history()
+
+            elif key == 'f':
+                self.enter_file_navigation_mode()
 
             return
 
@@ -328,10 +341,10 @@ class Sherlock(GObject.GObject):
     #  Actions
     # ---------
     def run_internal_command(self, cmd):
-        if cmd == 'clear':
-            pass #cache.clear_cache()
-        elif cmd == 'update':
-            pass # update cache
+        if cmd == 'update-cache':
+            self.manager.update_cache()
+        elif cmd  == 'reload-config':
+            pass
 
     def actionate(self):
 
@@ -357,7 +370,7 @@ class Sherlock(GObject.GObject):
 
         self.attic.add(self.query, match, action_name)
 
-        self.logger.info('executing: "%s" with arg "%s"' % (action_name, match.arg))
+        self.logger.info('executing action "%s" with arg "%s"' % (action_name, match.arg))
         action(match.arg)
 
         self.hide_menu()
@@ -396,6 +409,15 @@ class Sherlock(GObject.GObject):
         self.clear_bar()
         self.clear_menu()
 
+    def handle_query_file_navigation_mode(self):
+        pass
+
+    def handle_query_history_mode(self):
+        pass
+
+    def handle_query_clipboard_mode(self):
+        pass
+
 
     # ---------------------
     # File navigation mode
@@ -403,6 +425,13 @@ class Sherlock(GObject.GObject):
     def enter_file_navigation_mode(self):
         self.mode = MODE_FILE_NAVIGATION
         self.logger.info('changing mode to: FILE_NAVIGATION')
+
+        query = self.query
+        if not query:
+            query = '/home/fran/'
+
+        self.items  = self.file_navigation(query)
+        self.emit('menu-update')
 
     def exit_file_navigation_mode(self):
         self.mode = MODE_NORMAL
@@ -500,10 +529,6 @@ class Sherlock(GObject.GObject):
         # File navigation ('~/' or '/')
         if query.startswith('/') or query.startswith('~/'):
             self.enter_file_navigation_mode()
-
-            matches.extend(self.file_navigation(query))
-            self.items = matches
-            self.emit('menu-update')
             return
 
         # Check if match internal command
@@ -778,6 +803,7 @@ class Sherlock(GObject.GObject):
 
             # if self.preview is not None and self.preview.get_visible():
             #     self.update_preview()
+
         self.emit('menu-update')
 
     def select_up(self):
@@ -794,68 +820,6 @@ class Sherlock(GObject.GObject):
             #     self.update_preview()
 
         self.emit('menu-update')
-
-
-    def draw_item(self, cr, pos, item, selected, debug=False):
-
-        """
-        ---------------------------------
-        |    | TEXT             |       |
-        |    | subtext          |       |
-        ---------------------------------
-        """
-
-        # pos -> (x, y)
-        base_y = bar_h + pos * item_h
-
-        if pos == 0:
-            draw_horizontal_separator(cr, -5, base_y, win_width+10, sep_color)
-
-        if selected:
-            draw_rect(cr, 0, base_y-1, win_width, item_h+1, sel_color)
-        elif pos < 4:
-            draw_horizontal_separator(cr, 0, base_y+item_h, win_width, sep_color)
-
-        text_h = item_m
-        text = item.text
-
-        text_x = 20
-
-        # icon
-        if item.icon:
-            cr.save()
-            self.draw_icon(cr, item, 10, base_y+0.5*item_h-14)
-            cr.restore()
-            text_x = 50
-
-        if item.subtext:
-            if selected:
-                draw_text(cr, text_x, base_y+6, left_w, text_h, text, seltext_color, fontname, 20)
-            else:
-                draw_text(cr, text_x, base_y+6, left_w, text_h, text, text_color, fontname, 20)
-
-            y = base_y + item_h * 0.5
-            if selected:
-                draw_text(cr, text_x, y, left_w, text_h, item.subtext, seltext_color, fontname, 10)
-            else:
-                draw_text(cr, text_x, y, left_w, text_h, item.subtext, subtext_color, fontname, 10)
-
-        else:
-            if selected:
-                draw_text(cr, text_x, base_y, left_w, item_h, text, seltext_color, fontname, 20)
-            else:
-                draw_text(cr, text_x, base_y, left_w, item_h, text, text_color, fontname, 20)
-
-        # Default action and more actions arrow
-        if selected:
-            try:
-                action_name = self.manager.get_actions(item)[0][0]
-                draw_text(cr, left_w + right_w*0.5, base_y, right_w, item_h, action_name, seltext_color, fontname, 12)
-            except:
-                pass
-
-            # arrow
-            draw_small_arrow(cr, win_width-20, base_y + item_m + 4)
 
 
     def draw(self, widget, event):
@@ -883,6 +847,9 @@ class Sherlock(GObject.GObject):
         draw_horizontal_separator(cr, 0, bar_h-0.5, win_width, sep_color)
 
         # Menu
+        ## Items
+        left_w = win_width if not self.right_panel_visible else right_x
+
         items = self.items
 
         first_item = 0 if (self.item_selected < 5) else (self.item_selected - 4)
@@ -890,10 +857,74 @@ class Sherlock(GObject.GObject):
         n_items = len(items)
         max_items = min(5, n_items)
 
-        for i in range(max_items):
-            self.draw_item(cr, i, items[first_item + i],
-                      (first_item + i == self.item_selected))
+        for pos in range(max_items):
+            # self.draw_item(cr, i, items[first_item + i],
+            #                (first_item + i == self.item_selected), left_w)
 
+            """
+            --------------------------------
+            | IC | Text                    |
+            | ON | Subtext                 |
+            --------------------------------
+            """
+
+            item = items[first_item + pos]
+            selected = (first_item + pos == self.item_selected)
+
+            # pos -> (x, y)
+            base_y = bar_h + pos * item_h
+
+            if pos == 0:
+                draw_horizontal_separator(cr, -5, base_y, left_w, sep_color)
+
+            if selected:
+                draw_rect(cr, 0, base_y-1, left_w, item_h+1, sel_color)
+            elif pos < 4:
+                draw_horizontal_separator(cr, 0, base_y+item_h, left_w, sep_color)
+
+            text_h = item_m
+            text = item.text
+
+            text_x = 20
+
+            # icon
+            if item.icon:
+                cr.save()
+                self.draw_icon(cr, item, 10, base_y+0.5*item_h-14)
+                cr.restore()
+                text_x = 50
+
+            if item.subtext:
+                if selected:
+                    draw_text(cr, text_x, base_y+6, left_w, text_h, text, seltext_color, fontname, 20)
+                else:
+                    draw_text(cr, text_x, base_y+6, left_w, text_h, text, text_color, fontname, 20)
+
+                y = base_y + item_h * 0.5
+                if selected:
+                    draw_text(cr, text_x, y, left_w, text_h, item.subtext, seltext_color, fontname, 10)
+                else:
+                    draw_text(cr, text_x, y, left_w, text_h, item.subtext, subtext_color, fontname, 10)
+
+            else:
+                if selected:
+                    draw_text(cr, text_x, base_y, left_w, item_h, text, seltext_color, fontname, 20)
+                else:
+                    draw_text(cr, text_x, base_y, left_w, item_h, text, text_color, fontname, 20)
+
+            # Default action and more actions arrow
+            if selected:
+                try:
+                    action_name = self.manager.get_actions(item)[0][0]
+                    draw_text(cr, left_w + right_w*0.5, base_y, right_w, item_h, action_name, seltext_color, fontname, 12)
+                except:
+                    pass
+
+                # arrow
+                draw_small_arrow(cr, left_w-20, base_y + item_m + 4)
+
+
+        ## Right panel
         if self.right_panel_visible:
 
             draw_rect(cr, right_x, bar_h, right_w, menu_h, bkg_color)

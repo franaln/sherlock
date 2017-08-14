@@ -132,14 +132,15 @@ class Clipboard:
                 it_text = text
 
             td = (datetime.now() - datetime.strptime(data_dict['timestamp'], '%Y-%m-%d %H:%M:%S'))
-            if td.seconds < 60:
+
+            if td.days >= 1:
+                it_time = 'Copied at %s' % data_dict['timestamp']
+            elif td.seconds < 60:
                 it_time = 'Copied %i seconds ago' % td.seconds
             elif td.seconds < 3600:
                 it_time = 'Copied %i minutes ago' % (td.seconds/60)
             elif td.seconds < 24*3600:
                 it_time = 'Copied %i hours ago' % (td.seconds/3600)
-            else:
-                it_time = 'Copied at %s' % data_dict['timestamp']
 
             it = Item(text=it_text, subtext=it_time, arg=text, keys=text, category='cb')
 

@@ -20,7 +20,7 @@ actions_dict = {
         ('Open', 'open_dir'),
         ('Open in terminal', 'open_dir_terminal'),
         ('Explore', 'explore'),
-        ),
+    ),
 
 
     'url': (
@@ -96,7 +96,7 @@ class Manager:
                 plugin.update_cache()
                 self.logger.info('updating %s cache' % name)
             except AttributeError:
-                self.logger.debug('updateing cache: skipping plugin %s (doesn\'t have a update cache method)' % name)
+                self.logger.debug('updating cache: skipping plugin %s (doesn\'t have a update cache method)' % name)
         return True
 
     def get_fallback_items(self, query):
