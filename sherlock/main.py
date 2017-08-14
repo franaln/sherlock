@@ -173,6 +173,7 @@ class Sherlock(GObject.GObject):
         self.menu.connect('delete-event', Gtk.main_quit)
         self.menu.connect('key_press_event', self.on_key_press)
         self.menu.connect('focus-out-event', self.on_hide_menu)
+
         self.connect('menu-update', self.on_menu_update)
         self.connect('query-change', self.on_query_change)
 
@@ -894,23 +895,25 @@ class Sherlock(GObject.GObject):
                 cr.restore()
                 text_x = 50
 
+            left_text_w = left_w - 2 * text_x
+
             if item.subtext:
                 if selected:
-                    draw_text(cr, text_x, base_y+6, left_w, text_h, text, seltext_color, fontname, 20)
+                    draw_text(cr, text_x, base_y+6, left_text_w, text_h, text, seltext_color, fontname, 20)
                 else:
-                    draw_text(cr, text_x, base_y+6, left_w, text_h, text, text_color, fontname, 20)
+                    draw_text(cr, text_x, base_y+6, left_text_w, text_h, text, text_color,    fontname, 20)
 
                 y = base_y + item_h * 0.5
                 if selected:
-                    draw_text(cr, text_x, y, left_w, text_h, item.subtext, seltext_color, fontname, 10)
+                    draw_text(cr, text_x, y, left_text_w, text_h, item.subtext, seltext_color, fontname, 10)
                 else:
-                    draw_text(cr, text_x, y, left_w, text_h, item.subtext, subtext_color, fontname, 10)
+                    draw_text(cr, text_x, y, left_text_w, text_h, item.subtext, subtext_color, fontname, 10)
 
             else:
                 if selected:
-                    draw_text(cr, text_x, base_y, left_w, item_h, text, seltext_color, fontname, 20)
+                    draw_text(cr, text_x, base_y, left_text_w, item_h, text, seltext_color, fontname, 20)
                 else:
-                    draw_text(cr, text_x, base_y, left_w, item_h, text, text_color, fontname, 20)
+                    draw_text(cr, text_x, base_y, left_text_w, item_h, text, text_color, fontname, 20)
 
             # Default action and more actions arrow
             if selected:
@@ -921,7 +924,7 @@ class Sherlock(GObject.GObject):
                     pass
 
                 # arrow
-                draw_small_arrow(cr, left_w-20, base_y + item_m + 4)
+                draw_small_arrow(cr, left_w-15, base_y + item_m + 4)
 
 
         ## Right panel
