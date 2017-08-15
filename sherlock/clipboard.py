@@ -66,7 +66,7 @@ class Clipboard:
         if self.last_copied and (text == self.last_copied or (datetime.now() - self.last_copied_time) < timedelta(seconds = 1)):
             return
 
-        self.logger.info('copying %s to the clipboards' % text[:50])
+        self.logger.info('copying %s to the clipboards' % text.split('\n')[0][:50])
 
         # remove from history if already exists
         self.remove_history(text)
@@ -120,12 +120,12 @@ class Clipboard:
     def get_history(self):
 
         items = []
-        for data_dict in reversed(self.history[:50]):
+        for data_dict in reversed(self.history):
 
             text = data_dict['text']
 
             if '\n' in text:
-                it_text = '%s...' % text.split('\n')[:50]
+                it_text = '%s...' % text.split('\n')[0][:50]
             elif len(text) > 50:
                 it_text = '%s...' % text[:50]
             else:

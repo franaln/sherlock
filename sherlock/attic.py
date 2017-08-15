@@ -62,6 +62,9 @@ class Attic:
 
     def add(self, query, item, action):
 
+        if not query:
+            return
+
         self.logger.info('adding event to attic: query=%s, item=%s, action=%s' % (query, item, action))
 
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
