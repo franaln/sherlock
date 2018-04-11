@@ -123,7 +123,7 @@ class Sherlock(GObject.GObject):
         # Manager & Attic & Clipboard
         self.manager = Manager(config)
         self.attic = Attic(attic_path)
-        self.clipboard = Clipboard(clipboard_path)
+        # self.clipboard = Clipboard(clipboard_path)
 
         self.commands = [
             'update-cache',
@@ -157,7 +157,7 @@ class Sherlock(GObject.GObject):
         self.counter = 0
         self.updated = False
 
-        GLib.timeout_add(500, self.check)
+        GLib.timeout_add(500, self.check) # TODO deactive on hide!
 
         self.connect('bar-update', self.on_bar_update)
 
@@ -189,12 +189,12 @@ class Sherlock(GObject.GObject):
         else:
             self.running = True
             Gtk.main()
-            self.running = False
+            # self.running = False
 
     def close(self, *args):
         self.logger.info('closing...')
         self.attic.save()
-        self.clipboard.save()
+        #self.clipboard.save()
         self.showing = False
         Gtk.main_quit()
 
@@ -240,7 +240,11 @@ class Sherlock(GObject.GObject):
             elif key == 'Right':
                 self.move_cursor_right()
             elif key == 'Up':
-                self.previous_query()
+                if self.item_selected >= 0:
+                    self.addchar(self.items[self.item_selected].arg, True)
+                else:
+                    self.previous_query()
+
             elif key == 'Down':
                 self.next_query()
             elif key == 'a':
@@ -331,6 +335,7 @@ class Sherlock(GObject.GObject):
         # self.check_automatic_plugins()
         self.menu.present()
         self.showing = True
+        GLib.timeout_add(500, self.check)
 
     def hide_menu(self):
         self.clear_bar()
@@ -523,7 +528,7 @@ class Sherlock(GObject.GObject):
         if query.startswith("'"):
             self.logger.info('shell command trigger')
             cmd = query[1:]
-            it = ItemCmd("run '%s' in a shell" % cmd, cmd)
+            it = Item(title="run '%s' in a shell" % cmd, subtitle=cmd, arg=cmd)
             it.score = 1000
             matches.append(it)
 
@@ -731,7 +736,11 @@ class Sherlock(GObject.GObject):
         if time.time() > (self.counter + 0.25) and self.updated:
             self.updated = False
             self.emit('query-change', self.query)
-        return True
+
+        if self.showing:
+            return True
+        else:
+            return False
 
     def select(self):
         self.selected = True

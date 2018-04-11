@@ -62,12 +62,17 @@ def filter_items(gen_items, query, min_score=0, max_results=0):
                 score = 100.0 - 2 * (valuelen / querylen)
 
             if not score:
-                # query matches capitalised letters in item,
-                # e.g. of = OmniFocus
-                initials = ''.join([c for c in value if c in INITIALS])
-                leninitials = len(initials)
-                if initials.lower().startswith(query):
-                    score = 98.0 - (leninitials / querylen)
+                # 'query' is a substring of item
+                if query in value.lower():
+                    score = 100.0 - len(value.lower().replace(query, ''))
+
+            # if not score:
+            #     # query matches capitalised letters in item,
+            #     # e.g. of = OmniFocus
+            #     initials = ''.join([c for c in value if c in INITIALS])
+            #     leninitials = len(initials)
+            #     if initials.lower().startswith(query):
+            #         score = 98.0 - (leninitials / querylen)
 
             if not score:
                 # split the item into "atoms", i.e. words separated by
@@ -83,23 +88,18 @@ def filter_items(gen_items, query, min_score=0, max_results=0):
                 if query in atoms:
                     score = 96.0 - (valuelen / querylen)
 
-            if not score:
-                # 'query' matches start (or all) of the initials of the
-                # atoms, e.g. 'himym' matches 'How I Met Your Mother'
-                # *and* 'how i met your mother' (the capitals rule only
-                # matches the former)
-                if initials.startswith(query):
-                    score = 94.0 - (leninitials / querylen)
+            # if not score:
+            #     # 'query' matches start (or all) of the initials of the
+            #     # atoms, e.g. 'himym' matches 'How I Met Your Mother'
+            #     # *and* 'how i met your mother' (the capitals rule only
+            #     # matches the former)
+            #     if initials.startswith(query):
+            #         score = 94.0 - (leninitials / querylen)
 
-                # 'query' is a substring of initials, e.g. 'doh' matches
-                # 'The Dukes of Hazzard'
-                elif query in initials:
-                    score = 92.0 - (leninitials / querylen)
-
-            if not score:
-                # 'query' is a substring of item
-                if query in value.lower():
-                    score = 92.0 - (valuelen / querylen)
+            #     # 'query' is a substring of initials, e.g. 'doh' matches
+            #     # 'The Dukes of Hazzard'
+            #     elif query in initials:
+            #         score = 92.0 - (leninitials / querylen)
 
             if not score:
                 d = utils.distance(query, value[:querylen])

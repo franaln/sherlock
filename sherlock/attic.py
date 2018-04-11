@@ -53,7 +53,7 @@ class Attic:
         self.logger.info('saving events')
         with open(self.path, 'w') as f:
             f.write(json.dumps(self.events))
-
+        self.changed = False
         # self.logger.info('saving history')
         # with open(self.history_path, 'w') as f:
         #     f.write(json.dumps(self.history))

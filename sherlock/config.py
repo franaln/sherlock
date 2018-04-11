@@ -10,11 +10,18 @@ fontname = 'Source Sans Pro'
 background_color = (0.93, 0.93, 0.93) # #ebebeb
 bar_color        = (0.93, 0.93, 0.93) # #cccccc
 separator_color  = (0.80, 0.80, 0.80) # #323232
-#selection_color  = (0.31, 0.61, 0.91) # #427fed
 selection_color  = (0.17, 0.25, 0.92) # #427fed
 text_color       = (0.27, 0.27, 0.27) # #454545
 subtext_color    = (0.50, 0.50, 0.50)
 seltext_color    = (1.00, 1.00, 1.00)
+
+# background_color = (0.07, 0.07, 0.07) # #ebebeb
+# bar_color        = (0.07, 0.07, 0.07) # #cccccc
+# separator_color  = (0.80, 0.80, 0.80) # #323232
+# selection_color  = (0.17, 0.25, 0.92) # #427fed
+# text_color       = (1.00, 1.00, 1.00) # #454545
+# subtext_color    = (0.50, 0.50, 0.50)
+# seltext_color    = (0.80, 0.80, 0.80)
 
 #--------------
 # Basic search
@@ -24,10 +31,12 @@ basic_plugins = [
     'applications',
     'system',
     'files',
-    #'bookmarks',
+    'bashhistory',
     'chromium',
     'websearch',
+
     'currency',
+    'rottenmovies',
 ]
 
 files_include = [

@@ -38,7 +38,7 @@ def run_app_terminal(self):
 
 
 # Files
-def open_uri(arg):
+def open_file(arg):
     uri = r'file://' + utils.escape(arg).replace(' ', r'%20')
     run_cmd('open '+uri)
 

@@ -2,7 +2,6 @@ import os
 import json
 import logging
 from datetime import datetime, timedelta
-
 from gi.repository import Gtk, Gdk, GLib
 
 from sherlock.items import Item
@@ -73,7 +72,7 @@ class Clipboard:
 
         # Check for growing or shrinking, but ignore duplicates
         try:
-            last_item = self.history[-1]
+            last_item = self.history[0]
         except IndexError:
             last_item = dict()
 
@@ -81,7 +80,7 @@ class Clipboard:
             # Make length difference a positive number before comparing
             if abs(len(text) - len(last_item['text'])) <= 10:
                 # new selection is a longer/shorter version of previous
-                self.history.pop()
+                pass #self.history.pop()
 
         # Insert selection into history
         timestamp = datetime.now()
@@ -94,7 +93,7 @@ class Clipboard:
             'timestamp': timestamp.strftime("%Y-%m-%d %H:%M:%S"),
         }
 
-        self.history.append(it)
+        self.history.insert(0, it)
         self.history_changed = True
 
         # Sync both clipboard
@@ -113,14 +112,16 @@ class Clipboard:
 
     def extract_url(self, text):
         pattern = r'\b\S+://\S+\b'
+        return re.find_all(pattern, text)[0]
 
     def extract_email(self, text):
         pattern = r'\b\S+\@\S+\.\S+\b'
+        return re.find_all(pattern, text)[0]
 
     def get_history(self):
 
         items = []
-        for data_dict in reversed(self.history):
+        for data_dict in self.history:
 
             text = data_dict['text']
 
