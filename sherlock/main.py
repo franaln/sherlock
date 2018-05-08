@@ -161,7 +161,6 @@ class Sherlock(GObject.GObject):
 
         self.connect('bar-update', self.on_bar_update)
 
-
         # recreate db
         self.manager.update_cache()
         GLib.timeout_add_seconds(1800, self.manager.update_cache)
@@ -227,7 +226,8 @@ class Sherlock(GObject.GObject):
         elif self.mode == MODE_HISTORY:
             self.handle_query_history_mode(query)
 
-        else: # MODE_NORMAL
+        # MODE_NORMAL
+        else:
             self.search(query)
 
     def on_key_press(self, window, event):
@@ -280,10 +280,6 @@ class Sherlock(GObject.GObject):
             else:
                 self.hide_menu()
 
-        elif key == 'Left':
-            if self.mode == MODE_FILE_NAVIGATION:
-                self.file_navigation_cd_back()
-
         elif key == 'Down':
             # if not self.menu_visible:
             #     if self.bar.is_empty():
@@ -306,9 +302,13 @@ class Sherlock(GObject.GObject):
         elif key == 'Delete':
             self.delchar(True)
 
+        elif key == 'Left':
+            if self.mode == MODE_FILE_NAVIGATION:
+                self.file_navigation_cd_back()
+
         elif key == 'Right':
             if self.mode == MODE_FILE_NAVIGATION:
-                self.file_navigation_cd()
+                self.file_navigation(self.selected_item().arg)
             else:
                 if self.items:
                     self.toggle_right_panel()
@@ -333,12 +333,14 @@ class Sherlock(GObject.GObject):
     # ----------------
     def show_menu(self):
         # self.check_automatic_plugins()
+        self.clear_bar()
         self.menu.present()
         self.showing = True
         GLib.timeout_add(500, self.check)
 
     def hide_menu(self):
         self.clear_bar()
+        self.manager.clear_cache()
         self.menu.hide()
         self.showing = False
 
@@ -511,6 +513,7 @@ class Sherlock(GObject.GObject):
         matches = search.filter_items(gen_items, query, min_score=60.0)
         result.extend(matches)
 
+
     def search(self, query):
 
         if not query:
@@ -546,7 +549,6 @@ class Sherlock(GObject.GObject):
             if plugin.match_trigger(query):
                 matches.extend([ it for it in plugin.get_items(query) ])
 
-
         # Filter non-trigger plugins
         if not matches:
             if use_threads:
@@ -571,11 +573,9 @@ class Sherlock(GObject.GObject):
                     plugin_matches = search.filter_items(plugin.get_items(), query, min_score=60.0)
                     matches.extend(plugin_matches)
 
-
         # Fallback plugins
         if not matches:
             matches = self.manager.get_fallback_items(query)
-
 
         self.items = self.sort_items(matches)
         self.emit('menu-update')
@@ -793,9 +793,6 @@ class Sherlock(GObject.GObject):
 
         match_actions = self.manager.get_actions(match)
 
-        # if len(match_actions) < 2:
-        #     return
-
         if match_actions:
             self.right_items = list(match_actions)
         self.right_panel_visible = True
@@ -958,7 +955,6 @@ class Sherlock(GObject.GObject):
 
         return False
 
-
     def draw_icon(self, cr, item, x, y):
 
         pixel_size = 28
@@ -980,7 +976,6 @@ class SherlockDbus(dbus.service.Object):
 
     def __init__(self, bus, path, name, debug):
         dbus.service.Object.__init__(self, bus, path, name)
-
         self.app = Sherlock(debug)
 
     @dbus.service.method("org.sherlock.Daemon", in_signature='', out_signature='')

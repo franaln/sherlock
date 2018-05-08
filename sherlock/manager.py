@@ -3,6 +3,8 @@ import sys
 import logging
 import importlib
 
+from sherlock import cache
+
 actions_dict = {
     'app': (
         ('Run', 'run_app'),
@@ -21,7 +23,6 @@ actions_dict = {
         ('Open in terminal', 'open_dir_terminal'),
         ('Explore', 'explore'),
     ),
-
 
     'url': (
         ('Open', 'open_url'),
@@ -52,6 +53,7 @@ class Manager:
         self.trigger_plugins = dict()
 
         self.fallback_plugins = []
+        self.cache_plugins = []
 
         self.load_plugins()
 
@@ -82,6 +84,9 @@ class Manager:
                 if hasattr(plugin, 'get_fallback_items'):
                     self.fallback_plugins.append(name)
 
+                if hasattr(plugin, 'update_cache'):
+                    self.cache_plugins.append(name)
+
     # def check_automatic_plugins(self):
     #     for name, plugin in self.automatic_plugins.items():
     #         self.logger.info('checking automatic plugin %s' % name)
@@ -91,13 +96,19 @@ class Manager:
     #             self.emit('menu-update')
 
     def update_cache(self):
-        for name, plugin in self.plugins.items():
-            try:
-                plugin.update_cache()
-                self.logger.info('updating %s cache' % name)
-            except AttributeError:
-                self.logger.debug('updating cache: skipping plugin %s (doesn\'t have a update cache method)' % name)
+        for name in self.cache_plugins:
+            self.plugins[name].update_cache()
+            self.logger.info('updating %s cache' % name)
+            cache.load_cachedict(name)
+
         return True
+
+    def load_cache(self):
+        for name in self.cache_plugins:
+            cache.load_cachedict(name)
+
+    def clear_cache(self):
+        cache.clear_cachedict()
 
     def get_fallback_items(self, query):
         items = []

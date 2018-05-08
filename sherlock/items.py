@@ -2,7 +2,7 @@ import os
 
 class Item(object):
 
-    __slots__ = ('text', 'subtext', 'icon', 'keys', 'arg', 'category', 'score', 'bonus')
+    __slots__ = ('text', 'subtext', 'icon', 'keys', 'arg', 'category', 'score')
 
     def __init__(self, text, subtext='', category='text', icon='', keys=[], arg=None):
         self.text = text
@@ -18,7 +18,6 @@ class Item(object):
         self.category = category
 
         self.score = 0 # temporal values to store the sorting scores
-        self.bonus = 0
 
     @classmethod
     def from_dict(cls, d):

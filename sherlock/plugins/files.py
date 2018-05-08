@@ -6,7 +6,7 @@ from sherlock import cache
 from sherlock import config
 from sherlock.items import Item
 
-exclude = ('.git', '.svn')
+exclude = ('.git', '.svn') ## TODO: use config dict
 
 include_dirs = config.files_include
 include_extensions = config.files_include_extensions

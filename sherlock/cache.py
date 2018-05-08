@@ -14,6 +14,8 @@ from sherlock import config
 
 cachedir = os.path.expanduser(config.cache_dir)
 
+_cachedict = {}
+
 def get_cachefile(filename):
     """
     Return full path to filename within cache dir.
@@ -22,35 +24,18 @@ def get_cachefile(filename):
         os.makedirs(cachedir)
     return os.path.join(cachedir, filename)
 
-# def get_cached_data(name, data_func=None, max_age=60):
-#     """ Retrieve data from cache or re-generate and re-cache data if
-#     stale/non-existant. If max_age is 0, return cached data no
-#     matter how old.
-#     """
-#     cache_path = get_cachefile('%s.cache' % name)
-#     age = get_cached_data_age(name)
-#     if (age < max_age or max_age == 0) and os.path.exists(cache_path):
-#         with open(cache_path, 'rb') as f:
-#             return pickle.load(f)
-#     if not data_func:
-#         return None
-#     data = data_func()
-#     cache_data(name, data)
-#     return data
-
-def get_cached_data(name):
+def load_cachedict(name):
 
     cache_path = get_cachefile('%s.cache' % name)
-
-    # age = get_cached_data_age(name)
-    #if os.path.exists(cache_path):
     with open(cache_path, 'rb') as f:
-        return pickle.load(f)
-    # if not data_func:
-    #     return None
-    # data = data_func()
-    # cache_data(name, data)
-    # return data
+        _cachedict[name] = pickle.load(f)
+
+
+def get_cached_data(name):
+    if name not in _cachedict:
+        load_cachedict(name)
+
+    return _cachedict[name]
 
 def cache_data(name, data):
     """ Save data to cache under name
@@ -92,3 +77,6 @@ def clear_cache():
 
             path = os.path.join(get_cachedir(), filename)
             os.unlink(path)
+
+def clear_cachedict():
+    _cachedict.clear()
