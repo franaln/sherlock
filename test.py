@@ -1,54 +1,59 @@
-import sys
+import time
 
-from sherlock.search import *
-from sherlock.plugins import files, applications, calculator
-from sherlock.attic2 import Attic
-from sherlock.config import cache_dir
-
-cache_dir = os.path.expanduser(cache_dir)
-attic_path = os.path.join(cache_dir, 'attic2')
-attic = Attic(attic_path)
-
-if len(sys.argv) < 2:
-    print('usage: test.py query1 [query2]')
-    sys.exit()
+from sherlock import files, applications, bookmarks
+from sherlock.search import filter_items
 
 
-# 1
-query = sys.argv[1]
-print('results for "%s":' % query)
+# Update cache
+#@profile
+def update_cache():
+    print('------------------------')
+    print('updating cache')
 
-matches = []
-matches.extend(get_matches(applications, query, min_score=80, max_results=10))
-matches.extend(get_matches(files, query, min_score=80, max_results=10))
-matches.extend(get_matches(calculator, query, min_score=80, max_results=10))
+    start_time = time.time()
 
-for m in matches:
-    bonus = attic.get_item_bonus(m)
-    m.score += bonus
+    applications.update_cache()
+    files.update_cache()
+    bookmarks.update_cache()
 
-matches = sorted(matches, key=lambda x: x.score, reverse=True)
-
-for m in matches:
-    print(m)
+    return (time.time() - start_time)
 
 
-# 2
-if len(sys.argv) > 2:
+# Search some queries
+#@profile
+def search(query):
 
-    query = sys.argv[2]
+    start_time = time.time()
+
+    print('------------------------')
     print('results for "%s":' % query)
 
-    matches2 = []
-    matches2.extend(get_matches(applications, query, min_score=80, max_results=10))
-    matches2.extend(get_matches(files, query, min_score=80, max_results=10))
-    matches2.extend(get_matches(calculator, query, min_score=80, max_results=10))
+    matches = []
+    matches.extend(filter_items(applications.get_items(), query, min_score=80, max_results=10))
+    matches.extend(filter_items(files.get_items(), query, min_score=80, max_results=10))
+    matches.extend(filter_items(bookmarks.get_items(), query, min_score=80, max_results=10))
 
-    for m in matches2:
-        bonus = attic.get_item_bonus(m)
-        m.score += bonus
+    matches = sorted(matches, key=lambda x: x.score, reverse=True)
 
-    matches2 = sorted(matches2, key=lambda x: x.score, reverse=True)
-
-    for m in matches2:
+    for m in matches:
         print(m)
+
+    return (time.time() - start_time)
+
+
+t0 = update_cache()
+t1 = search('arch')
+t2 = search('naut')
+t3 = search('moriond')
+t4 = search('pavu')
+
+
+# Result
+print('------------------------')
+print('t0 = %.4f seconds' % t0)
+print('t1 = %.4f seconds' % t1)
+print('t2 = %.4f seconds' % t2)
+print('t3 = %.4f seconds' % t3)
+print('t4 = %.4f seconds' % t4)
+print('Total = %.4f seconds' % (t0+t1+t2+t3+t4))
+print('------------------------')

@@ -9,6 +9,9 @@ from sherlock.items import Item
 bookmarks_file = os.path.expanduser('~/.config/chromium/Default/Bookmarks')
 history_file = os.path.expanduser('~/.config/chromium/Default/History')
 
+use_bookmarks = True
+use_history   = False
+
 def _get_bookmarks(node):
     if 'url' in node:
         if not re.match("javascript:", node['url']):
@@ -86,7 +89,16 @@ def get_bookmarks_and_history():
     return (get_bookmarks() + get_history())
 
 def update_cache():
-    cache.cache_data('chromium', get_bookmarks_and_history())
+
+    if use_bookmarks and use_history:
+        cache_fn = get_bookmarks_and_history
+    elif use_bookmarks:
+        cache_fn = get_bookmarks
+    elif use_history:
+        cache_fn = get_history
+
+    cache.cache_data('chromium', cache_fn())
+
 
 def get_items():
     for item in cache.get_cached_data('chromium'):

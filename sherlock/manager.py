@@ -4,6 +4,7 @@ import logging
 import importlib
 
 from sherlock import cache
+from sherlock import similarity
 
 actions_dict = {
     'app': (
@@ -97,9 +98,12 @@ class Manager:
 
     def update_cache(self):
         for name in self.cache_plugins:
-            self.plugins[name].update_cache()
             self.logger.info('updating %s cache' % name)
+            self.plugins[name].update_cache()
             cache.load_cachedict(name)
+
+        # self.logger.info('updating trie data')
+        # similarity.update_trie_data(self.plugins)
 
         return True
 

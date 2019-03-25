@@ -13,15 +13,18 @@ def update_cache():
     exes = []
     # from desktop files
     for app in Gio.app_info_get_all():
+
+        exe = os.path.basename(app.get_executable())
+
         item = Item(
             text=app.get_name(),
             subtext=app.get_executable(),
             category='app',
-            keys=(app.get_name(), app.get_executable()),
+            keys=(app.get_name(), exe),
             arg=app.get_filename()
         )
         apps.append(item)
-        exes.append(app.get_executable())
+        exes.append(exe)
 
     # from path
     for path in os.getenv('PATH').split(':'):
@@ -32,12 +35,12 @@ def update_cache():
 
             name = os.path.basename(exe)
 
-            if  name not in exes:
+            if name not in exes:
                 item = Item(
                     text=name,
                     subtext=exe,
                     category='app',
-                    keys=exe,
+                    keys=name,
                     arg=exe,
                 )
 

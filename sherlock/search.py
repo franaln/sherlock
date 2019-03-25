@@ -8,12 +8,14 @@ from gi.repository import GObject
 
 from sherlock import items
 from sherlock import utils
+from sherlock import similarity
 
 # Anchor characters in a name
 INITIALS = string.ascii_uppercase + string.digits
 
 # Split on non-letters, numbers
 split_on_delimiters = re.compile('[^a-zA-Z0-9]').split
+
 
 def filter_items(gen_items, query, min_score=0, max_results=0):
 
@@ -58,13 +60,13 @@ def filter_items(gen_items, query, min_score=0, max_results=0):
                 continue
 
             # item starts with query (case-insensitive)
-            if valuelow.startswith(query) or valuelow.endswith(query):
-                score = 100.0 - 2 * (valuelen / querylen)
+            if valuelow.startswith(query):
+                score = 100.0 - (valuelen / querylen)
 
             if not score:
                 # 'query' is a substring of item
                 if query in value.lower():
-                    score = 100.0 - len(value.lower().replace(query, ''))
+                    score = 80.0 - len(value.lower().replace(query, ''))
 
             # if not score:
             #     # query matches capitalised letters in item,
@@ -74,19 +76,19 @@ def filter_items(gen_items, query, min_score=0, max_results=0):
             #     if initials.lower().startswith(query):
             #         score = 98.0 - (leninitials / querylen)
 
-            if not score:
-                # split the item into "atoms", i.e. words separated by
-                # spaces or other non-word characters
-                atoms = [s.lower() for s in split_on_delimiters(value)]
-                # print('atoms : %s  -->  %s' % (value, atoms))
-                # initials of the atoms
-                initials = ''.join([s[0] for s in atoms if s])
+            # if not score:
+            #     # split the item into "atoms", i.e. words separated by
+            #     # spaces or other non-word characters
+            #     atoms = [s.lower() for s in split_on_delimiters(value)]
+            #     # print('atoms : %s  -->  %s' % (value, atoms))
+            #     # initials of the atoms
+            #     initials = ''.join([s[0] for s in atoms if s])
 
-                # is 'query' one of the atoms in item?
-                # similar to substring, but scores more highly, as it's
-                # a word within the item
-                if query in atoms:
-                    score = 96.0 - (valuelen / querylen)
+            #     # is 'query' one of the atoms in item?
+            #     # similar to substring, but scores more highly, as it's
+            #     # a word within the item
+            #     if query in atoms:
+            #         score = 96.0 - (valuelen / querylen)
 
             # if not score:
             #     # 'query' matches start (or all) of the initials of the
@@ -101,10 +103,10 @@ def filter_items(gen_items, query, min_score=0, max_results=0):
             #     elif query in initials:
             #         score = 92.0 - (leninitials / querylen)
 
-            if not score:
-                d = utils.distance(query, value[:querylen])
-                if d < 5:
-                    score = 100 - d - valuelen + querylen
+
+            #     d = utils.distance(query, value[:querylen])
+            #     if d < 5:
+            #         score = 100 - d - valuelen + querylen
 
             if min_score > 0. and score < min_score:
                 continue
@@ -127,6 +129,14 @@ def filter_items(gen_items, query, min_score=0, max_results=0):
 
         if item.score > min_score:
             results.append(item)
+
+
+    # Similarity search
+    res = similarity.search(query, 2)
+
+    print(res)
+
+
 
     # sort on keys, then discard the keys
     # keys = sorted(results.keys(), reverse=False)

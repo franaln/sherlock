@@ -54,28 +54,36 @@ def draw_text(cr, x, y, w, h, text, color, fontname, size=12, justification='lef
 
     PangoCairo.show_layout(cr, layout)
 
-def draw_variable_text(cr, x, y, w, h, text, color, fontname, size=12):
-    layout = PangoCairo.create_layout(cr)
+def draw_bar(cr, x, y, bar_w, bar_h, text, color, fontname, size=12):
 
+    ## query
+    query_w = bar_w - 50
+
+    layout = PangoCairo.create_layout(cr)
     font = Pango.FontDescription('%s %s' % (fontname, size))
     layout.set_font_description(font)
     cr.set_source_rgb(*color)
-
     layout.set_text(u'%s' % text, -1)
-
     PangoCairo.update_layout(cr, layout)
 
     tw, th = layout.get_pixel_size()
-
-    while tw > w:
+    while tw > query_w:
         size = size - 1
         font = Pango.FontDescription('%s %s' % (fontname, size))
         layout.set_font_description(font)
         PangoCairo.update_layout(cr, layout)
         tw, th = layout.get_pixel_size()
 
-    cr.move_to(x, y + (h*0.5 - th*0.5))
+    cr.move_to(x, y - 0.5 * th)
     PangoCairo.show_layout(cr, layout)
+
+    ## cursor
+    tw, th = layout.get_pixel_size()
+    cursor_x = x + tw
+    cr.set_source_rgb(*color)
+    cr.rectangle(cursor_x, 0.25*bar_h, 1.5, 0.50*bar_h)
+    cr.fill()
+
 
 def draw_small_arrow(cr, x, y):
     cr.set_source_rgb(1, 1, 1)
