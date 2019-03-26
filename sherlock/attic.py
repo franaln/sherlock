@@ -25,8 +25,8 @@ class Attic:
         # create bonus dict
         self.bonus = dict()
         for event in self.events:
-            item_dict = event[2]
-            title = item_dict['text']
+            item = event[2]
+            title = item['text']
             if not title in self.bonus:
                 self.bonus[title] = 1
             else:
@@ -68,10 +68,10 @@ class Attic:
         self.logger.info('adding event to attic: query=%s, item=%s, action=%s' % (query, item, action))
 
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        item_dict = item.to_dict()
+        # item_dict = item.to_dict()
 
         # add event to history
-        event = (timestamp, query, item_dict, action, item.score)
+        event = (timestamp, query, item, action, item['score'])
 
         self.events.insert(0, event)
 
@@ -110,7 +110,7 @@ class Attic:
     #     return total
 
     def get_item_bonus(self, item):
-        return self.bonus.get(item.text, 0)
+        return self.bonus.get(item['text'], 0)
 
     # def get_similar(self, query):
 

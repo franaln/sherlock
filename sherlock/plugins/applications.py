@@ -5,7 +5,6 @@ import glob
 from gi.repository import Gio
 
 from sherlock import cache
-from sherlock.items import Item
 
 def update_cache():
 
@@ -16,13 +15,13 @@ def update_cache():
 
         exe = os.path.basename(app.get_executable())
 
-        item = Item(
-            text=app.get_name(),
-            subtext=app.get_executable(),
-            category='app',
-            keys=(app.get_name(), exe),
-            arg=app.get_filename()
-        )
+        item = {
+            'text': app.get_name(),
+            'subtext': app.get_executable(),
+            'category': 'app',
+            'keys': (app.get_name(), exe),
+            'arg': app.get_filename()
+        }
         apps.append(item)
         exes.append(exe)
 
@@ -36,13 +35,13 @@ def update_cache():
             name = os.path.basename(exe)
 
             if name not in exes:
-                item = Item(
-                    text=name,
-                    subtext=exe,
-                    category='app',
-                    keys=name,
-                    arg=exe,
-                )
+                item = {
+                    'text': name,
+                    'subtext': exe,
+                    'category': 'app',
+                    'keys': (name,),
+                    'arg': exe,
+                }
 
                 apps.append(item)
 

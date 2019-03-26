@@ -6,7 +6,6 @@ import logging
 
 from gi.repository import GObject
 
-from sherlock import items
 from sherlock import utils
 from sherlock import similarity
 
@@ -35,7 +34,7 @@ def filter_items(gen_items, query, min_score=0, max_results=0):
     # Loop over items
     for i, item in enumerate(gen_items):
 
-        item.score = 0.
+        item['score'] = 0.
 
         try:
             item.keys
@@ -46,9 +45,9 @@ def filter_items(gen_items, query, min_score=0, max_results=0):
                 continue
 
         if not item.keys:
-            item.score = 100.0
+            item['score'] = 100.0
 
-        for value in item.keys:
+        for value in item['keys']:
 
             score = 0
             valuelen = len(value)
@@ -111,12 +110,12 @@ def filter_items(gen_items, query, min_score=0, max_results=0):
             if min_score > 0. and score < min_score:
                 continue
 
-            if score > 1. and score > item.score:
+            if score > 1. and score > item['score']:
                 # use "reversed" score (i.e. highest becomes lowest) and
                 # value as sort key. This means items with the same score
                 # will be sorted in alphabetical not reverse alphabetical order
                 #results[(100.0 / score, value.lower(), i)] = (item, round(score, 2))
-                item.score = round(score, 2)
+                item['score'] = round(score, 2)
                 # if isinstance(item, items.ItemUri):
                 #     results[(100.0/score, time.time() - os.path.getmtime(item.subtitle), value.lower(), i)] = item
                 # else:
@@ -127,14 +126,14 @@ def filter_items(gen_items, query, min_score=0, max_results=0):
                 #     time_penalty = datetime.datetime.fromtimestamp(time.time()) - datetime.datetime.fromtimestamp(os.path.getmtime(item.subtitle))
                 #     item.score -= time_penalty.days if time_penalty.days < 100 else 100
 
-        if item.score > min_score:
+        if item['score'] > min_score:
             results.append(item)
 
 
     # Similarity search
-    res = similarity.search(query, 2)
+    # res = similarity.search(query, 2)
 
-    print(res)
+    # print(res)
 
 
 

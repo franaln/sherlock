@@ -4,7 +4,6 @@ import os
 from sherlock import utils
 from sherlock import cache
 from sherlock import config
-from sherlock.items import Item
 
 exclude = ('.git', '.svn') ## TODO: use config dict
 
@@ -27,11 +26,11 @@ def update_cache():
 
         if os.path.isdir(path):
             files.append(
-                Item(text=fname, subtext=path, category='dir', keys=fname, arg=path)
+                {'text': fname, 'subtext': path, 'category': 'dir', 'keys': (fname,), 'arg': path}
             )
         else:
             files.append(
-                Item(text=fname, subtext=path, category='file', keys=fname, arg=path)
+                {'text': fname, 'subtext': path, 'category': 'file', 'keys': (fname,), 'arg': path}
             )
 
     for dirname in include_dirs:
@@ -52,7 +51,7 @@ def update_cache():
                 path =  os.path.join(root, dn)
 
                 files.append(
-                    Item(text=dn, subtext=path, category='dir', keys=dn, arg=path)
+                    {'text': dn, 'subtext': path, 'category': 'dir', 'keys': (dn,), 'arg': path}
                 )
 
             for fn in filenames:
@@ -65,7 +64,7 @@ def update_cache():
                 path = os.path.join(root, fn)
 
                 files.append(
-                    Item(text=fn, subtext=path, category='file', keys=fn, arg=path)
+                    {'text': fn, 'subtext': path, 'category': 'file', 'keys': (fn,), 'arg': path}
                 )
 
     cache.cache_data('files', files)

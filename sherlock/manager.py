@@ -133,7 +133,7 @@ class Manager:
     # --------
     def get_actions(self, item):
         """ return posible actions for the item """
-        return actions_dict.get(item.category, ())
+        return actions_dict.get(item['category'], ())
 
     def get_action(self, name):
         pass

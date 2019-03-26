@@ -1,5 +1,4 @@
 from sherlock.utils import get_cmd_output
-from sherlock.items import Item
 
 def match_trigger(query):
     if len(query) > 2 and  any([i in query for i in '+-*/%^)(']):
@@ -12,4 +11,4 @@ def get_items(query):
     result = get_cmd_output(['calc', expression])
 
     if result:
-        yield Item('= %s' % result, '', arg=result)
+        yield {'text': '= %s' % result, 'subtext': '', 'arg': result}

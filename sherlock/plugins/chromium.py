@@ -4,7 +4,6 @@ import json
 import sqlite3
 
 from sherlock import utils, cache
-from sherlock.items import Item
 
 bookmarks_file = os.path.expanduser('~/.config/chromium/Default/Bookmarks')
 history_file = os.path.expanduser('~/.config/chromium/Default/History')
@@ -32,22 +31,23 @@ def get_bookmarks():
         if n is not None:
             name, url = n['name'], n['url']
             bookmarks.append(
-                Item(text=name,
-                    subtext=url,
-                    keys=[name,],
-                    category='url',
-                    arg=url)
+                {'text': name,
+                 'subtext': url,
+                 'keys': [name,],
+                 'category': 'url',
+                 'arg': url}
             )
 
     for n in _get_bookmarks(content['roots']['other']):
         if n is not None:
             name, url = n['name'], n['url']
             bookmarks.append(
-                Item(text=name,
-                    subtext=url,
-                    keys=[name,],
-                    category='url',
-                    arg=url)
+                {
+                    'text': name,
+                    'subtext': url,
+                    'keys': [name,],
+                    'category': 'url',
+                    'arg': url}
             )
 
     return bookmarks
@@ -73,12 +73,13 @@ def get_history():
         if visit_count < 10:
             continue
 
-        it = Item(
-            text=name,
-            subtext=url,
-            keys=[name,],
-            category='url',
-            arg=url)
+        it = {
+            'text': name,
+            'subtext': url,
+            'keys': [name,],
+            'category': 'url',
+            'arg': url
+        }
 
         if not it in history:
             history.append(it)

@@ -1,7 +1,5 @@
 # System commands plugin
 
-from sherlock.items import Item
-
 _cmds = [
     ('Sleep',     'systmectl suspend'),
     ('Power off', 'systemctl poweroff'),
@@ -13,4 +11,4 @@ _cmds = [
 
 def get_items():
     for name, cmd in _cmds:
-        yield Item(text=name, subtext='', keys=name, arg=cmd, category='cmd')
+        yield {'text': name, 'subtext': '', 'keys': (name,), 'arg': cmd, 'category': 'cmd'}
