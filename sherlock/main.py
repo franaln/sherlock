@@ -864,7 +864,7 @@ class Sherlock(GObject.GObject):
             # Date
             date_txt = today.strftime('%A, %d %b %Y')
 
-            draw_text(cr, 0, bar_h+10, right_w, 80, date_txt, text_color, 20, justification='center')
+            draw_text(cr, 0, bar_h+10, right_w, win_width, date_txt, text_color, 20, justification='center')
 
             # Time
             time_1 = today.strftime('%H:%M')
@@ -878,39 +878,41 @@ class Sherlock(GObject.GObject):
             draw_text(cr, 0, bar_h+70,  right_w, 80, time_1, text_color, 28, justification='center')
             #draw_text(cr, right_x, bar_h+130, right_w, 80, time_2, text_color, 28, justification='center')
 
-#     # Battery: Battery 0: Unknown, 98%
-#     #acpi_output = utils.get_cmd_output(['acpi',])
+            # Battery: Battery 0: Unknown, 98%
+            acpi_output = utils.get_cmd_output(['acpi',])
+
+            draw_text(cr, 0, bar_h+10, right_w, 80, date_txt, text_color, 20, justification='center')
 
 
-#     # Volume
+            # Volume
 
-#     # Weather?
+            # Weather?
 
-#     # RAM/CPU??
-#     # raminfo = Popen(['free', '-m'], stdout=PIPE).communicate()[0].decode('Utf-8').split('\n')
-#     # ram = ''.join(filter(re.compile('M').search, raminfo)).split()
-#     # used = int(ram[2]) ##- int(ram[4]) - int(ram[5])
-#     # usedpercent = ((float(used) / float(ram[1])) * 100)
+            # RAM/CPU??
+            # raminfo = Popen(['free', '-m'], stdout=PIPE).communicate()[0].decode('Utf-8').split('\n')
+            # ram = ''.join(filter(re.compile('M').search, raminfo)).split()
+            # used = int(ram[2]) ##- int(ram[4]) - int(ram[5])
+            # usedpercent = ((float(used) / float(ram[1])) * 100)
 
-#     # ramdisplay = '%s MB / %s MB' % (used, ram[1])
+            # ramdisplay = '%s MB / %s MB' % (used, ram[1])
 
-#     # draw_text(cr, right_x+10, bar_h+120, right_w, 82, ramdisplay, text_color, 16, center=True)
+            # draw_text(cr, right_x+10, bar_h+120, right_w, 82, ramdisplay, text_color, 16, center=True)
 
-#     # user = os.getenv('USER')
-#     # hostname = Popen(['uname', '-n'], stdout=PIPE).communicate()[0].decode('Utf-8').rstrip('\n')
+            # user = os.getenv('USER')
+            # hostname = Popen(['uname', '-n'], stdout=PIPE).communicate()[0].decode('Utf-8').rstrip('\n')
 
-#     # p1 = Popen(['df', '-Tlh', '--total', '-t', 'ext4', '-t', 'ext3', '-t', 'ext2', '-t', 'reiserfs', '-t', 'jfs', '-t', 'ntfs', '-t', 'fat32', '-t', 'btrfs', '-t', 'fuseblk'], stdout=PIPE).communicate()[0].decode("Utf-8")
-#     # total = p1.splitlines()[-1]
-#     # used = total.split()[3]
-#     # size = total.split()[2]
-#     # usedpercent = float(total.split()[5][:-1])
+            # p1 = Popen(['df', '-Tlh', '--total', '-t', 'ext4', '-t', 'ext3', '-t', 'ext2', '-t', 'reiserfs', '-t', 'jfs', '-t', 'ntfs', '-t', 'fat32', '-t', 'btrfs', '-t', 'fuseblk'], stdout=PIPE).communicate()[0].decode("Utf-8")
+            # total = p1.splitlines()[-1]
+            # used = total.split()[3]
+            # size = total.split()[2]
+            # usedpercent = float(total.split()[5][:-1])
 
-#     # if usedpercent <= 33:
-#     #     disk = '%s%s %s/ %s' % (colorDict['Sensors'][1], used, colorDict['Clear'][0], size)
-#     # if usedpercent > 33 and usedpercent < 67:
-#     #     disk = '%s%s %s/ %s' % (colorDict['Sensors'][2], used, colorDict['Clear'][0], size)
-#     # if usedpercent >= 67:
-#     #     disk = '%s%s %s/ %s' % (colorDict['Sensors'][0], used, colorDict['Clear'][0], size)
+            # if usedpercent <= 33:
+            #     disk = '%s%s %s/ %s' % (colorDict['Sensors'][1], used, colorDict['Clear'][0], size)
+            # if usedpercent > 33 and usedpercent < 67:
+            #     disk = '%s%s %s/ %s' % (colorDict['Sensors'][2], used, colorDict['Clear'][0], size)
+            # if usedpercent >= 67:
+            #     #     disk = '%s%s %s/ %s' % (colorDict['Sensors'][0], used, colorDict['Clear'][0], size)
 
 
         else:

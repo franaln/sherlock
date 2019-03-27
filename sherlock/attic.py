@@ -5,7 +5,6 @@ from datetime import datetime
 from gi.repository import GLib
 
 from sherlock import utils
-from sherlock.items import Item
 
 history_size = 100
 

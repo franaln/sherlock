@@ -4,8 +4,6 @@ import logging
 from datetime import datetime, timedelta
 from gi.repository import Gtk, Gdk, GLib
 
-from sherlock.items import Item
-
 class Clipboard:
 
     def __init__(self, path):
