@@ -23,20 +23,20 @@ import dbus.mainloop.glib
 
 from sherlock.manager import Manager
 from sherlock.attic import Attic
-from sherlock.clipboard import Clipboard
+#from sherlock.clipboard import Clipboard
 
 from sherlock import config
 from sherlock import utils
 from sherlock import search
-from sherlock.drawutils import *
 from sherlock import actions
+from sherlock.drawutils import *
 
 config_dir = os.path.expanduser('~/.config/sherlock')
 cache_dir  = os.path.expanduser('~/.cache/sherlock/')
 attic_path = os.path.join(cache_dir, 'attic.json')
 clipboard_path = os.path.join(cache_dir, 'clipboard.json')
 
-lock = threading.Lock()
+#lock = threading.Lock()
 
 use_threads = False
 
@@ -72,11 +72,18 @@ MODE_HISTORY         = 1
 MODE_FILE_NAVIGATION = 2
 MODE_CLIPBOARD       = 3
 
+mode_str = {
+    MODE_NORMAL:          'MODE_NORMAL',
+    MODE_HISTORY:         'MODE_HISTORY',
+    MODE_FILE_NAVIGATION: 'MODE_FILE_NAVIGATION',
+    MODE_CLIPBOARD:       'MODE_CLIPBOARD',
+}
+
 mode_labels = {
     MODE_NORMAL:          '',
-    MODE_HISTORY:         'Sherlock History',
-    MODE_FILE_NAVIGATION: 'File Navigation',
-    MODE_CLIPBOARD:       'Clipboard History',
+    MODE_HISTORY:         'History',
+    MODE_FILE_NAVIGATION: 'Files',
+    MODE_CLIPBOARD:       'Clipboard',
 }
 
 
@@ -163,12 +170,12 @@ class Sherlock(GObject.GObject):
 
         # recreate db
         self.manager.update_cache()
-        GLib.timeout_add_seconds(3600, self.manager.update_cache)
+        GLib.timeout_add_seconds(3600, self.manager.update_cache) # TODO reactivate on resume
 
         # preview
         self.preview = None
 
-        #
+        # cb
         self.menu.connect('delete-event', Gtk.main_quit)
         self.menu.connect('key_press_event', self.on_key_press)
         self.menu.connect('focus-out-event', self.on_hide_menu)
@@ -198,6 +205,22 @@ class Sherlock(GObject.GObject):
         self.showing = False
         Gtk.main_quit()
 
+
+    # ----------------
+    # Show / Hide menu
+    # ----------------
+    def show_menu(self):
+        # self.check_automatic_plugins()
+        self.clear_bar()
+        self.menu.present()
+        self.showing = True
+        GLib.timeout_add(500, self.check)
+
+    def hide_menu(self):
+        self.clear_bar()
+        self.manager.clear_cache()
+        self.menu.hide()
+        self.showing = False
 
     # -----------
     #  Callbacks
@@ -310,7 +333,7 @@ class Sherlock(GObject.GObject):
 
         elif key == 'Right':
             if self.mode == MODE_FILE_NAVIGATION:
-                self.file_navigation(self.selected_item().arg)
+                self.file_navigation_cd()
             else:
                 if self.items:
                     self.toggle_right_panel()
@@ -330,21 +353,6 @@ class Sherlock(GObject.GObject):
                 self.addchar(event.string)
 
 
-    # ----------------
-    # Show / Hide menu
-    # ----------------
-    def show_menu(self):
-        # self.check_automatic_plugins()
-        self.clear_bar()
-        self.menu.present()
-        self.showing = True
-        GLib.timeout_add(500, self.check)
-
-    def hide_menu(self):
-        self.clear_bar()
-        self.manager.clear_cache()
-        self.menu.hide()
-        self.showing = False
 
 
     # ---------
@@ -414,20 +422,20 @@ class Sherlock(GObject.GObject):
     #
     def change_mode(self, mode):
         self.mode = mode
-        self.logger.info('changing mode to: %s' % mode_labels[mode])
+        self.logger.info('changing mode to: %s' % mode_str[mode])
 
     def back_to_normal_mode(self):
-        self.mode = MODE_NORMAL
+        self.change_mode(MODE_NORMAL)
         self.clear_bar()
         self.clear_menu()
 
-    def handle_query_file_navigation_mode(self):
+    def handle_query_file_navigation_mode(self, query):
+        self.file_navigation(query)
+
+    def handle_query_history_mode(self, query):
         pass
 
-    def handle_query_history_mode(self):
-        pass
-
-    def handle_query_clipboard_mode(self):
+    def handle_query_clipboard_mode(self, query):
         pass
 
 
@@ -435,21 +443,21 @@ class Sherlock(GObject.GObject):
     # File navigation mode
     # ---------------------
     def enter_file_navigation_mode(self):
-        self.mode = MODE_FILE_NAVIGATION
-        self.logger.info('changing mode to: FILE_NAVIGATION')
+        self.change_mode(MODE_FILE_NAVIGATION)
 
         query = self.query
         if not query:
-            query = '/home/fran/'
+            query = os.path.expanduser('~')
 
-        self.items  = self.file_navigation(query)
-        self.emit('menu-update')
+        self.file_navigation(query)
 
     def exit_file_navigation_mode(self):
         self.mode = MODE_NORMAL
         self.logger.info('changing mode to: NORMAL')
 
     def file_navigation(self, query):
+
+        self.logger.debug('file navigation with query: %s' % query)
 
         query = os.path.expanduser(query)
 
@@ -476,8 +484,10 @@ class Sherlock(GObject.GObject):
 
             abspath = os.path.join(path, name)
 
+            # print(name, abspath, os.path.isdir(path)
+
             category = 'file'
-            if os.path.isdir(path):
+            if os.path.isdir(abspath):
                 category = 'dir'
                 name = '%s/' % name
                 abspath = '%s/' % abspath
@@ -485,11 +495,12 @@ class Sherlock(GObject.GObject):
             items.append({'text': name, 'subtext': abspath, 'category': category,
                               'keys': (name,), 'arg': abspath})
 
-        return sorted(items, key=lambda it: it.arg)
+        self.items = sorted(items, key=lambda it: it['arg'])
+        self.emit('menu-update')
 
     def file_navigation_cd(self):
         if self.selected_item() is not None:
-            new_query = self.selected_item().arg
+            new_query = self.selected_item()['arg']
             self.addchar(new_query.replace(home_dir, '~'), True)
 
     def file_navigation_cd_back(self):
@@ -697,6 +708,7 @@ class Sherlock(GObject.GObject):
 
         self.preview.show_all()
 
+
     # ------
     #  Menu
     # ------
@@ -864,7 +876,7 @@ class Sherlock(GObject.GObject):
             # Date
             date_txt = today.strftime('%A, %d %b %Y')
 
-            draw_text(cr, 0, bar_h+10, right_w, win_width, date_txt, text_color, 20, justification='center')
+            #draw_text(cr, 0, bar_h+10, right_w, win_width, date_txt, text_color, 20, justification='center')
 
             # Time
             time_1 = today.strftime('%H:%M')
@@ -875,13 +887,13 @@ class Sherlock(GObject.GObject):
             # else:
             #     time_2 = '%2i:%2i (Home)' % (h-5, m)
 
-            draw_text(cr, 0, bar_h+70,  right_w, 80, time_1, text_color, 28, justification='center')
+            #draw_text(cr, 0, bar_h+70,  right_w, 80, time_1, text_color, 28, justification='center')
             #draw_text(cr, right_x, bar_h+130, right_w, 80, time_2, text_color, 28, justification='center')
 
             # Battery: Battery 0: Unknown, 98%
-            acpi_output = utils.get_cmd_output(['acpi',])
+            #acpi_output = utils.get_cmd_output(['acpi',])
 
-            draw_text(cr, 0, bar_h+10, right_w, 80, date_txt, text_color, 20, justification='center')
+            #draw_text(cr, 0, bar_h+10, right_w, 80, date_txt, text_color, 20, justification='center')
 
 
             # Volume
