@@ -46,6 +46,7 @@ class Attic:
                 utils.copy_file(self.path, self.path+'.backup')
                 self.events = []
 
+
     def save(self):
         if not self.changed:
             return
@@ -70,7 +71,7 @@ class Attic:
         # item_dict = item.to_dict()
 
         # add event to history
-        event = (timestamp, query, item, action, item['score'])
+        event = (timestamp, query, item, action, item.get('score', 0.0))
 
         self.events.insert(0, event)
 
@@ -79,8 +80,10 @@ class Attic:
 
         self.changed = True
 
+
     def remove(self):
         self.changed = True
+
 
     def get_next_query(self):
         pass
@@ -90,6 +93,7 @@ class Attic:
         #     return None
         # return self.events[self.pos][1]
 
+
     def get_previous_query(self):
         pass
         # self.pos += 1
@@ -98,15 +102,18 @@ class Attic:
         #     return None
         # return self.events[self.pos][1]
 
+
     def get_history(self):
         pass
         #return [ Item.from_dict(ev[2]) for ev in self.events ]
+
 
     # def get_total_score(self):
     #     total = 0
     #     for b in self.attic.values:
     #         total += b
     #     return total
+
 
     def get_item_bonus(self, item):
         return self.bonus.get(item['text'], 0)

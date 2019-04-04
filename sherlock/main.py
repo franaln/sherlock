@@ -54,7 +54,7 @@ item_m = 41
 right_x = 500
 right_w = 300
 query_x = 25
-query_y = bar_h * 0.5
+query_y = 45 #bar_h * 0.5
 
 # Font/Colors
 fontname      = config.fontname
@@ -164,12 +164,12 @@ class Sherlock(GObject.GObject):
         self.counter = 0
         self.updated = False
 
-        GLib.timeout_add(500, self.check) # TODO deactive on hide!
+        GLib.timeout_add(500, self.check)
 
         self.connect('bar-update', self.on_bar_update)
 
         # recreate db
-        self.manager.update_cache()
+        #self.manager.update_cache()
         GLib.timeout_add_seconds(3600, self.manager.update_cache) # TODO reactivate on resume
 
         # preview
@@ -211,25 +211,26 @@ class Sherlock(GObject.GObject):
     # ----------------
     def show_menu(self):
         # self.check_automatic_plugins()
-        self.clear_bar()
+        #self.clear_bar()
         self.menu.present()
         self.showing = True
         GLib.timeout_add(500, self.check)
 
     def hide_menu(self):
         self.clear_bar()
+        self.clear_menu()
         self.manager.clear_cache()
         self.menu.hide()
         self.showing = False
+        if self.preview is not None:
+            self.preview.hide()
+            self.preview = None
 
     # -----------
     #  Callbacks
     # -----------
     def on_hide_menu(self, widget, a):
         self.hide_menu()
-        if self.preview is not None:
-            self.preview.hide()
-            self.preview = None
 
     def on_query_change(self, widget, query):
         self.logger.debug('query change: %s', query)
@@ -325,7 +326,7 @@ class Sherlock(GObject.GObject):
             self.delchar()
 
         elif key == 'Delete':
-            self.delchar(True)
+            self.delchar(delete=True)
 
         elif key == 'Left':
             if self.mode == MODE_FILE_NAVIGATION:
@@ -351,8 +352,6 @@ class Sherlock(GObject.GObject):
         else:
             if event.string:
                 self.addchar(event.string)
-
-
 
 
     # ---------
@@ -417,9 +416,9 @@ class Sherlock(GObject.GObject):
 
 
 
-    #
+    #-------
     # Modes
-    #
+    #-------
     def change_mode(self, mode):
         self.mode = mode
         self.logger.info('changing mode to: %s' % mode_str[mode])
@@ -439,9 +438,9 @@ class Sherlock(GObject.GObject):
         pass
 
 
-    # ---------------------
+    #----------------------
     # File navigation mode
-    # ---------------------
+    #----------------------
     def enter_file_navigation_mode(self):
         self.change_mode(MODE_FILE_NAVIGATION)
 
@@ -483,8 +482,6 @@ class Sherlock(GObject.GObject):
                 continue
 
             abspath = os.path.join(path, name)
-
-            # print(name, abspath, os.path.isdir(path)
 
             category = 'file'
             if os.path.isdir(abspath):
@@ -602,10 +599,10 @@ class Sherlock(GObject.GObject):
     # --------
     def sort_items(self, items):
 
-        # for m in items:
-        #     m.bonus = self.attic.get_item_bonus(m)
+        for m in items:
+            m['bonus'] = self.attic.get_item_bonus(m)
 
-        items = sorted(items, key=lambda x: x.get('score', 0), reverse=True)
+        items = sorted(items, key=lambda x: x.get('score', 0)+x.get('bonus', 0), reverse=True)
 
         # self.items = [i for i in self.items if i.score > 60.]
         #if len(query) > 1:
@@ -640,7 +637,7 @@ class Sherlock(GObject.GObject):
 
     def update_preview(self):
 
-        path = self.menu.selected_item().arg
+        path = self.menu.selected_item()['arg']
 
         pb = None
         # if path is an image
@@ -683,14 +680,13 @@ class Sherlock(GObject.GObject):
 
         w, h = pb.get_width(), pb.get_height()
 
-        max_w = 0.66*screen_w
+        max_w = 0.66 * screen_w
         max_h = screen_h
 
         ratio = min(max_w/float(w), max_h/float(h))
 
         if w > max_w or h > max_h:
-
-            new_w = w  * ratio
+            new_w = w * ratio
             new_h = h * ratio
 
             pb = pb.scale_simple(new_w, new_h, GdkPixbuf.InterpType.BILINEAR)
@@ -846,29 +842,7 @@ class Sherlock(GObject.GObject):
         self.emit('menu-update')
 
 
-    def draw(self, widget, event):
-
-        cr = Gdk.cairo_create(widget.get_window())
-
-        draw_background(cr, bkg_color)
-
-        # Bar
-
-        draw_bar(cr, query_x, query_y, bar_w, bar_h, self.query, text_color, fontname, size=38)
-
-        ## mode
-        if mode_labels.get(self.mode, ''):
-            draw_text(cr, 0.7*win_width, 20, 0.3*win_width-10, 0,
-                      mode_labels[self.mode], text_color, fontname, 12, justification='right')
-
-        ## bar/menu separator
-        draw_horizontal_separator(cr, 0, bar_h-0.5, win_width, sep_color)
-
-        # Menu
-        items = self.items
-
-        ## Info panel
-        if not items:
+    def draw_info_panel(self):
             #     draw_rect(cr, right_x, bar_h+1, right_w, menu_h, bkg_color)
 
             today = datetime.datetime.today()
@@ -925,13 +899,36 @@ class Sherlock(GObject.GObject):
             #     disk = '%s%s %s/ %s' % (colorDict['Sensors'][2], used, colorDict['Clear'][0], size)
             # if usedpercent >= 67:
             #     #     disk = '%s%s %s/ %s' % (colorDict['Sensors'][0], used, colorDict['Clear'][0], size)
+            pass
 
 
+    def draw(self, widget, event):
+
+        cr = Gdk.cairo_create(widget.get_window())
+
+        draw_background(cr, bkg_color)
+
+        # Bar
+        draw_bar(cr, query_x, query_y, bar_w, bar_h, self.query, text_color, fontname, size=38)
+
+        ## mode
+        if mode_labels.get(self.mode, ''):
+            draw_text(cr, 0.7*win_width, 15, 0.3*win_width-10, 0,
+                      mode_labels[self.mode], text_color, fontname, 10, justification='right')
+
+        ## bar/menu separator
+        draw_horizontal_separator(cr, 0, bar_h-0.5, win_width, sep_color)
+
+        # Menu
+        items = self.items
+
+
+        if not items:
+            self.draw_info_panel()
         else:
 
            ## Items
            left_w = win_width if not self.right_panel_visible else right_x
-
 
            first_item = 0 if (self.item_selected < 5) else (self.item_selected - 4)
 
@@ -1028,6 +1025,7 @@ class Sherlock(GObject.GObject):
                draw_vertical_separator(cr, right_x, bar_h, menu_h, sep_color)
 
         return False
+
 
     def draw_icon(self, cr, item, x, y):
 
