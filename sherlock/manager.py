@@ -8,21 +8,21 @@ from sherlock import similarity
 
 actions_dict = {
     'app': (
-        ('Run', 'run_app'),
+        ('Open',            'run_app'),
         ('Run in terminal', 'run_app_terminal'),
     ),
 
     'file': (
-        ('Open', 'open_file'),
-        ('Open dir', 'open_dir'),
+        ('Open',                 'open_file'),
+        ('Open dir',             'open_dir'),
         ('Open dir in terminal', 'open_dir_terminal'),
-        ('Explore', 'explore'),
+        ('Explore',              'explore'),
     ),
 
     'dir': (
-        ('Open', 'open_dir'),
+        ('Open',             'open_dir'),
         ('Open in terminal', 'open_dir_terminal'),
-        ('Explore', 'explore'),
+        ('Explore',          'explore'),
     ),
 
     'url': (
@@ -31,7 +31,7 @@ actions_dict = {
     ),
 
     'cmd': (
-        ('Run', 'run_cmd'),
+        ('Run',             'run_cmd'),
         ('Copy to console', 'copy_to_console')
     ),
 
@@ -51,10 +51,11 @@ class Manager:
 
         # plugins
         self.plugins = dict()
-        self.trigger_plugins = dict()
 
+        self.normal_plugins   = []
+        self.trigger_plugins  = []
         self.fallback_plugins = []
-        self.cache_plugins = []
+        self.cache_plugins    = []
 
         self.load_plugins()
 
@@ -77,10 +78,12 @@ class Manager:
             plugin = self.import_plugin(name)
 
             if plugin is not None:
+                self.plugins[name] = plugin
+
                 if hasattr(plugin, 'match_trigger'):
-                    self.trigger_plugins[name] = plugin
+                    self.trigger_plugins.append(name)
                 else:
-                    self.plugins[name] = plugin
+                    self.normal_plugins.append(name)
 
                 if hasattr(plugin, 'get_fallback_items'):
                     self.fallback_plugins.append(name)
@@ -137,3 +140,15 @@ class Manager:
 
     def get_action(self, name):
         pass
+
+
+    # ---------
+    # Iterators
+    # ---------
+    def loop_normal_plugins(self):
+        for name in self.normal_plugins:
+            yield self.plugins[name]
+
+    def loop_trigger_plugins(self):
+        for name in self.trigger_plugins:
+            yield self.plugins[name]

@@ -39,10 +39,7 @@ def filter_items(gen_items, query, min_score=0, max_results=0):
         try:
             item.keys
         except:
-            try:
-                print(item)
-            except:
-                continue
+            continue
 
         if not item.keys:
             item['score'] = 100.0
@@ -66,6 +63,7 @@ def filter_items(gen_items, query, min_score=0, max_results=0):
                 # 'query' is a substring of item
                 if query in value.lower():
                     score = 80.0 - len(value.lower().replace(query, ''))
+                    ##print ('AA', query, value, score)
 
             # if not score:
             #     # query matches capitalised letters in item,
@@ -75,13 +73,13 @@ def filter_items(gen_items, query, min_score=0, max_results=0):
             #     if initials.lower().startswith(query):
             #         score = 98.0 - (leninitials / querylen)
 
-            # if not score:
-            #     # split the item into "atoms", i.e. words separated by
-            #     # spaces or other non-word characters
-            #     atoms = [s.lower() for s in split_on_delimiters(value)]
-            #     # print('atoms : %s  -->  %s' % (value, atoms))
-            #     # initials of the atoms
-            #     initials = ''.join([s[0] for s in atoms if s])
+            if not score:
+                # split the item into "atoms", i.e. words separated by
+                # spaces or other non-word characters
+                atoms = [s.lower() for s in split_on_delimiters(value)]
+                # print('atoms : %s  -->  %s' % (value, atoms))
+                # initials of the atoms
+                initials = ''.join([s[0] for s in atoms if s])
 
             #     # is 'query' one of the atoms in item?
             #     # similar to substring, but scores more highly, as it's

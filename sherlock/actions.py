@@ -55,7 +55,7 @@ def open_dir_terminal(arg):
         dir_ = '/'.join(arg.split('/')[:-1])
     else:
         dir_ = arg
-    cmd = 'urxvt -e sh -c "cd %s ; bash"' % dir_
+    cmd = 'setsid setsid urxvt -e sh -c "cd %s ; bash"' % dir_
     os.system(cmd)
 
 

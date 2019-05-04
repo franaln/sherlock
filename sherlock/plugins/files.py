@@ -26,11 +26,24 @@ def update_cache():
 
         if os.path.isdir(path):
             files.append(
-                {'text': fname, 'subtext': path, 'category': 'dir', 'keys': (fname,), 'arg': path}
+                {
+                    'text': fname,
+                    'subtext': path,
+                    'category': 'dir',
+                    'keys': (fname,),
+                    'arg': path,
+                    'icon': 'inode-directory',
+                }
             )
         else:
             files.append(
-                {'text': fname, 'subtext': path, 'category': 'file', 'keys': (fname,), 'arg': path}
+                {
+                    'text': fname,
+                    'subtext': path,
+                    'category': 'file',
+                    'keys': (fname,),
+                    'arg': path
+                }
             )
 
     for dirname in include_dirs:
@@ -51,7 +64,14 @@ def update_cache():
                 path =  os.path.join(root, dn)
 
                 files.append(
-                    {'text': dn, 'subtext': path, 'category': 'dir', 'keys': (dn,), 'arg': path}
+                    {
+                        'text': dn,
+                        'subtext': path,
+                        'category': 'dir',
+                        'keys': (dn,),
+                        'arg': path,
+                        'icon': 'inode-directory',
+                    }
                 )
 
             for fn in filenames:

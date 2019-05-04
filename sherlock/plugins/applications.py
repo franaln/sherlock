@@ -20,30 +20,33 @@ def update_cache():
             'subtext': app.get_executable(),
             'category': 'app',
             'keys': (app.get_name(), exe),
-            'arg': app.get_filename()
+            'arg': app.get_filename(),
+            'icon': app.get_icon().to_string() if app.get_icon() is not None else '',
         }
+
         apps.append(item)
         exes.append(exe)
 
-    # from path
-    for path in os.getenv('PATH').split(':'):
+    # # from path
+    # for path in os.getenv('PATH').split(':'):
 
-        output = glob.glob(path+'/*')
+    #     output = glob.glob(path+'/*')
 
-        for exe in output:
+    #     for exe in output:
 
-            name = os.path.basename(exe)
+    #         name = os.path.basename(exe)
 
-            if name not in exes:
-                item = {
-                    'text': name,
-                    'subtext': exe,
-                    'category': 'app',
-                    'keys': (name,),
-                    'arg': exe,
-                }
+    #         if name not in exes:
+    #             item = {
+    #                 'text': name,
+    #                 'subtext': exe,
+    #                 'category': 'app',
+    #                 'keys': (name,),
+    #                 'arg': exe,
+    #                 'icon': '',
+    #             }
 
-                apps.append(item)
+    #             apps.append(item)
 
     cache.cache_data('applications', apps)
 

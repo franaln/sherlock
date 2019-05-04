@@ -34,9 +34,12 @@ def run_cmd(cmd):
     return subprocess.call(cmd)
 
 
-def get_cmd_output(cmd_list):
+def get_cmd_output(cmd_list, keep_stderr=False):
     try:
-        output = subprocess.check_output(cmd_list, stderr=subprocess.DEVNULL)
+        if keep_stderr:
+            output = subprocess.check_output(cmd_list, stderr=subprocess.STDOUT1)
+        else:
+            output = subprocess.check_output(cmd_list, stderr=subprocess.DEVNULL)
     except subprocess.CalledProcessError:
         return ''
 

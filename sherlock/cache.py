@@ -27,8 +27,9 @@ def get_cachefile(filename):
 def load_cachedict(name):
 
     cache_path = get_cachefile('%s.cache' % name)
-    with open(cache_path, 'rb') as f:
-        _cachedict[name] = pickle.load(f)
+    if os.path.isfile(cache_path):
+        with open(cache_path, 'rb') as f:
+            _cachedict[name] = pickle.load(f)
 
 
 def get_cached_data(name):

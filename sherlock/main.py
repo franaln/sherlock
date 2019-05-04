@@ -30,6 +30,7 @@ from sherlock import utils
 from sherlock import search
 from sherlock import actions
 from sherlock.drawutils import *
+from sherlock.icons import IconCache
 
 config_dir = os.path.expanduser('~/.config/sherlock')
 cache_dir  = os.path.expanduser('~/.cache/sherlock/')
@@ -44,9 +45,9 @@ home_dir = os.environ['HOME']
 
 ## Size (hardcoded)
 win_width  = 800
-win_height = 500
+win_height = 510
 bar_w = 800
-bar_h = 90
+bar_h = 100
 menu_w = 800
 menu_h = 410
 item_h = 82
@@ -55,6 +56,7 @@ right_x = 500
 right_w = 300
 query_x = 25
 query_y = 45 #bar_h * 0.5
+icon_size = 42
 
 # Font/Colors
 fontname      = config.fontname
@@ -175,6 +177,9 @@ class Sherlock(GObject.GObject):
         # preview
         self.preview = None
 
+        # icons
+        self.icon_cache = IconCache()
+
         # cb
         self.menu.connect('delete-event', Gtk.main_quit)
         self.menu.connect('key_press_event', self.on_key_press)
@@ -219,7 +224,8 @@ class Sherlock(GObject.GObject):
     def hide_menu(self):
         self.clear_bar()
         self.clear_menu()
-        self.manager.clear_cache()
+        #self.manager.clear_cache()
+        self.back_to_normal_mode()
         self.menu.hide()
         self.showing = False
         if self.preview is not None:
@@ -420,8 +426,9 @@ class Sherlock(GObject.GObject):
     # Modes
     #-------
     def change_mode(self, mode):
-        self.mode = mode
-        self.logger.info('changing mode to: %s' % mode_str[mode])
+        if mode != self.mode:
+            self.mode = mode
+            self.logger.info('changing mode to: %s' % mode_str[mode])
 
     def back_to_normal_mode(self):
         self.change_mode(MODE_NORMAL)
@@ -484,13 +491,13 @@ class Sherlock(GObject.GObject):
             abspath = os.path.join(path, name)
 
             category = 'file'
+            icon = ''
             if os.path.isdir(abspath):
                 category = 'dir'
-                name = '%s/' % name
-                abspath = '%s/' % abspath
+                icon = 'inode-directory'
 
             items.append({'text': name, 'subtext': abspath, 'category': category,
-                              'keys': (name,), 'arg': abspath})
+                              'keys': (name,), 'arg': abspath, 'icon': icon})
 
         self.items = sorted(items, key=lambda it: it['arg'])
         self.emit('menu-update')
@@ -558,7 +565,7 @@ class Sherlock(GObject.GObject):
             return
 
         # Check if match any plugin trigger
-        for plugin in self.manager.trigger_plugins.values():
+        for plugin in self.manager.loop_trigger_plugins():
             if plugin.match_trigger(query):
                 matches.extend([ it for it in plugin.get_items(query) ])
 
@@ -582,8 +589,8 @@ class Sherlock(GObject.GObject):
 
                 # matches.extend(result)
             else:
-                for plugin in self.manager.plugins.values():
-                    plugin_matches = search.filter_items(plugin.get_items(), query, min_score=80.0, max_results=10)
+                for plugin in self.manager.loop_normal_plugins():
+                    plugin_matches = search.filter_items(plugin.get_items(), query, min_score=70.0, max_results=20)
                     matches.extend(plugin_matches)
 
         # Fallback plugins
@@ -785,7 +792,7 @@ class Sherlock(GObject.GObject):
 
     def clear_menu(self):
         del self.items[:]
-        self.item_selected = -1
+        self.item_selected = 0 ##-1
 
     def toggle_right_panel(self):
         if self.right_panel_visible:
@@ -902,144 +909,215 @@ class Sherlock(GObject.GObject):
             pass
 
 
+
+    # def draw_item():
+    #     x = cell_hpadding;
+    #     y = (height - icon_size) / 2;
+    #     draw_icon (ctx, m, x, y);
+
+    def draw_icon_in_position(self, ctx, name, pixel_size):
+
+        ctx.rectangle(0, 0, pixel_size, pixel_size)
+        ctx.clip()
+
+        if not name or name is None:
+            name = "unknown"
+
+        try:
+            icon_pixbuf = self.icon_cache.get_icon(name, pixel_size) ##IconCacheService.get_default().get_icon(name, pixel_size)
+        except:
+            icon_pixbuf = self.icon_cache.get_icon('unknown', pixel_size)
+
+        if not icon_pixbuf or icon_pixbuf is None:
+            return
+
+        Gdk.cairo_set_source_pixbuf(ctx, icon_pixbuf, 0, 0)
+        ctx.paint()
+
+
+    def draw_icon(self, ctx, item, x, y):
+        ctx.save()
+        ctx.translate(x, y);
+        self.draw_icon_in_position(ctx, item.get('icon', None), icon_size)
+        ctx.restore()
+
+    def draw_item(self, ctx, base_y, item, selected, left_w):
+        """
+        --------------------------------
+        | IC | Text                |   |
+        | ON | Subtext             |   |
+        --------------------------------
+        """
+        ctx.set_operator(cairo.OPERATOR_OVER)
+
+        left_text_w = left_w - (icon_size + 3)
+
+        if selected:
+            #draw_rect(ctx, 0, base_y-1, left_w, item_h+1, sel_color)
+            draw_rect(ctx, 0, base_y, left_w, item_h, sel_color)
+
+            # spc = 6
+            # draw_rect(ctx, spc, base_y+spc, left_w-spc-spc, item_h-spc-spc, sel_color)
+
+        # icon
+        x = 10
+        y = base_y + 0.5 * (item_h - icon_size)
+
+        self.draw_icon(ctx, item, x, y)
+
+        # Text and subtext
+        text = item['text']
+        subtext = item.get('subtext', '')
+
+        text_h = item_m if subtext else item_h
+
+        x += (icon_size + 10)
+        y = base_y + 6 if subtext else base_y
+        if selected:
+            draw_text(ctx, x, y, left_text_w, text_h, text, seltext_color, fontname, 20)
+        else:
+            draw_text(ctx, x, y, left_text_w, text_h, text, text_color,    fontname, 20)
+
+        y = base_y + item_h * 0.5
+        if subtext:
+            if selected:
+                draw_text(ctx, x, y, left_text_w, text_h, subtext, seltext_color, fontname, 10)
+            else:
+                draw_text(ctx, x, y, left_text_w, text_h, subtext, subtext_color, fontname, 10)
+
+        # Action
+        if selected:
+            # try:
+            # action_name = self.manager.get_actions(item)[0][0]
+
+            # x = right_x ## + right_w*0.5
+            # y = base_y ##+ item_h * 0.5
+            # draw_text(ctx, x, y, right_w, item_h, action_name, seltext_color, fontname, 12, 'right')
+            # except:
+            #     pass
+
+            # arrow
+            draw_small_arrow(ctx, left_w-15, base_y + item_m + 4)
+
+
+
     def draw(self, widget, event):
 
-        cr = Gdk.cairo_create(widget.get_window())
+        ctx = Gdk.cairo_create(widget.get_window())
 
-        draw_background(cr, bkg_color)
+        # print (widget)
+        # #Gdk.Window.begin_draw_frame()
+        # dctx = Gdk.Window.begin_draw_frame(widget.get_window())
+        # ctx = dctx.get_cairo_context()
+
+        # Background // draw_background(ctx, bkg_color)
+        ctx.set_source_rgb(*bkg_color)
+        ctx.set_operator(cairo.OPERATOR_SOURCE)
+        ctx.paint()
 
         # Bar
-        draw_bar(cr, query_x, query_y, bar_w, bar_h, self.query, text_color, fontname, size=38)
+        # draw_bar(ctx, query_x, query_y, bar_w, bar_h, self.query, text_color, fontname, size=38)
+        size = 38
+
+        ## query
+        query_w = bar_w - 50
+
+        layout = PangoCairo.create_layout(ctx)
+        font = Pango.FontDescription('%s %s' % (fontname, size))
+        layout.set_font_description(font)
+        ctx.set_source_rgb(*text_color)
+        layout.set_text(u'%s' % self.query, -1)
+        PangoCairo.update_layout(ctx, layout)
+
+        tw, th = layout.get_pixel_size()
+        while tw > query_w:
+            size = size - 1
+            font = Pango.FontDescription('%s %s' % (fontname, size))
+            layout.set_font_description(font)
+            PangoCairo.update_layout(ctx, layout)
+            tw, th = layout.get_pixel_size()
+
+        ctx.move_to(query_x, query_y - 0.5 * th)
+        PangoCairo.show_layout(ctx, layout)
+
+        ## cursor
+        cursor_x = query_x
+        if self.query:
+            cursor_x += calc_text_width(ctx, self.query[:self.cursor], size, fontname) ## FIX: slow
+
+        ctx.set_source_rgb(*text_color)
+        ctx.rectangle(cursor_x, 0.25*bar_h, 1.5, 0.50*bar_h)
+        ctx.fill()
 
         ## mode
         if mode_labels.get(self.mode, ''):
-            draw_text(cr, 0.7*win_width, 15, 0.3*win_width-10, 0,
+            draw_text(ctx, 0.7*win_width, 15, 0.3*win_width-10, 0,
                       mode_labels[self.mode], text_color, fontname, 10, justification='right')
 
         ## bar/menu separator
-        draw_horizontal_separator(cr, 0, bar_h-0.5, win_width, sep_color)
+        draw_horizontal_separator(ctx, 0, bar_h-0.5, win_width, sep_color)
 
         # Menu
         items = self.items
 
-
         if not items:
-            self.draw_info_panel()
+            return ##self.draw_info_panel()
+
         else:
 
-           ## Items
-           left_w = win_width if not self.right_panel_visible else right_x
+            n_items = len(items)
+            max_items = min(5, n_items)
+            item_selected_idx = self.item_selected
 
-           first_item = 0 if (self.item_selected < 5) else (self.item_selected - 4)
+            left_w = win_width if not self.right_panel_visible else right_x
 
-           n_items = len(items)
-           max_items = min(5, n_items)
+            first_item = 0 if (item_selected_idx < 5) else (item_selected_idx - 4)
 
-           for pos in range(max_items):
-               # self.draw_item(cr, i, items[first_item + i],
-               #                (first_item + i == self.item_selected), left_w)
+            for pos in range(max_items):
 
-               """
-               --------------------------------
-               | IC | Text                    |
-               | ON | Subtext                 |
-               --------------------------------
-               """
+                item = items[first_item+pos]
+                is_selected = (first_item+pos == item_selected_idx)
 
-               item = items[first_item + pos]
-               selected = (first_item + pos == self.item_selected)
+                # pos -> (x, y)
+                base_y = bar_h + pos * item_h
 
-               # pos -> (x, y)
-               base_y = bar_h + pos * item_h
+                self.draw_item(ctx,
+                               base_y,
+                               item,
+                               is_selected,
+                               left_w)
 
-               if pos == 0:
-                   draw_horizontal_separator(cr, -5, base_y, left_w, sep_color)
+                # if pos == 0:
+                #     draw_horizontal_separator(ctx, -5, base_y, left_w, sep_color)
 
-               if selected:
-                   draw_rect(cr, 0, base_y-1, left_w, item_h+1, sel_color)
-               elif pos < 4:
-                   draw_horizontal_separator(cr, 0, base_y+item_h, left_w, sep_color)
-
-               text_h = item_m
-               text = item['text']
-
-               text_x = 20
-
-               # icon
-               if 'icon' in item:
-                   cr.save()
-                   self.draw_icon(cr, item, 10, base_y+0.5*item_h-14)
-                   cr.restore()
-                   text_x = 50
-
-               left_text_w = left_w - 2 * text_x
-
-               if item['subtext']:
-                   if selected:
-                       draw_text(cr, text_x, base_y+6, left_text_w, text_h, text, seltext_color, fontname, 20)
-                   else:
-                       draw_text(cr, text_x, base_y+6, left_text_w, text_h, text, text_color,    fontname, 20)
-
-                   y = base_y + item_h * 0.5
-                   if selected:
-                       draw_text(cr, text_x, y, left_text_w, text_h, item['subtext'], seltext_color, fontname, 10)
-                   else:
-                       draw_text(cr, text_x, y, left_text_w, text_h, item['subtext'], subtext_color, fontname, 10)
-
-               else:
-                   if selected:
-                       draw_text(cr, text_x, base_y, left_text_w, item_h, text, seltext_color, fontname, 20)
-                   else:
-                       draw_text(cr, text_x, base_y, left_text_w, item_h, text, text_color, fontname, 20)
-
-               # Default action and more actions arrow
-               if selected:
-                   try:
-                       action_name = self.manager.get_actions(item)[0][0]
-                       draw_text(cr, left_w + right_w*0.5, base_y, right_w, item_h, action_name, seltext_color, fontname, 12)
-                   except:
-                       pass
-
-                   # arrow
-                   draw_small_arrow(cr, left_w-15, base_y + item_m + 4)
+                # if pos < 4 and not is_selected:
+                #     draw_horizontal_separator(ctx, 0, base_y+item_h, left_w, sep_color)
 
 
-           ## Right panel
-           if self.right_panel_visible:
+            ## Right panel
+            if self.right_panel_visible:
 
-               draw_rect(cr, right_x, bar_h, right_w, menu_h, bkg_color)
+                draw_rect(ctx, right_x, bar_h, right_w, menu_h, bkg_color)
 
-               for pos, action in enumerate(self.right_items):
+                for pos, action in enumerate(self.right_items):
 
-                   base_y =  bar_h + item_h * pos
+                    base_y =  bar_h + item_h * pos
 
-                   draw_horizontal_separator(cr, right_x, base_y+81, right_w, sep_color)
+                    draw_horizontal_separator(ctx, right_x, base_y+81, right_w, sep_color)
 
-                   if self.right_item_selected == pos:
-                       draw_rect(cr, right_x, base_y, right_w, 82, sel_color)
-                       draw_text(cr, right_x+10, base_y, right_w, 82, action[0], seltext_color, fontname)
-                   else:
-                       draw_text(cr, right_x+10, base_y, right_w, 82, action[0], text_color, fontname)
+                    if self.right_item_selected == pos:
+                        draw_rect(ctx, right_x, base_y, right_w, 82, sel_color)
+                        draw_text(ctx, right_x+10, base_y, right_w, 82, action[0], seltext_color, fontname)
+                    else:
+                        draw_text(ctx, right_x+10, base_y, right_w, 82, action[0], text_color, fontname)
 
 
-               draw_vertical_separator(cr, right_x, bar_h, menu_h, sep_color)
+                draw_vertical_separator(ctx, right_x, bar_h, menu_h, sep_color)
+
 
         return False
 
 
-    def draw_icon(self, cr, item, x, y):
-
-        pixel_size = 28
-
-        cr.translate (x, y)
-        cr.rectangle(0, 0, pixel_size, pixel_size)
-        cr.clip()
-
-        icon_theme = Gtk.IconTheme.get_default()
-        icon_pixbuf = icon_theme.load_icon(item.icon, pixel_size, Gtk.IconLookupFlags.FORCE_SIZE)
-
-        Gdk.cairo_set_source_pixbuf(cr, icon_pixbuf, 0, 0);
-        cr.paint()
 
 
 
