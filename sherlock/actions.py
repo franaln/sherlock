@@ -26,13 +26,13 @@ def copy_to_console(arg):
 
 
 # Apps
-def run_app(arg):
+def open_app(arg):
     if arg.endswith('.desktop'):
         utils.launch_app(arg)
     else:
         utils.run_cmd('setsid setsid %s' % arg)
 
-def run_app_terminal(self):
+def open_app_terminal(self):
     print('urxvtc -e "%s"' % arg)
     os.system('setsid urxvt -e "%s" +hold' % arg)
 

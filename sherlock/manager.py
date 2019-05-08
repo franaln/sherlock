@@ -8,8 +8,8 @@ from sherlock import similarity
 
 actions_dict = {
     'app': (
-        ('Open',            'run_app'),
-        ('Run in terminal', 'run_app_terminal'),
+        ('Open',             'open_app'),
+        ('Open in terminal', 'open_app_terminal'),
     ),
 
     'file': (
@@ -56,15 +56,16 @@ class Manager:
         self.trigger_plugins  = []
         self.fallback_plugins = []
         self.cache_plugins    = []
+        self.auto_plugins     = []
 
         self.load_plugins()
 
     def import_plugin(self, name):
         try:
             plugin = importlib.import_module(name)
-            self.logger.info('plugin %s loaded.' % name)
+            self.logger.info('plugin loaded: %s' % name)
         except ImportError:
-            self.logger.error('error loading plugin %s.' % name)
+            self.logger.error('error loading plugin: %s' % name)
             return None
 
         return plugin
@@ -91,22 +92,20 @@ class Manager:
                 if hasattr(plugin, 'update_cache'):
                     self.cache_plugins.append(name)
 
-    # def check_automatic_plugins(self):
-    #     for name, plugin in self.automatic_plugins.items():
-    #         self.logger.info('checking automatic plugin %s' % name)
-    #         matches = plugin.get_matches()
-    #         if matches:
-    #             self.items.extend(matches)
-    #             self.emit('menu-update')
+                if hasattr(plugin, 'get_auto_items'):
+                    self.auto_plugins.append(name)
+
 
     def update_cache(self):
         for name in self.cache_plugins:
-            self.logger.info('updating %s cache' % name)
+            self.logger.info('updating cache: %s' % name)
             self.plugins[name].update_cache()
             cache.load_cachedict(name)
 
         # self.logger.info('updating trie data')
         # similarity.update_trie_data(self.plugins)
+
+        self.logger.info('updating caches done.')
 
         return True
 
@@ -136,6 +135,9 @@ class Manager:
     # --------
     def get_actions(self, item):
         """ return posible actions for the item """
+        if 'actions' in item:
+            return item['actions']
+
         return actions_dict.get(item['category'], ())
 
     def get_action(self, name):
@@ -151,4 +153,8 @@ class Manager:
 
     def loop_trigger_plugins(self):
         for name in self.trigger_plugins:
+            yield self.plugins[name]
+
+    def loop_auto_plugins(self):
+        for name in self.auto_plugins:
             yield self.plugins[name]

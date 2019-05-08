@@ -90,7 +90,7 @@ def update_cache():
     cache.cache_data('files', files)
     return
 
-def get_items():
+def get_items(query):
 
     _cached_files = cache.get_cached_data('files')
 

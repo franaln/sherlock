@@ -101,6 +101,6 @@ def update_cache():
     cache.cache_data('chromium', cache_fn())
 
 
-def get_items():
+def get_items(query):
     for item in cache.get_cached_data('chromium'):
         yield item

@@ -68,10 +68,11 @@ class Attic:
         self.logger.info('adding event to attic: query=%s, item=%s, action=%s' % (query, item, action))
 
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        # item_dict = item.to_dict()
 
         # add event to history
-        event = (timestamp, query, item, action, item.get('score', 0.0))
+        item_to_save = { key: value for key, value in item.items() if key not in ('score', 'bonus') }
+
+        event = (timestamp, query, item_to_save, action, item.get('score', 0.0))
 
         self.events.insert(0, event)
 
@@ -107,6 +108,19 @@ class Attic:
         pass
         #return [ Item.from_dict(ev[2]) for ev in self.events ]
 
+
+    def get_last_items(self):
+        last_items = []
+        for ev in self.events:
+            item = ev[2]
+            if item not in last_items:
+                last_items.append(item)
+            if len(last_items) >= 10:
+                break
+
+        print(last_items)
+
+        return last_items
 
     # def get_total_score(self):
     #     total = 0

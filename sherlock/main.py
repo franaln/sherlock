@@ -52,8 +52,8 @@ menu_w = 800
 menu_h = 410
 item_h = 82
 item_m = 41
-right_x = 500
-right_w = 300
+right_x = 450
+right_w = 250
 query_x = 25
 query_y = 45 #bar_h * 0.5
 icon_size = 42
@@ -215,8 +215,7 @@ class Sherlock(GObject.GObject):
     # Show / Hide menu
     # ----------------
     def show_menu(self):
-        # self.check_automatic_plugins()
-        #self.clear_bar()
+        self.check_welcome_items()
         self.menu.present()
         self.showing = True
         GLib.timeout_add(500, self.check)
@@ -536,6 +535,8 @@ class Sherlock(GObject.GObject):
     def search(self, query):
 
         if not query:
+            self.check_welcome_items()
+
             return
 
         self.logger.info('searching %s' % query)
@@ -572,11 +573,12 @@ class Sherlock(GObject.GObject):
         # Filter non-trigger plugins
         if not matches:
             if use_threads:
-                result = []
+                result1 = []
+                result2 = []
 
-                # # merge db and split in 4?
-                # j1 = threading.Thread(target=self.do_cache_thread_search, args=(applications.get_items(), query, result))
-                # j2 = threading.Thread(target=self.do_cache_thread_search, args=(files.get_items(), query, result))
+                # merge db and split in 4?
+                j1 = threading.Thread(target=self.do_cache_thread_search, args=(applications.get_items(), query, result))
+                j2 = threading.Thread(target=self.do_cache_thread_search, args=(files.get_items(), query, result))
                 # j3 = threading.Thread(target=self.do_cache_thread_search, args=(bookmarks.get_items(), query, result))
 
                 # j1.start()
@@ -590,7 +592,7 @@ class Sherlock(GObject.GObject):
                 # matches.extend(result)
             else:
                 for plugin in self.manager.loop_normal_plugins():
-                    plugin_matches = search.filter_items(plugin.get_items(), query, min_score=70.0, max_results=20)
+                    plugin_matches = search.filter_items(plugin.get_items(query), query, min_score=70.0, max_results=20)
                     matches.extend(plugin_matches)
 
         # Fallback plugins
@@ -849,71 +851,95 @@ class Sherlock(GObject.GObject):
         self.emit('menu-update')
 
 
-    def draw_info_panel(self):
-            #     draw_rect(cr, right_x, bar_h+1, right_w, menu_h, bkg_color)
+    def check_welcome_items(self):
 
-            today = datetime.datetime.today()
+        items = []
+        # Auto plugins
+        for plugin in self.manager.loop_auto_plugins():
+            # self.logger.info('checking automatic plugin %s' % name)
+            matches = plugin.get_auto_items()
+            if matches:
+                items.extend(matches)
 
-            # Date
-            date_txt = today.strftime('%A, %d %b %Y')
+        # Last used items
+        items.extend(self.attic.get_last_items())
 
-            #draw_text(cr, 0, bar_h+10, right_w, win_width, date_txt, text_color, 20, justification='center')
-
-            # Time
-            time_1 = today.strftime('%H:%M')
-
-            # h, m = [int(a) for a in today.strftime('%H:%M').split(':')]
-            # if h < 5:
-            #     time_2 = '%2i:%2i (Home)' % (24-h+5, m)
-            # else:
-            #     time_2 = '%2i:%2i (Home)' % (h-5, m)
-
-            #draw_text(cr, 0, bar_h+70,  right_w, 80, time_1, text_color, 28, justification='center')
-            #draw_text(cr, right_x, bar_h+130, right_w, 80, time_2, text_color, 28, justification='center')
-
-            # Battery: Battery 0: Unknown, 98%
-            #acpi_output = utils.get_cmd_output(['acpi',])
-
-            #draw_text(cr, 0, bar_h+10, right_w, 80, date_txt, text_color, 20, justification='center')
-
-
-            # Volume
-
-            # Weather?
-
-            # RAM/CPU??
-            # raminfo = Popen(['free', '-m'], stdout=PIPE).communicate()[0].decode('Utf-8').split('\n')
-            # ram = ''.join(filter(re.compile('M').search, raminfo)).split()
-            # used = int(ram[2]) ##- int(ram[4]) - int(ram[5])
-            # usedpercent = ((float(used) / float(ram[1])) * 100)
-
-            # ramdisplay = '%s MB / %s MB' % (used, ram[1])
-
-            # draw_text(cr, right_x+10, bar_h+120, right_w, 82, ramdisplay, text_color, 16, center=True)
-
-            # user = os.getenv('USER')
-            # hostname = Popen(['uname', '-n'], stdout=PIPE).communicate()[0].decode('Utf-8').rstrip('\n')
-
-            # p1 = Popen(['df', '-Tlh', '--total', '-t', 'ext4', '-t', 'ext3', '-t', 'ext2', '-t', 'reiserfs', '-t', 'jfs', '-t', 'ntfs', '-t', 'fat32', '-t', 'btrfs', '-t', 'fuseblk'], stdout=PIPE).communicate()[0].decode("Utf-8")
-            # total = p1.splitlines()[-1]
-            # used = total.split()[3]
-            # size = total.split()[2]
-            # usedpercent = float(total.split()[5][:-1])
-
-            # if usedpercent <= 33:
-            #     disk = '%s%s %s/ %s' % (colorDict['Sensors'][1], used, colorDict['Clear'][0], size)
-            # if usedpercent > 33 and usedpercent < 67:
-            #     disk = '%s%s %s/ %s' % (colorDict['Sensors'][2], used, colorDict['Clear'][0], size)
-            # if usedpercent >= 67:
-            #     #     disk = '%s%s %s/ %s' % (colorDict['Sensors'][0], used, colorDict['Clear'][0], size)
-            pass
+        self.items = items
+        self.emit('menu-update')
 
 
 
-    # def draw_item():
-    #     x = cell_hpadding;
-    #     y = (height - icon_size) / 2;
-    #     draw_icon (ctx, m, x, y);
+    def draw_welcome_panel(self, ctx):
+
+        ## Left
+        y = bar_h
+        pos  = 0
+
+        for item in self.items:
+            y += item_h * pos
+            self.draw_item(ctx, y, item, False, right_x)
+            pos += 1
+
+
+        ## Right
+
+        today = datetime.datetime.today()
+
+        # Date
+        date_txt = today.strftime('%A, %d %b %Y')
+
+        draw_text(ctx, right_x, bar_h+10, right_w, win_width, date_txt, text_color, 20, justification='center')
+
+        # Time
+        # time_1 = today.strftime('%H:%M')
+
+        # h, m = [int(a) for a in today.strftime('%H:%M').split(':')]
+        # if h < 5:
+        #     time_2 = '%2i:%2i (Home)' % (24-h+5, m)
+        # else:
+        #     time_2 = '%2i:%2i (Home)' % (h-5, m)
+
+        #draw_text(cr, 0, bar_h+70,  right_w, 80, time_1, text_color, 28, justification='center')
+        #draw_text(cr, right_x, bar_h+130, right_w, 80, time_2, text_color, 28, justification='center')
+
+        # Battery: Battery 0: Unknown, 98%
+        #acpi_output = utils.get_cmd_output(['acpi',])
+
+        #draw_text(cr, 0, bar_h+10, right_w, 80, date_txt, text_color, 20, justification='center')
+
+
+        # Volume
+
+        # Weather?
+
+        # RAM/CPU??
+        # raminfo = Popen(['free', '-m'], stdout=PIPE).communicate()[0].decode('Utf-8').split('\n')
+        # ram = ''.join(filter(re.compile('M').search, raminfo)).split()
+        # used = int(ram[2]) ##- int(ram[4]) - int(ram[5])
+        # usedpercent = ((float(used) / float(ram[1])) * 100)
+
+        # ramdisplay = '%s MB / %s MB' % (used, ram[1])
+
+        # draw_text(cr, right_x+10, bar_h+120, right_w, 82, ramdisplay, text_color, 16, center=True)
+
+        # user = os.getenv('USER')
+        # hostname = Popen(['uname', '-n'], stdout=PIPE).communicate()[0].decode('Utf-8').rstrip('\n')
+
+        # p1 = Popen(['df', '-Tlh', '--total', '-t', 'ext4', '-t', 'ext3', '-t', 'ext2', '-t', 'reiserfs', '-t', 'jfs', '-t', 'ntfs', '-t', 'fat32', '-t', 'btrfs', '-t', 'fuseblk'], stdout=PIPE).communicate()[0].decode("Utf-8")
+        # total = p1.splitlines()[-1]
+        # used = total.split()[3]
+        # size = total.split()[2]
+        # usedpercent = float(total.split()[5][:-1])
+
+        # if usedpercent <= 33:
+        #     disk = '%s%s %s/ %s' % (colorDict['Sensors'][1], used, colorDict['Clear'][0], size)
+        # if usedpercent > 33 and usedpercent < 67:
+        #     disk = '%s%s %s/ %s' % (colorDict['Sensors'][2], used, colorDict['Clear'][0], size)
+        # if usedpercent >= 67:
+        #     #     disk = '%s%s %s/ %s' % (colorDict['Sensors'][0], used, colorDict['Clear'][0], size)
+
+
+
 
     def draw_icon_in_position(self, ctx, name, pixel_size):
 
@@ -941,7 +967,7 @@ class Sherlock(GObject.GObject):
         self.draw_icon_in_position(ctx, item.get('icon', None), icon_size)
         ctx.restore()
 
-    def draw_item(self, ctx, base_y, item, selected, left_w):
+    def draw_item(self, ctx, pos, base_y, item, selected, left_w):
         """
         --------------------------------
         | IC | Text                |   |
@@ -998,6 +1024,10 @@ class Sherlock(GObject.GObject):
 
             # arrow
             draw_small_arrow(ctx, left_w-15, base_y + item_m + 4)
+        # else:
+        #     draw_text       (ctx, menu_w-40, base_y, 40, item_h, 'C-%i' % pos, text_color, fontname, 10)
+
+
 
 
 
@@ -1061,7 +1091,7 @@ class Sherlock(GObject.GObject):
         items = self.items
 
         if not items:
-            return ##self.draw_info_panel()
+            return ##self.draw_welcome_panel(ctx)
 
         else:
 
@@ -1082,6 +1112,7 @@ class Sherlock(GObject.GObject):
                 base_y = bar_h + pos * item_h
 
                 self.draw_item(ctx,
+                               pos,
                                base_y,
                                item,
                                is_selected,

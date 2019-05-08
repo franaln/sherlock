@@ -13,15 +13,23 @@ def update_cache():
     # from desktop files
     for app in Gio.app_info_get_all():
 
-        exe = os.path.basename(app.get_executable())
+        name = app.get_name()
+        exe = app.get_executable()
+        exe_name = os.path.basename(exe)
+        icon = app.get_icon()
+
+        if name.lower() == exe_name.lower():
+            keys = (name,)
+        else:
+            keys = (name, exe_name)
 
         item = {
-            'text': app.get_name(),
-            'subtext': app.get_executable(),
+            'text': name,
+            'subtext': exe,
             'category': 'app',
-            'keys': (app.get_name(), exe),
+            'keys': keys,
             'arg': app.get_filename(),
-            'icon': app.get_icon().to_string() if app.get_icon() is not None else '',
+            'icon': icon.to_string() if icon is not None else '',
         }
 
         apps.append(item)
@@ -53,7 +61,7 @@ def update_cache():
     return
 
 
-def get_items():
+def get_items(query):
 
     _cached_applications = cache.get_cached_data('applications')
 
