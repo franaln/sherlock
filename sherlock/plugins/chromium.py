@@ -6,7 +6,7 @@ import sqlite3
 from sherlock import utils, cache
 
 bookmarks_file = os.path.expanduser('~/.config/chromium/Default/Bookmarks')
-history_file = os.path.expanduser('~/.config/chromium/Default/History')
+history_file   = os.path.expanduser('~/.config/chromium/Default/History')
 
 use_bookmarks = True
 use_history   = False
@@ -31,11 +31,13 @@ def get_bookmarks():
         if n is not None:
             name, url = n['name'], n['url']
             bookmarks.append(
-                {'text': name,
-                 'subtext': url,
-                 'keys': [name,],
-                 'category': 'url',
-                 'arg': url}
+                {
+                    'text': name,
+                    'subtext': url,
+                    'keys': (name, url),
+                    'category': 'url',
+                    'arg': url
+                }
             )
 
     for n in _get_bookmarks(content['roots']['other']):
@@ -45,9 +47,10 @@ def get_bookmarks():
                 {
                     'text': name,
                     'subtext': url,
-                    'keys': [name,],
+                    'keys': (name, url),
                     'category': 'url',
-                    'arg': url}
+                    'arg': url,
+                }
             )
 
     return bookmarks

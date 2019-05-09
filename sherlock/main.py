@@ -452,7 +452,7 @@ class Sherlock(GObject.GObject):
 
         query = self.query
         if not query:
-            query = os.path.expanduser('~')
+            query = os.path.expanduser('~/')
 
         self.file_navigation(query)
 
@@ -551,8 +551,13 @@ class Sherlock(GObject.GObject):
         if query.startswith("'"):
             self.logger.info('shell command trigger')
             cmd = query[1:]
-            it = {'text': "run '%s' in a shell" % cmd, 'subtext': cmd, 'arg': cmd}
-            it['score'] = 1000
+            it = {
+                'text': "run «%s» in a shell" % cmd,
+                ##'subtext': cmd,
+                'arg': cmd,
+                'category': 'cmd',
+                'icon': 'gnome-terminal',
+            }
             matches.append(it)
 
         # File navigation ('~/' or '/')
