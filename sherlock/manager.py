@@ -75,7 +75,7 @@ class Manager:
         plugins_dir = os.path.dirname(__file__) + '/plugins'
         sys.path.append(plugins_dir)
 
-        for name in self.config.basic_plugins:
+        for name in self.config.plugins:
             plugin = self.import_plugin(name)
 
             if plugin is not None:

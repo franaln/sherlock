@@ -6,13 +6,12 @@ try:
 except:
     import pickle
 
-from sherlock import config
 
 #-------------#
 # Cache utils #
 #-------------#
 
-cachedir = os.path.expanduser(config.cache_dir)
+cachedir = os.path.expanduser('~/.cache/sherlock/')
 
 _cachedict = {}
 

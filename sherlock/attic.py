@@ -118,8 +118,6 @@ class Attic:
             if len(last_items) >= 10:
                 break
 
-        print(last_items)
-
         return last_items
 
     # def get_total_score(self):
