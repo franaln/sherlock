@@ -27,13 +27,12 @@ def get_items(query):
 
     if extra_calc:
 
+        result = ''
         if not expression:
             text = "Empty input"
-            subtext = "Enter something to convert"
+            subtext = "Enter something to calculate/convert"
 
         else:
-
-            result = ''
 
             if _use_calc:
                 result = get_cmd_output(['calc', expression])
@@ -44,7 +43,7 @@ def get_items(query):
 
                 try:
                     result = get_cmd_output(['units', '-t'] + args)
-                except sp.CalledProcessError as e:
+                except:
                     pass
 
             if result:
@@ -52,14 +51,13 @@ def get_items(query):
                 subtext = ''
             else:
                 text = 'Input error'
-                subtext = 'Check the syntax'
-
+                subtext = 'Check the input syntax'
 
         yield {
             'text': text,
             'subtext': subtext,
             'category': 'text',
-            'arg': text,
+            'arg': result,
             'icon': 'accessories-calculator'
         }
 
@@ -74,6 +72,7 @@ def get_items(query):
                 yield {
                     'text': '= %s' % result,
                     'subtext': '',
+                    'category': 'text',
                     'arg': result,
                     'icon': 'accessories-calculator'
                 }
