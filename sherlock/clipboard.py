@@ -4,6 +4,8 @@ import logging
 from datetime import datetime, timedelta
 from gi.repository import Gtk, Gdk, GLib
 
+history_size = 100
+
 class Clipboard:
 
     def __init__(self, path):
@@ -57,7 +59,7 @@ class Clipboard:
 
         text = clipboard.wait_for_text()
 
-        if text is None:
+        if text is None or not text.strip() or len(text) < 5:
             return
 
         if self.last_copied and (text == self.last_copied or (datetime.now() - self.last_copied_time) < timedelta(seconds = 1)):
@@ -94,11 +96,17 @@ class Clipboard:
         self.history.insert(0, it)
         self.history_changed = True
 
+
         # Sync both clipboard
         if selection_type == 'CLIPBOARD':
             self.selection_primary.set_text(text, -1)
         elif selection_type == 'PRIMARY':
             self.selection_clipboard.set_text(text, -1)
+
+        if len(self.history) > history_size:
+            del self.history[history_size:]
+
+        self.save()
 
         return True
 
@@ -141,14 +149,20 @@ class Clipboard:
             elif td.seconds < 24*3600:
                 it_time = 'Copied %i hours ago' % (td.seconds/3600)
 
-            it = Item(text=it_text, subtext=it_time, arg=text, keys=text, category='cb')
+            it = {
+                'text': it_text,
+                'subtext': it_time,
+                'arg': text,
+                'keys': (text,),
+                'category': 'cb'
+                }
 
             items.append(it)
 
         return items
 
     def get_text(self):
-        text = clipboard.wait_for_text()
+        text = self.selection_primary.wait_for_text()
         if text is None or not text:
             text = ''
         return text

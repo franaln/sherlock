@@ -23,7 +23,7 @@ import dbus.mainloop.glib
 
 from sherlock.manager import Manager
 from sherlock.attic import Attic
-#from sherlock.clipboard import Clipboard
+from sherlock.clipboard import Clipboard
 
 from sherlock import config
 from sherlock import utils
@@ -131,7 +131,7 @@ class Sherlock(GObject.GObject):
         # Manager & Attic & Clipboard
         self.manager = Manager(config)
         self.attic = Attic(attic_path)
-        # self.clipboard = Clipboard(clipboard_path)
+        self.clipboard = Clipboard(clipboard_path)
 
         self.commands = [
             'quit',
@@ -272,7 +272,7 @@ class Sherlock(GObject.GObject):
                 self.move_cursor_right()
             elif key == 'Up':
                 if self.item_selected >= 0:
-                    self.addchar(self.items[self.item_selected].arg, True)
+                    self.addchar(self.selected_item()['arg'], True)
                 else:
                     self.previous_query()
 
@@ -289,7 +289,7 @@ class Sherlock(GObject.GObject):
             elif key == 'y':
                 selected_text = self.clipboard.get_text()
                 if selected_text:
-                    self.addchar(selected_text)
+                    self.addchar(selected_text, True)
 
             # modes
             elif key == 'h':
@@ -536,7 +536,6 @@ class Sherlock(GObject.GObject):
 
         if not query:
             self.check_welcome_items()
-
             return
 
         self.logger.info('searching %s' % query)
@@ -552,7 +551,7 @@ class Sherlock(GObject.GObject):
             self.logger.info('shell command trigger')
             cmd = query[1:]
             it = {
-                'text': "run «%s» in a shell" % cmd,
+                'text': "Run «%s» in a shell" % cmd,
                 ##'subtext': cmd,
                 'arg': cmd,
                 'category': 'cmd',
@@ -568,6 +567,7 @@ class Sherlock(GObject.GObject):
         # Check if match internal command
         if query.startswith('!') and query[1:] in self.commands:
             self.run_internal_command(query[1:])
+            self.query = ''
             return
 
         # Check if match any plugin trigger
@@ -597,7 +597,7 @@ class Sherlock(GObject.GObject):
                 # matches.extend(result)
             else:
                 for plugin in self.manager.loop_normal_plugins():
-                    plugin_matches = search.filter_items(plugin.get_items(query), query, min_score=70.0, max_results=20)
+                    plugin_matches = search.filter_items(plugin.get_items(query), query) ##, min_score=70.0, max_results=20)
                     matches.extend(plugin_matches)
 
         # Fallback plugins

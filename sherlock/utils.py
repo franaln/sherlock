@@ -35,15 +35,16 @@ def run_cmd(cmd):
 
 
 def get_cmd_output(cmd_list, keep_stderr=False):
-    try:
-        if keep_stderr:
-            output = subprocess.check_output(cmd_list, stderr=subprocess.STDOUT1)
-        else:
-            output = subprocess.check_output(cmd_list, stderr=subprocess.DEVNULL)
-    except subprocess.CalledProcessError:
-        return ''
-
-    return output.decode('utf8').strip()
+    if keep_stderr:
+        try:
+            return subprocess.check_output(cmd_list, stderr=subprocess.STDOUT).decode().strip()
+        except subprocess.CalledProcessError as e:
+            return e.stdout.decode().strip().partition('\n')[0]
+    else:
+        try:
+            return subprocess.check_output(cmd_list, stderr=subprocess.DEVNULL).decode().strip()
+        except:
+            return ''
 
 
 def is_running(name):

@@ -79,7 +79,8 @@ class Attic:
         # if len(self.history) > history_size:
         #     del self.history[history_size:]
 
-        self.changed = True
+        self.save()
+        #self.changed = True
 
 
     def remove(self):
